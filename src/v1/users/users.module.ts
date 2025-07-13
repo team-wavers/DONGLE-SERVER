@@ -9,5 +9,6 @@ import { ClubsModule } from '../clubs/clubs.module';
     imports: [TypeOrmModule.forFeature([User]), ClubsModule],
     controllers: [UsersController],
     providers: [UsersService],
+    exports: [UsersService],
 })
 export class UsersModule {}
