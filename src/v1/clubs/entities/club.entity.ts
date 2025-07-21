@@ -39,11 +39,23 @@ export class Club {
     @Column({ type: 'text', nullable: true })
     main_activities: string;
 
-    // users 테이블의 id와 연결되는 외래키, 1:1 관계로 처리
     @OneToOne(() => User)
     @Column({ name: 'president_id', nullable: true })
     @JoinColumn({ name: 'president_id' })
     president: User;
+
+    @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+    created_at: Date;
+
+    @Column({
+        type: 'datetime',
+        default: () => 'CURRENT_TIMESTAMP',
+        onUpdate: 'CURRENT_TIMESTAMP',
+    })
+    updated_at: Date;
+
+    @Column({ type: 'datetime', nullable: true })
+    deleted_at: Date;
 }
 
 /**
