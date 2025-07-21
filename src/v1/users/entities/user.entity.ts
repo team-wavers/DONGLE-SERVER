@@ -2,10 +2,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    ManyToOne,
-    JoinColumn,
 } from 'typeorm';
-import { Club } from '../../clubs/entities/club.entity';
 
 @Entity('users')
 export class User {
@@ -43,20 +40,3 @@ export class User {
     @Column({ type: 'datetime', nullable: true })
     deleted_at: Date;
 }
-
-/**
- * CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    login_id VARCHAR(100) NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    club_id INT,
-    role VARCHAR(10) NOT NULL,
-    phone VARCHAR(100),
-    refresh_token VARCHAR(255),
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at DATETIME,
-    FOREIGN KEY (club_id) REFERENCES clubs(id)
-);
- */

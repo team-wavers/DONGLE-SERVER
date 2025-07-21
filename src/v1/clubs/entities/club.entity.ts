@@ -24,8 +24,8 @@ export class Club {
     @Column({ type: 'json', nullable: true })
     sns: Record<string, string>;
 
-    @Column({ length: 255, nullable: true })
-    tags: string;
+    @Column({ type: 'array', nullable: true })
+    tag: string[];
 
     @Column({ type: 'date', nullable: true })
     recruit_start: Date;
@@ -57,22 +57,3 @@ export class Club {
     @Column({ type: 'datetime', nullable: true })
     deleted_at: Date;
 }
-
-/**
- * CREATE TABLE clubs (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    name         VARCHAR(100) NOT NULL,
-    is_recruiting BOOLEAN NOT NULL DEFAULT FALSE,
-    category     VARCHAR(50) NOT NULL ,
-    sns         JSON,
-    tags         VARCHAR(255) ,
-    recruit_start DATE ,
-    recruit_end   DATE ,
-    description  TEXT ,
-    main_activities TEXT ,
-    president_id INT,
-    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ,
-    updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP '
-    deleted_at   TIMESTAMP NULL
-);
- */
