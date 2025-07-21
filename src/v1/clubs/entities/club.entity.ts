@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    OneToOne,
+    JoinColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('clubs')
@@ -38,7 +44,6 @@ export class Club {
     @Column({ name: 'president_id', nullable: true })
     @JoinColumn({ name: 'president_id' })
     president: User;
-
 }
 
 /**
