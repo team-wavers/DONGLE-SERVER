@@ -25,6 +25,11 @@ export class ClubsController {
         return await this.clubsService.findAll();
     }
 
+    @Post('registration-urls')
+    createRegistrationUrl() {
+        return this.clubsService.createRegistrationUrl();
+    }
+
     @Get(':id')
     async findOne(@Param('id') id: number) {
         return await this.clubsService.findOne(id);

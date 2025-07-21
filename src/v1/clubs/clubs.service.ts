@@ -42,4 +42,9 @@ export class ClubsService {
         }
         return result;
     }
+
+    createRegistrationUrl() {
+        // jwt 관련 모듈 추가되면 구현 예정
+    }
+
 }
