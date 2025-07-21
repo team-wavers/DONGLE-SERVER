@@ -24,8 +24,12 @@ export class ClubsService {
     return this.clubRepository.findOne({ where: { id } });
   }
 
-  update(id: number, updateClubDto: UpdateClubDto) {
-    return `This action updates a #${id} club`;
+  async update(id: number, updateClubDto: UpdateClubDto) {
+    const result = await this.clubRepository.update(id, updateClubDto);
+    if (result.affected === 0) {
+      throw new Error('존재하지 않는 club_id입니다.');
+    }
+    return result;
   }
 
   remove(id: number) {

@@ -15,11 +15,6 @@ export class User {
     @Column({ length: 255 })
     password: string;
 
-    // club_id는 Club 엔티티와의 관계로 처리
-    @ManyToOne(() => Club, club => club.users, { nullable: true })
-    @JoinColumn({ name: 'club_id' })
-    club: Club;
-
     @Column({ length: 10 })
     role: string;
 
