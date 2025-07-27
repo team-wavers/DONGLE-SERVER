@@ -17,9 +17,9 @@ export class UsersService {
     ) {}
 
     async create(createUserDto: CreateUserDto) {
-        // 1. 필수값 검증
-        const { name, login_id, password, role, club_id, phone } = createUserDto;
-        if (!name || !login_id || !password || !role || !club_id || !phone) {
+        const { name, login_id, password, role, club_id, phone } =
+            createUserDto;
+        if (!name || !login_id || !password || !role || !phone) {
             throw new Error('필수값이 누락되었습니다.');
         }
 
@@ -38,11 +38,13 @@ export class UsersService {
             password: hashedPassword,
             role,
             phone,
-            club,
         });
 
-        // 4. DB에 저장
-        return await this.userRepository.save(user);
+        if (club_id) {
+            this.clubsService.update(club_id, { president: user });
+        }
+
+        return user;
     }
 
     findAll() {

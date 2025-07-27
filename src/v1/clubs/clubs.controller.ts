@@ -1,34 +1,47 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Body,
+    Param,
+    Delete,
+    Put,
+} from '@nestjs/common';
 import { ClubsService } from './clubs.service';
 import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 
 @Controller('clubs')
 export class ClubsController {
-  constructor(private readonly clubsService: ClubsService) {}
+    constructor(private readonly clubsService: ClubsService) {}
 
-  @Post()
-  create(@Body() createClubDto: CreateClubDto) {
-    return this.clubsService.create(createClubDto);
-  }
+    @Post()
+    async create(@Body() createClubDto: CreateClubDto) {
+        return await this.clubsService.create(createClubDto);
+    }
 
-  @Get()
-  findAll() {
-    return this.clubsService.findAll();
-  }
+    @Get()
+    async findAll() {
+        return await this.clubsService.findAll();
+    }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.clubsService.findOne(+id);
-  }
+    @Post('registration-urls')
+    createRegistrationUrl() {
+        return this.clubsService.createRegistrationUrl();
+    }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateClubDto: UpdateClubDto) {
-    return this.clubsService.update(+id, updateClubDto);
-  }
+    @Get(':id')
+    async findOne(@Param('id') id: number) {
+        return await this.clubsService.findOne(id);
+    }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.clubsService.remove(+id);
-  }
+    @Put(':id')
+    async update(@Param('id') id: number, @Body() updateClubDto: UpdateClubDto) {
+        return await this.clubsService.update(id, updateClubDto);
+    }
+
+    @Delete(':id')
+    async delete(@Param('id') id: number) {
+        return await this.clubsService.delete(id);
+    }
 }
