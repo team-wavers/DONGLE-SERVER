@@ -59,6 +59,12 @@ export class ClubsController {
         return await this.clubReportsService.update(reportId, updateClubReportDto);
     }
 
+    // Authorization 로직 설정 필요
+    @Delete(':id/reports/:reportId')
+    async deleteReport(@Param('reportId') reportId: number) {
+        return await this.clubReportsService.remove(reportId);
+    }
+
     @Get(':id')
     async findOne(@Param('id') id: number) {
         return await this.clubsService.findOne(id);

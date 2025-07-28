@@ -33,7 +33,7 @@ export class ClubReportsService {
         return await this.clubReportRepository.update(id, updateClubReportDto);
     }
 
-    remove(id: number) {
-        return `This action removes a #${id} clubReport`;
+    async remove(id: number) {
+        return await this.clubReportRepository.delete(id);
     }
 }
