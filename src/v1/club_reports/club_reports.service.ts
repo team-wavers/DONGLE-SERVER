@@ -29,8 +29,8 @@ export class ClubReportsService {
         return `This action returns a #${id} clubReport`;
     }
 
-    update(id: number, updateClubReportDto: UpdateClubReportDto) {
-        return `This action updates a #${id} clubReport`;
+    async update(id: number, updateClubReportDto: UpdateClubReportDto) {
+        return await this.clubReportRepository.update(id, updateClubReportDto);
     }
 
     remove(id: number) {

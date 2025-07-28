@@ -49,6 +49,16 @@ export class ClubsController {
         return await this.clubReportsService.create(createClubReportDto);
     }
 
+    @Put(':id/reports/:reportId')
+    async updateReport(
+        @Param('id') clubId: number,
+        @Param('reportId') reportId: number,
+        @Body() updateClubReportDto: CreateClubReportDto
+    ) {
+        updateClubReportDto.clubId = clubId;
+        return await this.clubReportsService.update(reportId, updateClubReportDto);
+    }
+
     @Get(':id')
     async findOne(@Param('id') id: number) {
         return await this.clubsService.findOne(id);
