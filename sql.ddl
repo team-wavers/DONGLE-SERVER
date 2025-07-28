@@ -7,9 +7,9 @@ CREATE TABLE users (
     role            VARCHAR(10) NOT NULL,
     phone           VARCHAR(100),
     refresh_token   VARCHAR(255),
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted_at      TIMESTAMP
+    created_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    deleted_at      TIMESTAMPTZ
 );
 
 -- clubs 테이블
@@ -24,13 +24,25 @@ CREATE TABLE clubs (
     recruit_end      DATE,
     description      TEXT,
     main_activities  TEXT,
-    president_id     INTEGER,
-    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted_at       TIMESTAMP,
+    president_id    INTEGER,
+    created_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    deleted_at      TIMESTAMPTZ
 
     CONSTRAINT fk_president
         FOREIGN KEY (president_id)
         REFERENCES users(id)
         ON DELETE SET NULL
 );
+
+CREATE TABLE club_reports (
+    id          SERIAL PRIMARY KEY,
+    content     JSONB          ,
+    club_id     INTEGER        NOT NULL,
+    created_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    deleted_at  TIMESTAMPTZ
+);
+
+CREATE INDEX idx_club_reports_club_id
+    ON club_reports(club_id);
