@@ -4,8 +4,13 @@ import {
     Column,
     OneToOne,
     JoinColumn,
+    OneToMany,
+    CreateDateColumn,
+    UpdateDateColumn,
+    DeleteDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { ClubReport } from '../../club_reports/entities/club_report.entity';
 
 @Entity('clubs')
 export class Club {
@@ -44,16 +49,15 @@ export class Club {
     @JoinColumn({ name: 'president_id' })
     president: User;
 
-    @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
-    created_at: Date;
+    @OneToMany(() => ClubReport, (report) => report.club)
+    reports: ClubReport[];
 
-    @Column({
-        type: 'datetime',
-        default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP',
-    })
-    updated_at: Date;
+    @CreateDateColumn({ type: 'timestamp with time zone', name: 'created_at' })
+    createdAt: Date;
 
-    @Column({ type: 'datetime', nullable: true })
-    deleted_at: Date;
+    @UpdateDateColumn({ type: 'timestamp with time zone', name: 'updated_at' })
+    updatedAt: Date;
+
+    @DeleteDateColumn({ type: 'timestamp with time zone', name: 'deleted_at', nullable: true })
+    deletedAt?: Date;
 }
