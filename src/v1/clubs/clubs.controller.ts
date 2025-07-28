@@ -10,10 +10,14 @@ import {
 import { ClubsService } from './clubs.service';
 import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
+import { ClubReportsService } from '../club_reports/club_reports.service';
 
 @Controller('clubs')
 export class ClubsController {
-    constructor(private readonly clubsService: ClubsService) {}
+    constructor(
+        private readonly clubsService: ClubsService,
+        private readonly clubReportsService: ClubReportsService
+    ) {}
 
     @Post()
     async create(@Body() createClubDto: CreateClubDto) {
@@ -28,6 +32,11 @@ export class ClubsController {
     @Post('registration-urls')
     createRegistrationUrl() {
         return this.clubsService.createRegistrationUrl();
+    }
+
+    @Get('reports')
+    async findAllReports() {
+        return await this.clubReportsService.findAll();
     }
 
     @Get(':id')

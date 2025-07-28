@@ -18,7 +18,11 @@ export class ClubReportsService {
     }
 
     findAll() {
-        return `This action returns all clubReports`;
+        const reports = this.clubReportRepository.find({
+            relations: ['club'],
+            order: { createdAt: 'DESC' },
+        });
+        return reports;
     }
 
     findOne(id: number) {
