@@ -14,11 +14,11 @@ export class ClubReportsService {
 
     async create(createClubReportDto: CreateClubReportDto) {
         const report = this.clubReportRepository.create(createClubReportDto);
-        return report;
+        return await this.clubReportRepository.save(report);
     }
 
-    findAll() {
-        const reports = this.clubReportRepository.find({
+    async findAll() {
+        const reports = await this.clubReportRepository.find({
             relations: ['club'],
             order: { createdAt: 'DESC' },
         });

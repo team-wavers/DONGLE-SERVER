@@ -11,6 +11,7 @@ import { ClubsService } from './clubs.service';
 import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 import { ClubReportsService } from '../club_reports/club_reports.service';
+import { CreateClubReportDto } from '../club_reports/dto/create-club_report.dto';
 
 @Controller('clubs')
 export class ClubsController {
@@ -37,6 +38,15 @@ export class ClubsController {
     @Get('reports')
     async findAllReports() {
         return await this.clubReportsService.findAll();
+    }
+
+    @Post(':id/reports')
+    async createReport(
+        @Param('id') clubId: number,
+        @Body() createClubReportDto: CreateClubReportDto
+    ) {
+        createClubReportDto.clubId = clubId;
+        return await this.clubReportsService.create(createClubReportDto);
     }
 
     @Get(':id')

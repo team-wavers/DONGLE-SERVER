@@ -14,8 +14,4 @@ import { CreateClubReportDto } from './dto/create-club_report.dto';
 export class ClubReportsController {
     constructor(private readonly clubReportsService: ClubReportsService) {}
 
-    @Post()
-    create(@Body() createClubReportDto: CreateClubReportDto) {
-        return this.clubReportsService.create(createClubReportDto);
-    }
 }
