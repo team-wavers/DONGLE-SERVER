@@ -21,10 +21,12 @@ export class ClubsService {
     }
 
     async findOne(id: number) {
-        return await this.clubRepository.findOne({ where: {
-            id: id,
-            deleted_at: IsNull() // deleted_at이 null인 경우만 조회
-        } });
+        return await this.clubRepository.findOne({
+            where: {
+                id: id,
+                deleted_at: IsNull(), // deleted_at이 null인 경우만 조회
+            },
+        });
     }
 
     async update(id: number, updateClubDto: UpdateClubDto) {
@@ -36,15 +38,16 @@ export class ClubsService {
     }
 
     async delete(id: number) {
-        const result = await this.clubRepository.update(id, { deleted_at: new Date() });
+        const result = await this.clubRepository.update(id, {
+            deleted_at: new Date(),
+        });
         if (result.affected === 0) {
             throw new Error('존재하지 않는 club_id입니다.');
         }
         return result;
     }
 
-    createRegistrationUrl() {
-        // jwt 관련 모듈 추가되면 구현 예정
-    }
-
+    // createRegistrationUrl() {
+    //     // jwt 관련 모듈 추가되면 구현 예정
+    // }
 }

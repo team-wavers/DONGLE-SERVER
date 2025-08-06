@@ -9,6 +9,8 @@ async function bootstrap() {
     const port = config.get<number>('PORT') || 3000;
     await app.listen(port);
 
-    console.log(`🚀 Application running on port ${port} (env: ${process.env.NODE_ENV})`);
+    console.log(
+        `🚀 Application running on port ${port} (env: ${process.env.NODE_ENV})`,
+    );
 }
 bootstrap();

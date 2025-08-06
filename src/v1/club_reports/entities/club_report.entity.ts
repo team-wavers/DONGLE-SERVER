@@ -18,7 +18,10 @@ export class ClubReport {
     @Column({ type: 'jsonb', nullable: true })
     content: any;
 
-    @ManyToOne(() => Club, (club) => club.reports, { nullable: false, onDelete: 'CASCADE'})
+    @ManyToOne(() => Club, (club) => club.reports, {
+        nullable: false,
+        onDelete: 'CASCADE',
+    })
     @JoinColumn({ name: 'club_id' })
     club: Club;
 
@@ -28,6 +31,10 @@ export class ClubReport {
     @UpdateDateColumn({ type: 'timestamp with time zone', name: 'updated_at' })
     updatedAt: Date;
 
-    @DeleteDateColumn({ type: 'timestamp with time zone', name: 'deleted_at', nullable: true })
+    @DeleteDateColumn({
+        type: 'timestamp with time zone',
+        name: 'deleted_at',
+        nullable: true,
+    })
     deletedAt?: Date;
 }

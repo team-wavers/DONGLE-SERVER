@@ -52,12 +52,12 @@ export class Club {
     @OneToMany(() => ClubReport, (report) => report.club)
     reports: ClubReport[];
 
-    @CreateDateColumn({ type: 'timestamp with time zone', name: 'created_at' })
-    createdAt: Date;
+    @CreateDateColumn({ type: 'timestamp with time zone' })
+    created_at: Date;
 
-    @UpdateDateColumn({ type: 'timestamp with time zone', name: 'updated_at' })
-    updatedAt: Date;
+    @UpdateDateColumn({ type: 'timestamp with time zone' })
+    updated_at: Date;
 
-    @DeleteDateColumn({ type: 'timestamp with time zone', name: 'deleted_at', nullable: true })
-    deletedAt?: Date;
+    @DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })
+    deleted_at?: Date;
 }

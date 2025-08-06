@@ -49,7 +49,7 @@ export class ClubsController {
     @UseInterceptors(FileInterceptor('file'))
     async uploadReportImage(
         @Param('id') clubId: number,
-        @UploadedFile() file: Express.Multer.File
+        @UploadedFile() file: Express.Multer.File,
     ) {
         const buffer = file.buffer;
         const key = `club-reports/${clubId}`;
@@ -60,7 +60,7 @@ export class ClubsController {
     @Post(':id/reports')
     async createReport(
         @Param('id') clubId: number,
-        @Body() createClubReportDto: CreateClubReportDto
+        @Body() createClubReportDto: CreateClubReportDto,
     ) {
         createClubReportDto.clubId = clubId;
         return await this.clubReportsService.create(createClubReportDto);
@@ -70,10 +70,13 @@ export class ClubsController {
     async updateReport(
         @Param('id') clubId: number,
         @Param('reportId') reportId: number,
-        @Body() updateClubReportDto: CreateClubReportDto
+        @Body() updateClubReportDto: CreateClubReportDto,
     ) {
         updateClubReportDto.clubId = clubId;
-        return await this.clubReportsService.update(reportId, updateClubReportDto);
+        return await this.clubReportsService.update(
+            reportId,
+            updateClubReportDto,
+        );
     }
 
     // Authorization 로직 설정 필요
@@ -88,7 +91,10 @@ export class ClubsController {
     }
 
     @Put(':id')
-    async update(@Param('id') id: number, @Body() updateClubDto: UpdateClubDto) {
+    async update(
+        @Param('id') id: number,
+        @Body() updateClubDto: UpdateClubDto,
+    ) {
         return await this.clubsService.update(id, updateClubDto);
     }
 

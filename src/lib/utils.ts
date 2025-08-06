@@ -1,4 +1,4 @@
-import { ConfigService } from "@nestjs/config";
+import { ConfigService } from '@nestjs/config';
 
 export function getRequiredEnv(config: ConfigService, key: string): string {
     const value = config.get<string>(key);
