@@ -11,12 +11,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         private readonly configService: ConfigService,
         private readonly usersService: UsersService,
     ) {
+        const jwtSecret = configService.get<string>('jwt_access_secret');
+        if (!jwtSecret) {
+            throw new Error('jwt_access_secret 환경변수가 설정되지 않았습니다.');
+        }
+        
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKey:
-                configService.get<string>('JWT_ACCESS_SECRET') ||
-                'default-secret',
+            secretOrKey: jwtSecret,
         });
     }
 

@@ -51,13 +51,12 @@ export class UsersService {
         return this.userRepository.find({ relations: ['club'] });
     }
 
-    findOne(id: number) {
+    findOne(id: number): Promise<User | null> {
         return this.userRepository.findOne({ where: { id } });
     }
 
-    update(id: number, updateUserDto: UpdateUserDto) {
-        // TODO: update 구현
-        return `This action updates a #${id} user`;
+    async update(id: number, updateUserDto: UpdateUserDto | { refresh_token: string }): Promise<void> {
+        await this.userRepository.update(id, updateUserDto);
     }
 
     remove(id: number) {
@@ -69,10 +68,9 @@ export class UsersService {
     // login_id: 로그인 아이디
     // return: 사용자 또는 null
     async findByLoginId(login_id: string): Promise<User | null> {
-        const user = await this.userRepository.findOne({ 
+        return this.userRepository.findOne({ 
             where: { login_id }
         });
-        return user || null;
     }
 
     // 사용자 비밀번호 검증 (JWT 인증용)
@@ -91,7 +89,7 @@ export class UsersService {
     // userId: 사용자 ID
     // refreshToken: 리프레시 토큰
     async updateRefreshToken(userId: number, refreshToken: string): Promise<void> {
-        await this.userRepository.update(userId, { refresh_token: refreshToken });
+        await this.update(userId, { refresh_token: refreshToken });
     }
 
     // 리프레시 토큰으로 사용자 조회 (JWT 인증용)

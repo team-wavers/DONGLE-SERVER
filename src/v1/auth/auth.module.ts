@@ -13,16 +13,21 @@ import { UsersModule } from '../users/users.module';
         PassportModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
-            useFactory: async (configService: ConfigService) => ({
-                secret:
-                    configService.get<string>('JWT_ACCESS_SECRET') ||
-                    'default-secret',
-                signOptions: {
-                    expiresIn:
-                        configService.get<string>('JWT_ACCESS_EXPIRE_TIME') ||
-                        '15m',
-                },
-            }),
+            useFactory: async (configService: ConfigService) => {
+                const jwtSecret = configService.get<string>('jwt_access_secret');
+                const jwtExpireTime = configService.get<string>('jwt_access_expire_time');
+                
+                if (!jwtSecret) {
+                    throw new Error('jwt_access_secret 환경변수가 설정되지 않았습니다.');
+                }
+                
+                return {
+                    secret: jwtSecret,
+                    signOptions: {
+                        expiresIn: jwtExpireTime || '15m',
+                    },
+                };
+            },
             inject: [ConfigService],
         }),
     ],

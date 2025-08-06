@@ -46,8 +46,13 @@ export class AuthService {
 
         try {
             // 리프레시 토큰 검증
+            const refreshSecret = this.configService.get<string>('jwt_refresh_secret');
+            if (!refreshSecret) {
+                throw new Error('jwt_refresh_secret 환경변수가 설정되지 않았습니다.');
+            }
+            
             const decoded = this.jwtService.verify(refreshToken, {
-                secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'default-refresh-secret',
+                secret: refreshSecret,
             });
 
             // 사용자 조회
@@ -85,20 +90,33 @@ export class AuthService {
             role: user.role
         };
         
+        // 환경변수 검증
+        const accessSecret = this.configService.get<string>('jwt_access_secret');
+        const refreshSecret = this.configService.get<string>('jwt_refresh_secret');
+        const accessExpireTime = this.configService.get<string>('jwt_access_expire_time');
+        const refreshExpireTime = this.configService.get<string>('jwt_refresh_expire_time');
+        
+        if (!accessSecret) {
+            throw new Error('jwt_access_secret 환경변수가 설정되지 않았습니다.');
+        }
+        if (!refreshSecret) {
+            throw new Error('jwt_refresh_secret 환경변수가 설정되지 않았습니다.');
+        }
+        
         const accessTokenExpiresIn = this.parseExpirationTime(
-            this.configService.get<string>('JWT_ACCESS_EXPIRE_TIME') || '15m'
+            accessExpireTime || '15m'
         );
         
         // 액세스 토큰 생성
         const accessToken = this.jwtService.sign(payload, {
-            secret: this.configService.get<string>('JWT_ACCESS_SECRET') || 'default-secret',
-            expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRE_TIME') || '15m',
+            secret: accessSecret,
+            expiresIn: accessExpireTime || '15m',
         });
 
         // 리프레시 토큰 생성
         const refreshToken = this.jwtService.sign(payload, {
-            secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'default-refresh-secret',
-            expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRE_TIME') || '7d',
+            secret: refreshSecret,
+            expiresIn: refreshExpireTime || '7d',
         });
 
         return new TokenResponseDto(accessToken, refreshToken, accessTokenExpiresIn);
