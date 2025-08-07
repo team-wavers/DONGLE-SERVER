@@ -7,6 +7,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { User } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { normalizeRole } from './constants/roles';
 
 // 인증 서비스
 @Injectable()
@@ -87,7 +88,7 @@ export class AuthService {
             sub: user.id, 
             login_id: user.login_id,
             name: user.name, 
-            role: user.role
+            role: normalizeRole(user.role) // 역할 정규화
         };
         
         // 환경변수 검증
