@@ -43,7 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         }
 
         // 사용자 정보 검증
-        if (user.login_id !== login_id || user.name !== name) {
+        if (user.login_id !== login_id || user.name !== name || user.role !== role) {
             throw new UnauthorizedException('유효하지 않은 토큰입니다.');
         }
 
