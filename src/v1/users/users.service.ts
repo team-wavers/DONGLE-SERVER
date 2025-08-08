@@ -5,7 +5,6 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { ClubsService } from '../clubs/clubs.service';
-import { Club } from '../clubs/entities/club.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -68,7 +67,7 @@ export class UsersService {
     // login_id: 로그인 아이디
     // return: 사용자 또는 null
     async findByLoginId(login_id: string): Promise<User | null> {
-        return this.userRepository.findOne({ 
+        return this.userRepository.findOne({
             where: { login_id }
         });
     }
@@ -96,7 +95,7 @@ export class UsersService {
     // refreshToken: 리프레시 토큰
     // return: 사용자 또는 null
     async findByRefreshToken(refreshToken: string): Promise<User | null> {
-        const user = await this.userRepository.findOne({ 
+        const user = await this.userRepository.findOne({
             where: { refresh_token: refreshToken }
         });
         return user || null;

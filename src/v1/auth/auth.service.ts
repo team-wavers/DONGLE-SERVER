@@ -50,7 +50,7 @@ export class AuthService {
             if (!refreshSecret) {
                 throw new Error('jwt_refresh_secret 환경변수가 설정되지 않았습니다.');
             }
-            
+
             const decoded = this.jwtService.verify(refreshToken, {
                 secret: refreshSecret,
             });
@@ -78,35 +78,35 @@ export class AuthService {
         }
     }
 
-  
+
     // 토큰 생성
     // user: 사용자 정보
     // return: 토큰 응답
     private async generateTokens(user: User): Promise<TokenResponseDto> {
-        const payload = { 
-            sub: user.id, 
+        const payload = {
+            sub: user.id,
             login_id: user.login_id,
-            name: user.name, 
+            name: user.name,
             role: user.role
         };
-        
+
         // 환경변수 검증
-        const accessSecret = this.configService.get<string>('jwt_access_secret');
-        const refreshSecret = this.configService.get<string>('jwt_refresh_secret');
-        const accessExpireTime = this.configService.get<string>('jwt_access_expire_time');
-        const refreshExpireTime = this.configService.get<string>('jwt_refresh_expire_time');
-        
+        const accessSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
+        const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+        const accessExpireTime = this.configService.get<string>('JWT_ACCESS_EXPIRE_TIME');
+        const refreshExpireTime = this.configService.get<string>('JWT_REFRESH_EXPIRE_TIME');
+
         if (!accessSecret) {
             throw new Error('jwt_access_secret 환경변수가 설정되지 않았습니다.');
         }
         if (!refreshSecret) {
             throw new Error('jwt_refresh_secret 환경변수가 설정되지 않았습니다.');
         }
-        
+
         const accessTokenExpiresIn = this.parseExpirationTime(
             accessExpireTime || '15m'
         );
-        
+
         // 액세스 토큰 생성
         const accessToken = this.jwtService.sign(payload, {
             secret: accessSecret,
@@ -149,4 +149,4 @@ export class AuthService {
         await this.usersService.updateRefreshToken(userId, '');
         return { message: '로그아웃되었습니다.' };
     }
-} 
+}
