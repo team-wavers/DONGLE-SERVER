@@ -15,7 +15,7 @@ import { UpdateClubDto } from './dto/update-club.dto';
 import { ClubReportsService } from '../club_reports/club_reports.service';
 import { CreateClubReportDto } from '../club_reports/dto/create-club_report.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { S3Service } from '../../lib/s3-uploads';
+import { S3Service } from '../../common/lib/s3-uploads';
 
 @Controller('clubs')
 export class ClubsController {

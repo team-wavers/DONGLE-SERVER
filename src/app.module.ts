@@ -2,8 +2,13 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { V1Module } from './v1/v1.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RouterModule } from '@nestjs/core';
+import { UsersModule } from './v1/users/users.module';
+import { ClubsModule } from './v1/clubs/clubs.module';
+import { ClubReportsModule } from './v1/club_reports/club_reports.module';
+import { AuthModule } from './v1/auth/auth.module';
+import { HealthModule } from './common/health/health.module';
 
 @Module({
     imports: [
@@ -24,7 +29,18 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
                 synchronize: false,
             }),
         }),
-        V1Module,
+        RouterModule.register([
+            {
+                path: 'v1',
+                children: [
+                    { path: 'users', module: UsersModule },
+                    { path: 'clubs', module: ClubsModule },
+                    { path: 'club-reports', module: ClubReportsModule },
+                    { path: 'auth', module: AuthModule },
+                    { path: 'healthCheck', module: HealthModule}
+                ],
+            },
+        ]),
     ],
     controllers: [AppController],
     providers: [AppService],
