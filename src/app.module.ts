@@ -9,6 +9,7 @@ import { ClubsModule } from './v1/clubs/clubs.module';
 import { ClubReportsModule } from './v1/club_reports/club_reports.module';
 import { AuthModule } from './v1/auth/auth.module';
 import { HealthModule } from './common/health/health.module';
+import { getRequiredEnv } from './common/lib/utils';
 
 @Module({
     imports: [
@@ -21,11 +22,13 @@ import { HealthModule } from './common/health/health.module';
             inject: [ConfigService],
             useFactory: async (configService: ConfigService) => ({
                 type: 'postgres',
-                host: configService.get<string>('DB_HOST'),
-                port: configService.get<number>('DB_PORT'),
-                username: configService.get<string>('DB_USERNAME'),
-                password: configService.get<string>('DB_PASSWORD'),
-                entities: [__dirname + '/**/*.entity{.ts}'],
+                host: getRequiredEnv(configService, 'DB_HOST'),
+                port: parseInt(getRequiredEnv(configService, 'DB_PORT')),
+                username: getRequiredEnv(configService, 'DB_USERNAME'),
+                password: getRequiredEnv(configService, 'DB_PASSWORD'),
+                database: getRequiredEnv(configService, 'DB_NAME'),
+                autoLoadEntities: true,
+                // entities: [__dirname + '/**/*.entity{.ts}'],
                 synchronize: false,
             }),
         }),

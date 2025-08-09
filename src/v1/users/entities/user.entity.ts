@@ -27,16 +27,16 @@ export class User {
     @Column({ length: 255, nullable: true })
     refresh_token: string;
 
-    @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+    @Column({ type: 'timestamp with time zone', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date;
 
     @Column({
-        type: 'datetime',
+        type: 'timestamp with time zone',
         default: () => 'CURRENT_TIMESTAMP',
         onUpdate: 'CURRENT_TIMESTAMP',
     })
     updated_at: Date;
 
-    @Column({ type: 'datetime', nullable: true })
+    @Column({ type: 'timestamp with time zone', nullable: true })
     deleted_at: Date;
 }
