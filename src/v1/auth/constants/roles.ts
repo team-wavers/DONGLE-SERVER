@@ -1,8 +1,7 @@
 // 시스템 역할 상수
 export const ROLES = {
     ADMIN: 'admin',
-    PRESIDENT: 'president', 
-    MEMBER: 'member',
+    PRESIDENT: 'president',
 } as const;
 
 // 역할 타입 정의
@@ -12,7 +11,6 @@ export type UserRole = typeof ROLES[keyof typeof ROLES];
 export const ROLE_LEVELS = {
     [ROLES.ADMIN]: 3,
     [ROLES.PRESIDENT]: 2,
-    [ROLES.MEMBER]: 1,
 } as const;
 
 // 역할 유효성 검증 함수

@@ -38,8 +38,6 @@ export class ClubsController {
     }
 
     @Get()
-    @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN, ROLES.PRESIDENT, ROLES.MEMBER)
     async findAll() {
         return await this.clubsService.findAll();
     }
@@ -53,14 +51,14 @@ export class ClubsController {
 
     @Get('reports')
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN, ROLES.PRESIDENT, ROLES.MEMBER)
+    @Roles(ROLES.ADMIN, ROLES.PRESIDENT)
     async findAllReports() {
         return await this.clubReportsService.findAll();
     }
 
     @Post(':id/report-images')
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN, ROLES.PRESIDENT, ROLES.MEMBER)
+    @Roles(ROLES.PRESIDENT)
     @UseInterceptors(FileInterceptor('file'))
     async uploadReportImage(
         @Param('id') clubId: number,
@@ -74,7 +72,7 @@ export class ClubsController {
 
     @Post(':id/reports')
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN, ROLES.PRESIDENT, ROLES.MEMBER)
+    @Roles(ROLES.PRESIDENT)
     async createReport(
         @Param('id') clubId: number,
         @Body() createClubReportDto: CreateClubReportDto,
@@ -85,7 +83,7 @@ export class ClubsController {
 
     @Put(':id/reports/:reportId')
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN, ROLES.PRESIDENT)
+    @Roles(ROLES.PRESIDENT)
     async updateReport(
         @Param('id') clubId: number,
         @Param('reportId') reportId: number,
@@ -101,14 +99,12 @@ export class ClubsController {
     // Authorization 로직 설정 필요
     @Delete(':id/reports/:reportId')
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN, ROLES.PRESIDENT)
+    @Roles(ROLES.PRESIDENT)
     async deleteReport(@Param('reportId') reportId: number) {
         return await this.clubReportsService.remove(reportId);
     }
 
     @Get(':id')
-    @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN, ROLES.PRESIDENT, ROLES.MEMBER)
     async findOne(@Param('id') id: number) {
         return await this.clubsService.findOne(id);
     }
