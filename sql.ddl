@@ -12,6 +12,13 @@ CREATE TABLE users (
     deleted_at      TIMESTAMPTZ
 );
 
+CREATE INDEX idx_users_id
+    ON users(id);
+
+CREATE INDEX idx_users_login_id
+    ON users(login_id);
+
+
 -- clubs 테이블
 CREATE TABLE clubs (
     id               SERIAL PRIMARY KEY,
@@ -28,12 +35,10 @@ CREATE TABLE clubs (
     created_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     deleted_at      TIMESTAMPTZ
-
-    CONSTRAINT fk_president
-        FOREIGN KEY (president_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
 );
+
+CREATE INDEX idx_clubs_president_id
+    ON clubs(president_id);
 
 CREATE TABLE club_reports (
     id          SERIAL PRIMARY KEY,
