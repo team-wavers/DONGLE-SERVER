@@ -30,7 +30,7 @@ export class Club {
     sns: Record<string, string>;
 
     @Column({ type: 'text', nullable: true, array: true }) // TypeORM에서 array 타입 사용시 text, array: true로 설정하기
-    tag: string[];
+    tags: string[];
 
     @Column({ type: 'timestamp with time zone', nullable: true })
     recruit_start: Date;

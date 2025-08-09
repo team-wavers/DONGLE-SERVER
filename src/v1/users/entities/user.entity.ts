@@ -2,7 +2,9 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
+    OneToOne,
 } from 'typeorm';
+import { Club } from '../../clubs/entities/club.entity';
 
 @Entity('users')
 export class User {
@@ -39,4 +41,7 @@ export class User {
 
     @Column({ type: 'timestamp with time zone', nullable: true })
     deleted_at: Date;
+
+    @OneToOne(() => Club, (club) => club.president)
+    club: Club;
 }
