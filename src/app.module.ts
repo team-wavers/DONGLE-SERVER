@@ -41,6 +41,13 @@ import { HealthModule } from './common/health/health.module';
                 ],
             },
         ]),
+
+        HealthModule,
+        UsersModule,
+        ClubsModule,
+        ClubReportsModule,
+        AuthModule,
+
     ],
     controllers: [AppController],
     providers: [AppService],

@@ -17,7 +17,7 @@ import { CreateClubReportDto } from '../club_reports/dto/create-club_report.dto'
 import { FileInterceptor } from '@nestjs/platform-express';
 import { S3Service } from '../../common/lib/s3-uploads';
 
-@Controller('clubs')
+@Controller()
 export class ClubsController {
     constructor(
         private readonly clubsService: ClubsService,

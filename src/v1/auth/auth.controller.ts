@@ -14,7 +14,7 @@ import { TokenResponseDto } from './dto/token-response.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 // 인증 컨트롤러
-@Controller('auth')
+@Controller()
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
