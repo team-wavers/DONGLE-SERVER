@@ -41,7 +41,7 @@ export class UsersService {
         });
 
         if (club_id) {
-            this.clubsService.update(club_id, { president: user });
+            this.clubsService.update(club_id, { president_id: user.id });
         }
 
         return user;
