@@ -64,9 +64,15 @@ export class ClubsService {
     // 고유 키를 DB에 저장 → URL 발급 → 폼 제출 시 키 대조
     async createRegistrationUrl() {
         const key = randomUUID();
-        const expirationTime = getRequiredEnv(this.config, 'CLUB_REGISTRATION_EXPIRATION_TIME');
+        const expirationTime = getRequiredEnv(
+            this.config,
+            'CLUB_REGISTRATION_EXPIRATION_TIME',
+        );
 
-        const oneTimeKey = await this.authService.createOneTimeKey(key, expirationTime);
+        const oneTimeKey = await this.authService.createOneTimeKey(
+            key,
+            expirationTime,
+        );
         const url = `${getRequiredEnv(this.config, 'APP_URL')}/${getRequiredEnv(this.config, 'CLUB_REGISTRATION_PATH')}?key=${oneTimeKey.key}`;
         return url;
     }

@@ -55,7 +55,10 @@ export class UsersService {
         return this.userRepository.findOne({ where: { id } });
     }
 
-    async update(id: number, updateUserDto: UpdateUserDto | { refresh_token: string }): Promise<void> {
+    async update(
+        id: number,
+        updateUserDto: UpdateUserDto | { refresh_token: string },
+    ): Promise<void> {
         await this.userRepository.update(id, updateUserDto);
     }
 
@@ -69,7 +72,7 @@ export class UsersService {
     // return: 사용자 또는 null
     async findByLoginId(login_id: string): Promise<User | null> {
         return this.userRepository.findOne({
-            where: { login_id }
+            where: { login_id },
         });
     }
 
@@ -77,9 +80,12 @@ export class UsersService {
     // login_id: 로그인 아이디
     // password: 비밀번호
     // return: 검증된 사용자 또는 null
-    async validateUser(login_id: string, password: string): Promise<User | null> {
+    async validateUser(
+        login_id: string,
+        password: string,
+    ): Promise<User | null> {
         const user = await this.findByLoginId(login_id);
-        if (user && await bcrypt.compare(password, user.password)) {
+        if (user && (await bcrypt.compare(password, user.password))) {
             return user;
         }
         return null;
@@ -88,7 +94,10 @@ export class UsersService {
     // 사용자 리프레시 토큰 업데이트 (JWT 인증용)
     // userId: 사용자 ID
     // refreshToken: 리프레시 토큰
-    async updateRefreshToken(userId: number, refreshToken: string): Promise<void> {
+    async updateRefreshToken(
+        userId: number,
+        refreshToken: string,
+    ): Promise<void> {
         await this.update(userId, { refresh_token: refreshToken });
     }
 
@@ -97,9 +106,8 @@ export class UsersService {
     // return: 사용자 또는 null
     async findByRefreshToken(refreshToken: string): Promise<User | null> {
         const user = await this.userRepository.findOne({
-            where: { refresh_token: refreshToken }
+            where: { refresh_token: refreshToken },
         });
         return user || null;
     }
-
 }

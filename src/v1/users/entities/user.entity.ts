@@ -1,9 +1,4 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    OneToOne,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
 import { Club } from '../../clubs/entities/club.entity';
 
 @Entity('users')
@@ -29,7 +24,10 @@ export class User {
     @Column({ length: 255, nullable: true })
     refresh_token: string;
 
-    @Column({ type: 'timestamp with time zone', default: () => 'CURRENT_TIMESTAMP' })
+    @Column({
+        type: 'timestamp with time zone',
+        default: () => 'CURRENT_TIMESTAMP',
+    })
     created_at: Date;
 
     @Column({

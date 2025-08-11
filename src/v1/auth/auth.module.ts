@@ -16,11 +16,16 @@ import { OneTimeKey } from './entities/one_time_key.entity';
         JwtModule.registerAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => {
-                const jwtSecret = configService.get<string>('JWT_ACCESS_SECRET');
-                const jwtExpireTime = configService.get<string>('JWT_ACCESS_EXPIRE_TIME');
+                const jwtSecret =
+                    configService.get<string>('JWT_ACCESS_SECRET');
+                const jwtExpireTime = configService.get<string>(
+                    'JWT_ACCESS_EXPIRE_TIME',
+                );
 
                 if (!jwtSecret) {
-                    throw new Error('jwt_access_secret 환경변수가 설정되지 않았습니다.');
+                    throw new Error(
+                        'jwt_access_secret 환경변수가 설정되지 않았습니다.',
+                    );
                 }
 
                 return {

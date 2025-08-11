@@ -8,7 +8,11 @@ import { S3Service } from '../../common/lib/s3-uploads';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Club]), ClubReportsModule, forwardRef(() => AuthModule)],
+    imports: [
+        TypeOrmModule.forFeature([Club]),
+        ClubReportsModule,
+        forwardRef(() => AuthModule),
+    ],
     controllers: [ClubsController],
     providers: [ClubsService, S3Service],
     exports: [ClubsService],
