@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 import { Club } from './entities/club.entity';
@@ -15,6 +15,7 @@ export class ClubsService {
         @InjectRepository(Club)
         private readonly clubRepository: Repository<Club>,
         private readonly config: ConfigService,
+        @Inject(forwardRef(() => AuthService))
         private readonly authService: AuthService,
     ) {}
 
