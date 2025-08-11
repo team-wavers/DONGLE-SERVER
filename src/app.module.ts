@@ -20,7 +20,7 @@ import { getRequiredEnv } from './common/lib/utils';
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: async (configService: ConfigService) => ({
+            useFactory: (configService: ConfigService) => ({
                 type: 'postgres',
                 host: getRequiredEnv(configService, 'DB_HOST'),
                 port: parseInt(getRequiredEnv(configService, 'DB_PORT')),
@@ -40,7 +40,7 @@ import { getRequiredEnv } from './common/lib/utils';
                     { path: 'clubs', module: ClubsModule },
                     { path: 'club-reports', module: ClubReportsModule },
                     { path: 'auth', module: AuthModule },
-                    { path: 'healthCheck', module: HealthModule}
+                    { path: 'healthCheck', module: HealthModule },
                 ],
             },
         ]),
@@ -50,7 +50,6 @@ import { getRequiredEnv } from './common/lib/utils';
         ClubsModule,
         ClubReportsModule,
         AuthModule,
-
     ],
     controllers: [AppController],
     providers: [AppService],
