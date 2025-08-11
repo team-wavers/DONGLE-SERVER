@@ -36,8 +36,8 @@ export class ClubsController {
     }
 
     @Post('registration-urls')
-    createRegistrationUrl() {
-        return this.clubsService.createRegistrationUrl();
+    async createRegistrationUrl() {
+        return await this.clubsService.createRegistrationUrl();
     }
 
     @Get('reports')
