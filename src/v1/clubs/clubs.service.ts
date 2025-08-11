@@ -19,8 +19,15 @@ export class ClubsService {
         private readonly authService: AuthService,
     ) {}
 
+    // 저장된 키 대조 후 동아리 생성
     async create(createClubDto: CreateClubDto) {
-        return 'This action adds a new club';
+        const { key } = createClubDto;
+        const isValid = await this.authService.validateOneTimeKey(key);
+        if (!isValid) {
+            throw new Error('유효하지 않은 키입니다.');
+        }
+        const newClub = this.clubRepository.create(createClubDto);
+        return await this.clubRepository.save(newClub);
     }
 
     async findAll() {
