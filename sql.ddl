@@ -51,3 +51,16 @@ CREATE TABLE club_reports (
 
 CREATE INDEX idx_club_reports_club_id
     ON club_reports(club_id);
+
+CREATE TABLE one_time_keys (
+    id          SERIAL PRIMARY KEY,
+    key         VARCHAR(255) NOT NULL,
+    created_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    expired_at  TIMESTAMPTZ    NOT NULL,
+    used_at     TIMESTAMPTZ,
+    updated_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    deleted_at  TIMESTAMPTZ
+);
+
+CREATE INDEX idx_one_time_keys_key
+    ON one_time_keys(key);

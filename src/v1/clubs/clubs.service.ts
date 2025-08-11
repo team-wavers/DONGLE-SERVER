@@ -4,12 +4,18 @@ import { UpdateClubDto } from './dto/update-club.dto';
 import { Club } from './entities/club.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
+import { randomUUID } from 'crypto';
+import { ConfigService } from '@nestjs/config';
+import { getRequiredEnv } from '../../common/lib/utils';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class ClubsService {
     constructor(
         @InjectRepository(Club)
         private readonly clubRepository: Repository<Club>,
+        private readonly config: ConfigService,
+        private readonly authService: AuthService,
     ) {}
 
     async create(createClubDto: CreateClubDto) {
@@ -47,7 +53,13 @@ export class ClubsService {
         return result;
     }
 
-    createRegistrationUrl() {
-        return 'This action creates a registration URL for clubs';
+    // 고유 키를 DB에 저장 → URL 발급 → 폼 제출 시 키 대조
+    async createRegistrationUrl() {
+        const key = randomUUID();
+        const expirationTime = getRequiredEnv(this.config, 'CLUB_REGISTRATION_EXPIRATION_TIME');
+
+        const oneTimeKey = await this.authService.createOneTimeKey(key, expirationTime);
+        const url = `${getRequiredEnv(this.config, 'APP_URL')}/${getRequiredEnv(this.config, 'CLUB_REGISTRATION_PATH')}?key=${oneTimeKey.key}`;
+        return url;
     }
 }

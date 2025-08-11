@@ -6,7 +6,9 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { User } from '../users/entities/user.entity';
-import * as bcrypt from 'bcrypt';
+import { OneTimeKey } from './entities/one_time_key.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 // 인증 서비스
 @Injectable()
@@ -15,6 +17,8 @@ export class AuthService {
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
+        @InjectRepository(OneTimeKey)
+        private readonly oneTimeKeyRepository: Repository<OneTimeKey>,
     ) {}
 
     // 사용자 로그인
@@ -129,7 +133,7 @@ export class AuthService {
         const unit = expirationTime.slice(-1);
         const value = parseInt(expirationTime.slice(0, -1), 10);
 
-        switch (unit) {
+        switch (unit?.toLowerCase()) {
             case 's':
                 return value;
             case 'm':
@@ -148,5 +152,18 @@ export class AuthService {
     async logout(userId: number): Promise<{ message: string }> {
         await this.usersService.updateRefreshToken(userId, '');
         return { message: '로그아웃되었습니다.' };
+    }
+
+    // 일회용 키 생성
+    // key: 키
+    // expiredAt: 만료 시간
+    // return: 일회용 키
+    async createOneTimeKey(key: string, expirationTime: string): Promise<OneTimeKey> {
+        const expiredAt = new Date(Date.now() + this.parseExpirationTime(expirationTime));
+        const oneTimeKey = this.oneTimeKeyRepository.create({
+            key,
+            expiredAt,
+        });
+        return await this.oneTimeKeyRepository.save(oneTimeKey);
     }
 }
