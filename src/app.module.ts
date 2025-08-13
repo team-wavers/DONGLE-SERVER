@@ -2,8 +2,14 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { V1Module } from './v1/v1.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RouterModule } from '@nestjs/core';
+import { UsersModule } from './v1/users/users.module';
+import { ClubsModule } from './v1/clubs/clubs.module';
+import { ClubReportsModule } from './v1/club_reports/club_reports.module';
+import { AuthModule } from './v1/auth/auth.module';
+import { HealthModule } from './common/health/health.module';
+import { getRequiredEnv } from './common/lib/utils';
 
 @Module({
     imports: [
@@ -14,17 +20,36 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: async (configService: ConfigService) => ({
+            useFactory: (configService: ConfigService) => ({
                 type: 'postgres',
-                host: configService.get<string>('DB_HOST'),
-                port: configService.get<number>('DB_PORT'),
-                username: configService.get<string>('DB_USERNAME'),
-                password: configService.get<string>('DB_PASSWORD'),
-                entities: [__dirname + '/**/*.entity{.ts}'],
+                host: getRequiredEnv(configService, 'DB_HOST'),
+                port: parseInt(getRequiredEnv(configService, 'DB_PORT')),
+                username: getRequiredEnv(configService, 'DB_USERNAME'),
+                password: getRequiredEnv(configService, 'DB_PASSWORD'),
+                database: getRequiredEnv(configService, 'DB_NAME'),
+                autoLoadEntities: true,
+                // entities: [__dirname + '/**/*.entity{.ts}'],
                 synchronize: false,
             }),
         }),
-        V1Module,
+        RouterModule.register([
+            {
+                path: 'v1',
+                children: [
+                    { path: 'users', module: UsersModule },
+                    { path: 'clubs', module: ClubsModule },
+                    { path: 'club-reports', module: ClubReportsModule },
+                    { path: 'auth', module: AuthModule },
+                    { path: 'healthCheck', module: HealthModule },
+                ],
+            },
+        ]),
+
+        HealthModule,
+        UsersModule,
+        ClubsModule,
+        ClubReportsModule,
+        AuthModule,
     ],
     controllers: [AppController],
     providers: [AppService],

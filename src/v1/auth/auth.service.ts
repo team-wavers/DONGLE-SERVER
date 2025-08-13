@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+    Inject,
+    Injectable,
+    UnauthorizedException,
+    forwardRef,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
@@ -8,14 +13,20 @@ import { TokenResponseDto } from './dto/token-response.dto';
 import { User } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { normalizeRole } from './constants/roles';
+import { OneTimeKey } from './entities/one_time_key.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 // 인증 서비스
 @Injectable()
 export class AuthService {
     constructor(
+        @Inject(forwardRef(() => UsersService))
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
+        @InjectRepository(OneTimeKey)
+        private readonly oneTimeKeyRepository: Repository<OneTimeKey>,
     ) {}
 
     // 사용자 로그인
@@ -27,14 +38,19 @@ export class AuthService {
         // 사용자 존재 여부 및 비밀번호 확인
         const user = await this.usersService.validateUser(login_id, password);
         if (!user) {
-            throw new UnauthorizedException('로그인 아이디 또는 비밀번호가 올바르지 않습니다.');
+            throw new UnauthorizedException(
+                '로그인 아이디 또는 비밀번호가 올바르지 않습니다.',
+            );
         }
 
         // 토큰 생성
         const tokens = await this.generateTokens(user);
 
         // 리프레시 토큰 저장
-        await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
+        await this.usersService.updateRefreshToken(
+            user.id,
+            tokens.refreshToken,
+        );
 
         return tokens;
     }
@@ -42,14 +58,19 @@ export class AuthService {
     // 액세스 토큰 재발급
     // refreshTokenDto: 리프레시 토큰 DTO
     // return: 새로운 토큰 응답
-    async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<TokenResponseDto> {
+    async refreshToken(
+        refreshTokenDto: RefreshTokenDto,
+    ): Promise<TokenResponseDto> {
         const { refreshToken } = refreshTokenDto;
 
         try {
             // 리프레시 토큰 검증
-            const refreshSecret = this.configService.get<string>('jwt_refresh_secret');
+            const refreshSecret =
+                this.configService.get<string>('jwt_refresh_secret');
             if (!refreshSecret) {
-                throw new Error('jwt_refresh_secret 환경변수가 설정되지 않았습니다.');
+                throw new Error(
+                    'jwt_refresh_secret 환경변수가 설정되지 않았습니다.',
+                );
             }
 
             const decoded = this.jwtService.verify(refreshToken, {
@@ -64,21 +85,27 @@ export class AuthService {
 
             // 저장된 리프레시 토큰과 비교
             if (user.refresh_token !== refreshToken) {
-                throw new UnauthorizedException('유효하지 않은 리프레시 토큰입니다.');
+                throw new UnauthorizedException(
+                    '유효하지 않은 리프레시 토큰입니다.',
+                );
             }
 
             // 새로운 토큰 생성
             const tokens = await this.generateTokens(user);
 
             // 새로운 리프레시 토큰 저장
-            await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
+            await this.usersService.updateRefreshToken(
+                user.id,
+                tokens.refreshToken,
+            );
 
             return tokens;
         } catch (error) {
-            throw new UnauthorizedException('유효하지 않은 리프레시 토큰입니다.');
+            throw new UnauthorizedException(
+                '유효하지 않은 리프레시 토큰입니다.',
+            );
         }
     }
-
 
     // 토큰 생성
     // user: 사용자 정보
@@ -92,20 +119,30 @@ export class AuthService {
         };
 
         // 환경변수 검증
-        const accessSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
-        const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
-        const accessExpireTime = this.configService.get<string>('JWT_ACCESS_EXPIRE_TIME');
-        const refreshExpireTime = this.configService.get<string>('JWT_REFRESH_EXPIRE_TIME');
+        const accessSecret =
+            this.configService.get<string>('JWT_ACCESS_SECRET');
+        const refreshSecret =
+            this.configService.get<string>('JWT_REFRESH_SECRET');
+        const accessExpireTime = this.configService.get<string>(
+            'JWT_ACCESS_EXPIRE_TIME',
+        );
+        const refreshExpireTime = this.configService.get<string>(
+            'JWT_REFRESH_EXPIRE_TIME',
+        );
 
         if (!accessSecret) {
-            throw new Error('jwt_access_secret 환경변수가 설정되지 않았습니다.');
+            throw new Error(
+                'jwt_access_secret 환경변수가 설정되지 않았습니다.',
+            );
         }
         if (!refreshSecret) {
-            throw new Error('jwt_refresh_secret 환경변수가 설정되지 않았습니다.');
+            throw new Error(
+                'jwt_refresh_secret 환경변수가 설정되지 않았습니다.',
+            );
         }
 
         const accessTokenExpiresIn = this.parseExpirationTime(
-            accessExpireTime || '15m'
+            accessExpireTime || '15m',
         );
 
         // 액세스 토큰 생성
@@ -120,27 +157,31 @@ export class AuthService {
             expiresIn: refreshExpireTime || '7d',
         });
 
-        return new TokenResponseDto(accessToken, refreshToken, accessTokenExpiresIn);
+        return new TokenResponseDto(
+            accessToken,
+            refreshToken,
+            accessTokenExpiresIn,
+        );
     }
 
     // 만료 시간 문자열을 초 단위로 변환
     // expirationTime: 만료 시간 문자열 (예: '15m', '1h', '7d')
-    // return: 초 단위 만료 시간
+    // return: ms 단위 만료 시간
     private parseExpirationTime(expirationTime: string): number {
         const unit = expirationTime.slice(-1);
         const value = parseInt(expirationTime.slice(0, -1), 10);
 
-        switch (unit) {
+        switch (unit?.toLowerCase()) {
             case 's':
-                return value;
+                return value * 1000;
             case 'm':
-                return value * 60;
+                return value * 60 * 1000;
             case 'h':
-                return value * 60 * 60;
+                return value * 60 * 60 * 1000;
             case 'd':
-                return value * 60 * 60 * 24;
+                return value * 60 * 60 * 24 * 1000;
             default:
-                return 900; // 기본값 15분
+                return 900 * 1000; // 기본값 15분
         }
     }
 
@@ -149,5 +190,44 @@ export class AuthService {
     async logout(userId: number): Promise<{ message: string }> {
         await this.usersService.updateRefreshToken(userId, '');
         return { message: '로그아웃되었습니다.' };
+    }
+
+    // 일회용 키 생성
+    // key: 키
+    // expiredAt: 만료 시간
+    // return: 일회용 키
+    async createOneTimeKey(
+        key: string,
+        expirationTime: string,
+    ): Promise<OneTimeKey> {
+        const expiredAt = new Date(
+            Date.now() + this.parseExpirationTime(expirationTime),
+        );
+        const oneTimeKey = this.oneTimeKeyRepository.create({
+            key,
+            expiredAt,
+        });
+        return await this.oneTimeKeyRepository.save(oneTimeKey);
+    }
+
+    // 일회용 키 조회
+    // key: 키
+    // return: 키 유효 여부
+    async validateOneTimeKey(key: string): Promise<boolean> {
+        const oneTimeKey = await this.oneTimeKeyRepository.findOne({
+            where: { key },
+        });
+        if (
+            !oneTimeKey ||
+            oneTimeKey.expiredAt < new Date() ||
+            oneTimeKey.usedAt
+        ) {
+            return false; // 키가 존재하지 않거나 만료되었거나 사용된 경우
+        }
+        await this.oneTimeKeyRepository.update(
+            { key },
+            { usedAt: new Date(), updatedAt: new Date() },
+        );
+        return true; // 키가 유효한 경우
     }
 }

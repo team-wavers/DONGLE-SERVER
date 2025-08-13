@@ -13,7 +13,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     ) {
         const jwtSecret = configService.get<string>('JWT_ACCESS_SECRET');
         if (!jwtSecret) {
-            throw new Error('jwt_access_secret 환경변수가 설정되지 않았습니다.');
+            throw new Error(
+                'jwt_access_secret 환경변수가 설정되지 않았습니다.',
+            );
         }
 
         super({
@@ -26,9 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // JWT 토큰 유효성 검증
     // payload: JWT 페이로드
     // return: 사용자 정보
-    async validate(
-        payload: any,
-    ): Promise<{
+    async validate(payload: any): Promise<{
         userId: number;
         login_id: string;
         name: string;

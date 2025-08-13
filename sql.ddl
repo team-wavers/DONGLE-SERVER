@@ -12,6 +12,13 @@ CREATE TABLE users (
     deleted_at      TIMESTAMPTZ
 );
 
+CREATE INDEX idx_users_id
+    ON users(id);
+
+CREATE INDEX idx_users_login_id
+    ON users(login_id);
+
+
 -- clubs 테이블
 CREATE TABLE clubs (
     id               SERIAL PRIMARY KEY,
@@ -20,20 +27,18 @@ CREATE TABLE clubs (
     category         VARCHAR(50) NOT NULL,
     sns              JSON,
     tags             TEXT[],
-    recruit_start    DATE,
-    recruit_end      DATE,
+    recruit_start    TIMESTAMPTZ,
+    recruit_end      TIMESTAMPTZ,
     description      TEXT,
     main_activities  TEXT,
     president_id    INTEGER,
     created_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     deleted_at      TIMESTAMPTZ
-
-    CONSTRAINT fk_president
-        FOREIGN KEY (president_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
 );
+
+CREATE INDEX idx_clubs_president_id
+    ON clubs(president_id);
 
 CREATE TABLE club_reports (
     id          SERIAL PRIMARY KEY,
@@ -46,3 +51,16 @@ CREATE TABLE club_reports (
 
 CREATE INDEX idx_club_reports_club_id
     ON club_reports(club_id);
+
+CREATE TABLE one_time_keys (
+    id          SERIAL PRIMARY KEY,
+    key         VARCHAR(255) NOT NULL,
+    created_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    expired_at  TIMESTAMPTZ    NOT NULL,
+    used_at     TIMESTAMPTZ,
+    updated_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    deleted_at  TIMESTAMPTZ
+);
+
+CREATE INDEX idx_one_time_keys_key
+    ON one_time_keys(key);

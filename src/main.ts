@@ -1,10 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import { TransformResponseInterceptor } from './common/response.interceptor';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const config = app.get(ConfigService);
+
+    app.useGlobalInterceptors(new TransformResponseInterceptor());
 
     const port = config.get<number>('PORT') || 3000;
     await app.listen(port);

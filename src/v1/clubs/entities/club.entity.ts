@@ -29,13 +29,13 @@ export class Club {
     @Column({ type: 'json', nullable: true })
     sns: Record<string, string>;
 
-    @Column({ type: 'array', nullable: true })
-    tag: string[];
+    @Column({ type: 'text', nullable: true, array: true }) // TypeORM에서 array 타입 사용시 text, array: true로 설정하기
+    tags: string[];
 
-    @Column({ type: 'date', nullable: true })
+    @Column({ type: 'timestamp with time zone', nullable: true })
     recruit_start: Date;
 
-    @Column({ type: 'date', nullable: true })
+    @Column({ type: 'timestamp with time zone', nullable: true })
     recruit_end: Date;
 
     @Column({ type: 'text', nullable: true })

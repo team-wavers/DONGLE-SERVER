@@ -9,6 +9,8 @@ import {
     UseInterceptors,
     UploadedFile,
     UseGuards,
+    HttpException,
+    HttpStatus,
 } from '@nestjs/common';
 import { ClubsService } from './clubs.service';
 import { CreateClubDto } from './dto/create-club.dto';
@@ -16,13 +18,13 @@ import { UpdateClubDto } from './dto/update-club.dto';
 import { ClubReportsService } from '../club_reports/club_reports.service';
 import { CreateClubReportDto } from '../club_reports/dto/create-club_report.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { S3Service } from '../../lib/s3-uploads';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ROLES } from '../auth/constants/roles';
+import { S3Service } from '../../common/lib/s3-uploads';
 
-@Controller('clubs')
+@Controller()
 export class ClubsController {
     constructor(
         private readonly clubsService: ClubsService,
@@ -34,19 +36,31 @@ export class ClubsController {
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.ADMIN)  // 클럽 생성은 ADMIN만 가능
     async create(@Body() createClubDto: CreateClubDto) {
-        return await this.clubsService.create(createClubDto);
+        try {
+            return await this.clubsService.create(createClubDto);
+        } catch (error) {
+            throw error;
+        }
     }
 
     @Get()
     async findAll() {
-        return await this.clubsService.findAll();
+        try {
+            return await this.clubsService.findAll();
+        } catch (error) {
+            throw error;
+        }
     }
 
     @Post('registration-urls')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.ADMIN, ROLES.PRESIDENT)
-    createRegistrationUrl() {
-        return this.clubsService.createRegistrationUrl();
+    async createRegistrationUrl() {
+        try {
+            return await this.clubsService.createRegistrationUrl();
+        } catch (error) {
+            throw error;
+        }
     }
 
     @Get('reports')
@@ -106,7 +120,11 @@ export class ClubsController {
 
     @Get(':id')
     async findOne(@Param('id') id: number) {
-        return await this.clubsService.findOne(id);
+        try {
+            return await this.clubsService.findOne(id);
+        } catch (error) {
+            throw error;
+        }
     }
 
     @Put(':id')
@@ -116,13 +134,21 @@ export class ClubsController {
         @Param('id') id: number,
         @Body() updateClubDto: UpdateClubDto,
     ) {
-        return await this.clubsService.update(id, updateClubDto);
+        try {
+            return await this.clubsService.update(id, updateClubDto);
+        } catch (error) {
+            throw error;
+        }
     }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.ADMIN)
     async delete(@Param('id') id: number) {
-        return await this.clubsService.delete(id);
+        try {
+            return await this.clubsService.delete(id);
+        } catch (error) {
+            throw error;
+        }
     }
 }
