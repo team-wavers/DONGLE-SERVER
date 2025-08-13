@@ -29,17 +29,29 @@ export class ClubsController {
 
     @Post()
     async create(@Body() createClubDto: CreateClubDto) {
-        return await this.clubsService.create(createClubDto);
+        try {
+            return await this.clubsService.create(createClubDto);
+        } catch (error) {
+            throw error;
+        }
     }
 
     @Get()
     async findAll() {
-        return await this.clubsService.findAll();
+        try {
+            return await this.clubsService.findAll();
+        } catch (error) {
+            throw error;
+        }
     }
 
     @Post('registration-urls')
     async createRegistrationUrl() {
-        return await this.clubsService.createRegistrationUrl();
+        try {
+            return await this.clubsService.createRegistrationUrl();
+        } catch (error) {
+            throw error;
+        }
     }
 
     @Get('reports')
@@ -89,7 +101,11 @@ export class ClubsController {
 
     @Get(':id')
     async findOne(@Param('id') id: number) {
-        return await this.clubsService.findOne(id);
+        try {
+            return await this.clubsService.findOne(id);
+        } catch (error) {
+            throw error;
+        }
     }
 
     @Put(':id')
@@ -100,13 +116,16 @@ export class ClubsController {
         try {
             return await this.clubsService.update(id, updateClubDto);
         } catch (error) {
-            if (error instanceof HttpException) throw error;
-            throw new HttpException(error, HttpStatus.BAD_REQUEST);
+            throw error;
         }
     }
 
     @Delete(':id')
     async delete(@Param('id') id: number) {
-        return await this.clubsService.delete(id);
+        try {
+            return await this.clubsService.delete(id);
+        } catch (error) {
+            throw error;
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 import { Club } from './entities/club.entity';
@@ -24,7 +24,10 @@ export class ClubsService {
         const { key } = createClubDto;
         const isValid = await this.authService.validateOneTimeKey(key);
         if (!isValid) {
-            throw new Error('유효하지 않은 키입니다.');
+            throw new HttpException(
+                '유효하지 않은 키입니다.',
+                HttpStatus.BAD_REQUEST,
+            );
         }
         const newClub = this.clubRepository.create(createClubDto);
         return await this.clubRepository.save(newClub);
@@ -46,7 +49,10 @@ export class ClubsService {
     async update(id: number, updateClubDto: UpdateClubDto) {
         const result = await this.clubRepository.update(id, updateClubDto);
         if (result.affected === 0) {
-            throw new Error('존재하지 않는 club_id입니다.');
+            throw new HttpException(
+                '해당 동아리가 존재하지 않습니다.',
+                HttpStatus.BAD_REQUEST,
+            );
         }
         return result;
     }
@@ -56,7 +62,10 @@ export class ClubsService {
             deleted_at: new Date(),
         });
         if (result.affected === 0) {
-            throw new Error('존재하지 않는 club_id입니다.');
+            throw new HttpException(
+                '해당 동아리가 존재하지 않습니다.',
+                HttpStatus.BAD_REQUEST,
+            );
         }
         return result;
     }
