@@ -164,22 +164,22 @@ export class AuthService {
 
     // 만료 시간 문자열을 초 단위로 변환
     // expirationTime: 만료 시간 문자열 (예: '15m', '1h', '7d')
-    // return: 초 단위 만료 시간
+    // return: ms 단위 만료 시간
     private parseExpirationTime(expirationTime: string): number {
         const unit = expirationTime.slice(-1);
         const value = parseInt(expirationTime.slice(0, -1), 10);
 
         switch (unit?.toLowerCase()) {
             case 's':
-                return value;
+                return value * 1000;
             case 'm':
-                return value * 60;
+                return value * 60 * 1000;
             case 'h':
-                return value * 60 * 60;
+                return value * 60 * 60 * 1000;
             case 'd':
-                return value * 60 * 60 * 24;
+                return value * 60 * 60 * 24 * 1000;
             default:
-                return 900; // 기본값 15분
+                return 900 * 1000; // 기본값 15분
         }
     }
 
