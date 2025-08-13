@@ -8,6 +8,8 @@ import {
     Put,
     UseInterceptors,
     UploadedFile,
+    HttpException,
+    HttpStatus,
 } from '@nestjs/common';
 import { ClubsService } from './clubs.service';
 import { CreateClubDto } from './dto/create-club.dto';
@@ -95,7 +97,12 @@ export class ClubsController {
         @Param('id') id: number,
         @Body() updateClubDto: UpdateClubDto,
     ) {
-        return await this.clubsService.update(id, updateClubDto);
+        try {
+            return await this.clubsService.update(id, updateClubDto);
+        } catch (error) {
+            if (error instanceof HttpException) throw error;
+            throw new HttpException(error, HttpStatus.BAD_REQUEST);
+        }
     }
 
     @Delete(':id')
