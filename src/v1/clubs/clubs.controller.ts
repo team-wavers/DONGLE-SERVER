@@ -8,6 +8,7 @@ import {
     Put,
     UseInterceptors,
     UploadedFile,
+    UseGuards,
     HttpException,
     HttpStatus,
 } from '@nestjs/common';
@@ -17,6 +18,10 @@ import { UpdateClubDto } from './dto/update-club.dto';
 import { ClubReportsService } from '../club_reports/club_reports.service';
 import { CreateClubReportDto } from '../club_reports/dto/create-club_report.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RoleGuard } from '../auth/guards/role.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { ROLES } from '../auth/constants/roles';
 import { S3Service } from '../../common/lib/s3-uploads';
 
 @Controller()
@@ -28,6 +33,8 @@ export class ClubsController {
     ) {}
 
     @Post()
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.ADMIN)  // 클럽 생성은 ADMIN만 가능
     async create(@Body() createClubDto: CreateClubDto) {
         try {
             return await this.clubsService.create(createClubDto);
@@ -46,6 +53,8 @@ export class ClubsController {
     }
 
     @Post('registration-urls')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.ADMIN, ROLES.PRESIDENT)
     async createRegistrationUrl() {
         try {
             return await this.clubsService.createRegistrationUrl();
@@ -55,11 +64,15 @@ export class ClubsController {
     }
 
     @Get('reports')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.ADMIN, ROLES.PRESIDENT)
     async findAllReports() {
         return await this.clubReportsService.findAll();
     }
 
     @Post(':id/report-images')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
     @UseInterceptors(FileInterceptor('file'))
     async uploadReportImage(
         @Param('id') clubId: number,
@@ -72,6 +85,8 @@ export class ClubsController {
     }
 
     @Post(':id/reports')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
     async createReport(
         @Param('id') clubId: number,
         @Body() createClubReportDto: CreateClubReportDto,
@@ -81,6 +96,8 @@ export class ClubsController {
     }
 
     @Put(':id/reports/:reportId')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
     async updateReport(
         @Param('id') clubId: number,
         @Param('reportId') reportId: number,
@@ -95,6 +112,8 @@ export class ClubsController {
 
     // Authorization 로직 설정 필요
     @Delete(':id/reports/:reportId')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
     async deleteReport(@Param('reportId') reportId: number) {
         return await this.clubReportsService.remove(reportId);
     }
@@ -109,6 +128,8 @@ export class ClubsController {
     }
 
     @Put(':id')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.ADMIN, ROLES.PRESIDENT)
     async update(
         @Param('id') id: number,
         @Body() updateClubDto: UpdateClubDto,
@@ -121,6 +142,8 @@ export class ClubsController {
     }
 
     @Delete(':id')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.ADMIN)
     async delete(@Param('id') id: number) {
         try {
             return await this.clubsService.delete(id);

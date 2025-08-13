@@ -11,6 +11,8 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { User } from '../users/entities/user.entity';
+import * as bcrypt from 'bcrypt';
+import { normalizeRole } from './constants/roles';
 import { OneTimeKey } from './entities/one_time_key.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -112,8 +114,8 @@ export class AuthService {
         const payload = {
             sub: user.id,
             login_id: user.login_id,
-            name: user.name,
-            role: user.role,
+            name: user.name, 
+            role: normalizeRole(user.role) // 역할 정규화
         };
 
         // 환경변수 검증

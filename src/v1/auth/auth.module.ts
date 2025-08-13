@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { RoleGuard } from './guards/role.guard';
 import { UsersModule } from '../users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OneTimeKey } from './entities/one_time_key.entity';
@@ -39,8 +40,8 @@ import { OneTimeKey } from './entities/one_time_key.entity';
         }),
         TypeOrmModule.forFeature([OneTimeKey]),
     ],
-    controllers: [AuthController],
-    providers: [AuthService, JwtStrategy],
-    exports: [AuthService],
+      controllers: [AuthController],
+  providers: [AuthService, JwtStrategy, RoleGuard],
+  exports: [AuthService, RoleGuard],
 })
 export class AuthModule {}
