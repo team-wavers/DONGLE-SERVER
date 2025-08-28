@@ -43,6 +43,7 @@ export class ClubsService {
                 id: id,
                 deleted_at: IsNull(), // deleted_at이 null인 경우만 조회
             },
+            relations: ['president', 'reports'],
         });
     }
 
