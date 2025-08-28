@@ -30,6 +30,8 @@ CREATE TABLE clubs (
     recruit_start    TIMESTAMPTZ,
     recruit_end      TIMESTAMPTZ,
     description      TEXT,
+    icon_url         VARCHAR(255),
+    location         VARCHAR(100),
     main_activities  TEXT,
     president_id    INTEGER,
     created_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
