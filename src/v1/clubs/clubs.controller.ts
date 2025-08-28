@@ -70,6 +70,17 @@ export class ClubsController {
         return await this.clubReportsService.findAll();
     }
 
+    @Post(':id/icons')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadIcon(@Param('id') clubId: number, @UploadedFile() file: Express.Multer.File) {
+        const buffer = file.buffer;
+        const key = `club-icons/${clubId}`;
+        const contentType = file.mimetype;
+        return await this.s3Service.upload(buffer, key, contentType);
+    }
+
     @Post(':id/report-images')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.PRESIDENT)
