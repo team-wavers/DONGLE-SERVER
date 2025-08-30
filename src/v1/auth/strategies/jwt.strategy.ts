@@ -33,7 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         login_id: string;
         name: string;
         role: string;
-        club_id: number;
+        club_id: number | null;
     }> {
         const { sub: userId, login_id, name, role, club_id } = payload;
 

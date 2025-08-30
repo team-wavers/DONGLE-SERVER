@@ -61,7 +61,7 @@ export class AuthController {
             login_id: string;
             name: string;
             role: string;
-            club_id: number;
+            club_id: number | null;
         };
         error?: string;
     }> {

@@ -23,9 +23,12 @@ export class UsersService {
             throw new Error('필수값이 누락되었습니다.');
         }
 
-        const club = await this.clubsService.findOne(club_id);
-        if (!club) {
-            throw new Error('존재하지 않는 club_id입니다.');
+        // club_id가 제공된 경우에만 클럽 존재 여부 확인 (관리자는 club_id가 없을 수 있음)
+        if (club_id) {
+            const club = await this.clubsService.findOne(club_id);
+            if (!club) {
+                throw new Error('존재하지 않는 club_id입니다.');
+            }
         }
 
         // 2. 비밀번호 해시 처리
@@ -38,7 +41,7 @@ export class UsersService {
             password: hashedPassword,
             role,
             phone,
-            club_id,
+            club_id: club_id || undefined,
         });
 
         if (club_id) {

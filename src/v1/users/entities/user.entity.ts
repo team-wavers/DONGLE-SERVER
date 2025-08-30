@@ -24,7 +24,7 @@ export class User {
     @Column({ length: 255, nullable: true })
     refresh_token: string;
 
-    @Column()
+    @Column({ nullable: true })
     club_id: number;
 
     @Column({

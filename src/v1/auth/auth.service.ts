@@ -116,7 +116,7 @@ export class AuthService {
             login_id: user.login_id,
             name: user.name, 
             role: normalizeRole(user.role), // 역할 정규화
-            club_id: user.club_id // 클럽 ID 추가
+            club_id: user.club_id || null // 클럽 ID 추가 (관리자는 null)
         };
 
         // 환경변수 검증
@@ -242,7 +242,7 @@ export class AuthService {
             login_id: string;
             name: string;
             role: string;
-            club_id: number;
+            club_id: number | null;
         };
         error?: string;
     }> {
