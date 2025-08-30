@@ -1,6 +1,6 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -38,6 +38,7 @@ export class UsersService {
             password: hashedPassword,
             role,
             phone,
+            club_id,
         });
 
         if (club_id) {
@@ -48,11 +49,17 @@ export class UsersService {
     }
 
     findAll() {
-        return this.userRepository.find({ relations: ['club'] });
+        return this.userRepository.find({ 
+            relations: ['club'],
+            where: { deleted_at: IsNull() }
+        });
     }
 
     findOne(id: number): Promise<User | null> {
-        return this.userRepository.findOne({ where: { id } });
+        return this.userRepository.findOne({ 
+            where: { id, deleted_at: IsNull() },
+            relations: ['club']
+        });
     }
 
     async update(
@@ -62,9 +69,23 @@ export class UsersService {
         await this.userRepository.update(id, updateUserDto);
     }
 
-    remove(id: number) {
-        // TODO: remove 구현
-        return `This action removes a #${id} user`;
+    // 사용자 소프트삭제 (수동)
+    // id: 사용자 ID
+    // return: 삭제 결과 메시지
+    async remove(id: number): Promise<{ message: string }> {
+        const user = await this.userRepository.findOne({ 
+            where: { id, deleted_at: IsNull() } 
+        });
+        if (!user) {
+            throw new Error('사용자를 찾을 수 없습니다.');
+        }
+
+        // deleted_at 필드에 현재 시간 설정하여 소프트삭제
+        await this.userRepository.update(id, { 
+            deleted_at: new Date()
+        });
+        
+        return { message: `사용자 ID ${id}가 삭제되었습니다.` };
     }
 
     // 로그인 아이디로 사용자 조회 (JWT 인증용)
@@ -72,7 +93,8 @@ export class UsersService {
     // return: 사용자 또는 null
     async findByLoginId(login_id: string): Promise<User | null> {
         return this.userRepository.findOne({
-            where: { login_id },
+            where: { login_id, deleted_at: IsNull() },
+            relations: ['club']
         });
     }
 
@@ -85,7 +107,7 @@ export class UsersService {
         password: string,
     ): Promise<User | null> {
         const user = await this.findByLoginId(login_id);
-        if (user && (await bcrypt.compare(password, user.password))) {
+        if (user && !user.deleted_at && (await bcrypt.compare(password, user.password))) {
             return user;
         }
         return null;
@@ -106,7 +128,7 @@ export class UsersService {
     // return: 사용자 또는 null
     async findByRefreshToken(refreshToken: string): Promise<User | null> {
         const user = await this.userRepository.findOne({
-            where: { refresh_token: refreshToken },
+            where: { refresh_token: refreshToken, deleted_at: IsNull() },
         });
         return user || null;
     }
