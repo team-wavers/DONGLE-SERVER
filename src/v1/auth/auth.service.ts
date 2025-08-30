@@ -115,7 +115,8 @@ export class AuthService {
             sub: user.id,
             login_id: user.login_id,
             name: user.name, 
-            role: normalizeRole(user.role) // 역할 정규화
+            role: normalizeRole(user.role), // 역할 정규화
+            club_id: user.club_id // 클럽 ID 추가
         };
 
         // 환경변수 검증
@@ -229,5 +230,85 @@ export class AuthService {
             { usedAt: new Date(), updatedAt: new Date() },
         );
         return true; // 키가 유효한 경우
+    }
+
+    // 액세스 토큰 수동 검증
+    // token: 검증할 토큰
+    // return: 검증 결과 및 사용자 정보
+    async verifyAccessToken(token: string): Promise<{
+        isValid: boolean;
+        user?: {
+            userId: number;
+            login_id: string;
+            name: string;
+            role: string;
+            club_id: number;
+        };
+        error?: string;
+    }> {
+        try {
+            const accessSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
+            if (!accessSecret) {
+                return { 
+                    isValid: false, 
+                    error: 'JWT 설정이 올바르지 않습니다.' 
+                };
+            }
+
+            // 토큰 디코딩 및 서명 검증
+            const decoded = this.jwtService.verify(token, { 
+                secret: accessSecret 
+            });
+
+            // 사용자 조회
+            const user = await this.usersService.findOne(decoded.sub);
+            if (!user) {
+                return { 
+                    isValid: false, 
+                    error: '사용자를 찾을 수 없습니다.' 
+                };
+            }
+
+            // 토큰 페이로드와 DB 정보 일치 확인
+            if (
+                user.login_id !== decoded.login_id ||
+                user.name !== decoded.name ||
+                normalizeRole(user.role) !== decoded.role ||
+                user.club_id !== decoded.club_id
+            ) {
+                return { 
+                    isValid: false, 
+                    error: '토큰 정보가 일치하지 않습니다.' 
+                };
+            }
+
+            return {
+                isValid: true,
+                user: {
+                    userId: user.id,
+                    login_id: user.login_id,
+                    name: user.name,
+                    role: user.role,
+                    club_id: user.club_id
+                }
+            };
+        } catch (error) {
+            if (error.name === 'TokenExpiredError') {
+                return { 
+                    isValid: false, 
+                    error: '토큰이 만료되었습니다.' 
+                };
+            } else if (error.name === 'JsonWebTokenError') {
+                return { 
+                    isValid: false, 
+                    error: '유효하지 않은 토큰입니다.' 
+                };
+            } else {
+                return { 
+                    isValid: false, 
+                    error: '토큰 검증 중 오류가 발생했습니다.' 
+                };
+            }
+        }
     }
 }
