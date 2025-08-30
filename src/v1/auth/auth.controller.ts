@@ -11,6 +11,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
+import { VerifyTokenDto } from './dto/verify-token.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 // 인증 컨트롤러
@@ -46,5 +47,24 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     async logout(@Request() req): Promise<{ message: string }> {
         return this.authService.logout(req.user.userId);
+    }
+
+    // 토큰 유효성 검증
+    // verifyTokenDto: 검증할 토큰 DTO
+    // return: 검증 결과 및 사용자 정보
+    @Post('verify')
+    @HttpCode(HttpStatus.OK)
+    async verifyToken(@Body() verifyTokenDto: VerifyTokenDto): Promise<{
+        isValid: boolean;
+        user?: {
+            userId: number;
+            login_id: string;
+            name: string;
+            role: string;
+            club_id: number;
+        };
+        error?: string;
+    }> {
+        return this.authService.verifyAccessToken(verifyTokenDto.token);
     }
 }
