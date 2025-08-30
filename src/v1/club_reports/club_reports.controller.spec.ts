@@ -3,18 +3,18 @@ import { ClubReportsController } from './club_reports.controller';
 import { ClubReportsService } from './club_reports.service';
 
 describe('ClubReportsController', () => {
-  let controller: ClubReportsController;
+    let controller: ClubReportsController;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [ClubReportsController],
-      providers: [ClubReportsService],
-    }).compile();
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [ClubReportsController],
+            providers: [ClubReportsService],
+        }).compile();
 
-    controller = module.get<ClubReportsController>(ClubReportsController);
-  });
+        controller = module.get<ClubReportsController>(ClubReportsController);
+    });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
+    it('should be defined', () => {
+        expect(controller).toBeDefined();
+    });
 });

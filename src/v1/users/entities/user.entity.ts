@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
 import { Club } from '../../clubs/entities/club.entity';
 
 @Entity('users')
@@ -15,11 +15,6 @@ export class User {
     @Column({ length: 255 })
     password: string;
 
-    // club_id는 Club 엔티티와의 관계로 처리
-    @ManyToOne(() => Club, club => club.users, { nullable: true })
-    @JoinColumn({ name: 'club_id' })
-    club: Club;
-
     @Column({ length: 10 })
     role: string;
 
@@ -29,30 +24,22 @@ export class User {
     @Column({ length: 255, nullable: true })
     refresh_token: string;
 
-    @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+    @Column({
+        type: 'timestamp with time zone',
+        default: () => 'CURRENT_TIMESTAMP',
+    })
     created_at: Date;
 
-    @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+    @Column({
+        type: 'timestamp with time zone',
+        default: () => 'CURRENT_TIMESTAMP',
+        onUpdate: 'CURRENT_TIMESTAMP',
+    })
     updated_at: Date;
 
-    @Column({ type: 'datetime', nullable: true })
+    @Column({ type: 'timestamp with time zone', nullable: true })
     deleted_at: Date;
+
+    @OneToOne(() => Club, (club) => club.president)
+    club: Club;
 }
-
-
-/**
- * CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    login_id VARCHAR(100) NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    club_id INT,
-    role VARCHAR(10) NOT NULL,
-    phone VARCHAR(100),
-    refresh_token VARCHAR(255),
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at DATETIME,
-    FOREIGN KEY (club_id) REFERENCES clubs(id)
-);
- */

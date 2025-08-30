@@ -2,22 +2,54 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { V1Module } from './v1/v1.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RouterModule } from '@nestjs/core';
+import { UsersModule } from './v1/users/users.module';
+import { ClubsModule } from './v1/clubs/clubs.module';
+import { ClubReportsModule } from './v1/club_reports/club_reports.module';
+import { AuthModule } from './v1/auth/auth.module';
+import { HealthModule } from './common/health/health.module';
+import { getRequiredEnv } from './common/lib/utils';
 
 @Module({
     imports: [
-        TypeOrmModule.forRoot({
-            type: 'mysql',
-            host: 'localhost', // 실제 환경에 맞게 수정
-            port: 3306,
-            username: 'root', // 실제 환경에 맞게 수정
-            password: 'password', // 실제 환경에 맞게 수정
-            database: 'dongle', // 실제 환경에 맞게 수정
-            entities: [__dirname + '/**/*.entity.{js,ts}'],
-            synchronize: true, // 개발 환경에서만 true, 운영에서는 false 권장
-            logging: true,
+        ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: `.env.${process.env.NODE_ENV}`,
         }),
-        V1Module,
+        TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                type: 'postgres',
+                host: getRequiredEnv(configService, 'DB_HOST'),
+                port: parseInt(getRequiredEnv(configService, 'DB_PORT')),
+                username: getRequiredEnv(configService, 'DB_USERNAME'),
+                password: getRequiredEnv(configService, 'DB_PASSWORD'),
+                database: getRequiredEnv(configService, 'DB_NAME'),
+                autoLoadEntities: true,
+                // entities: [__dirname + '/**/*.entity{.ts}'],
+                synchronize: false,
+            }),
+        }),
+        RouterModule.register([
+            {
+                path: 'v1',
+                children: [
+                    { path: 'users', module: UsersModule },
+                    { path: 'clubs', module: ClubsModule },
+                    { path: 'club-reports', module: ClubReportsModule },
+                    { path: 'auth', module: AuthModule },
+                    { path: 'healthCheck', module: HealthModule },
+                ],
+            },
+        ]),
+
+        HealthModule,
+        UsersModule,
+        ClubsModule,
+        ClubReportsModule,
+        AuthModule,
     ],
     controllers: [AppController],
     providers: [AppService],
