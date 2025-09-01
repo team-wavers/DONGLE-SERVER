@@ -4,6 +4,7 @@ export class CreateClubDto {
     category: string;
     sns?: Record<string, string>;
     tags?: string[];
+    is_recruiting?: boolean;
     recruit_start?: Date;
     recruit_end?: Date;
     description?: string;
