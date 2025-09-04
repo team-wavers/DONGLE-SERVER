@@ -8,7 +8,7 @@ import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { getRequiredEnv } from '../../common/lib/utils';
 import { AuthService } from '../auth/auth.service';
-
+import { UsersService } from '../users/users.service';
 @Injectable()
 export class ClubsService {
     constructor(
@@ -17,6 +17,8 @@ export class ClubsService {
         private readonly config: ConfigService,
         @Inject(forwardRef(() => AuthService))
         private readonly authService: AuthService,
+        @Inject(forwardRef(() => UsersService))
+        private readonly usersService: UsersService,
     ) {}
 
     // 저장된 키 대조 후 동아리 생성
@@ -48,6 +50,13 @@ export class ClubsService {
     }
 
     async update(id: number, updateClubDto: UpdateClubDto) {
+        if (updateClubDto.president_id) { // 동아리 회장 변경 시
+            const president = await this.usersService.findOne(updateClubDto.president_id);
+            if (!president) {
+                throw new HttpException('존재하지 않는 사용자입니다.', HttpStatus.BAD_REQUEST);
+            }
+        }
+
         const result = await this.clubRepository.update(id, updateClubDto);
         if (result.affected === 0) {
             throw new HttpException(
