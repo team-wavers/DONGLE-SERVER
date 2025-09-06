@@ -33,8 +33,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         login_id: string;
         name: string;
         role: string;
+        club_id: number | null;
     }> {
-        const { sub: userId, login_id, name, role } = payload;
+        const { sub: userId, login_id, name, role, club_id } = payload;
 
         // 사용자 존재 여부 확인
         const user = await this.usersService.findOne(userId);
@@ -43,7 +44,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         }
 
         // 사용자 정보 검증
-        if (user.login_id !== login_id || user.name !== name || user.role !== role) {
+        if (user.login_id !== login_id || user.name !== name || user.role !== role || user.club_id !== club_id) {
             throw new UnauthorizedException('유효하지 않은 토큰입니다.');
         }
 
@@ -52,6 +53,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             login_id: user.login_id,
             name: user.name,
             role: user.role,
+            club_id: user.club_id,
         };
     }
 }
