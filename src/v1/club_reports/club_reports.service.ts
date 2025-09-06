@@ -31,8 +31,12 @@ export class ClubReportsService {
         return reports;
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} clubReport`;
+    async findAllByClubId(clubId: number) {
+        const reports = await this.clubReportRepository.find({
+            where: { club: { id: clubId } },
+            order: { createdAt: 'DESC' },
+        });
+        return reports;
     }
 
     async update(id: number, updateClubReportDto: CreateClubReportDto) {

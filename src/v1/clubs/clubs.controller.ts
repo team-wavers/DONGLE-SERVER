@@ -95,6 +95,13 @@ export class ClubsController {
         return await this.s3Service.upload(buffer, key, contentType);
     }
 
+    @Get(':id/reports')
+    // @UseGuards(JwtAuthGuard, RoleGuard)
+    // @Roles(ROLES.PRESIDENT)
+    async findReportsByClubId(@Param('id') clubId: number) {
+        return await this.clubReportsService.findAllByClubId(clubId);
+    }
+
     @Post(':id/reports')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.PRESIDENT)
