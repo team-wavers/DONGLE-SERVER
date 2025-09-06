@@ -6,6 +6,9 @@ import {
     Request,
     HttpCode,
     HttpStatus,
+    UnauthorizedException,
+    BadRequestException,
+    InternalServerErrorException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -51,20 +54,41 @@ export class AuthController {
 
     // 토큰 유효성 검증
     // verifyTokenDto: 검증할 토큰 DTO
-    // return: 검증 결과 및 사용자 정보
+    // return: 검증 성공 시 사용자 정보
     @Post('verify')
     @HttpCode(HttpStatus.OK)
     async verifyToken(@Body() verifyTokenDto: VerifyTokenDto): Promise<{
-        isValid: boolean;
-        user?: {
-            userId: number;
-            login_id: string;
-            name: string;
-            role: string;
-            club_id: number | null;
-        };
-        error?: string;
+        userId: number;
+        login_id: string;
+        name: string;
+        role: string;
+        club_id: number | null;
     }> {
-        return this.authService.verifyAccessToken(verifyTokenDto.token);
+        try {
+            return await this.authService.verifyAccessToken(verifyTokenDto.token);
+        } catch (error) {
+            if (error.name === 'TokenExpiredError') {
+                throw new UnauthorizedException({
+                    message: '토큰이 만료되었습니다.',
+                    errorCode: 'TOKEN_EXPIRED',
+                    type: 'AUTHENTICATION_ERROR'
+                });
+            } else if (error.name === 'JsonWebTokenError') {
+                throw new BadRequestException({
+                    message: '유효하지 않은 토큰입니다.',
+                    errorCode: 'INVALID_TOKEN',
+                    type: 'VALIDATION_ERROR'
+                });
+            } else if (error instanceof UnauthorizedException) {
+                // 서비스에서 발생한 UnauthorizedException은 그대로 전달
+                throw error;
+            } else {
+                throw new InternalServerErrorException({
+                    message: '토큰 검증 중 오류가 발생했습니다.',
+                    errorCode: 'VERIFICATION_ERROR',
+                    type: 'INTERNAL_ERROR'
+                });
+            }
+        }
     }
 }
