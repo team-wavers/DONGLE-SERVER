@@ -11,6 +11,7 @@ import {
     UseGuards,
     HttpException,
     HttpStatus,
+    Request,
 } from '@nestjs/common';
 import { ClubsService } from './clubs.service';
 import { CreateClubDto } from './dto/create-club.dto';
@@ -33,8 +34,6 @@ export class ClubsController {
     ) {}
 
     @Post()
-    @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN)  // 클럽 생성은 ADMIN만 가능
     async create(@Body() createClubDto: CreateClubDto) {
         try {
             return await this.clubsService.create(createClubDto);
@@ -65,7 +64,7 @@ export class ClubsController {
 
     @Get('reports')
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN, ROLES.PRESIDENT)
+    @Roles(ROLES.ADMIN)
     async findAllReports() {
         return await this.clubReportsService.findAll();
     }
@@ -76,7 +75,7 @@ export class ClubsController {
     @UseInterceptors(FileInterceptor('file'))
     async uploadIcon(@Param('id') clubId: number, @UploadedFile() file: Express.Multer.File) {
         const buffer = file.buffer;
-        const key = `club-icons/${clubId}`;
+        const key = `club-icons`;
         const contentType = file.mimetype;
         return await this.s3Service.upload(buffer, key, contentType);
     }
@@ -88,9 +87,10 @@ export class ClubsController {
     async uploadReportImage(
         @Param('id') clubId: number,
         @UploadedFile() file: Express.Multer.File,
+        @Request() req,
     ) {
         const buffer = file.buffer;
-        const key = `club-reports/${clubId}`;
+        const key = `club-reports`;
         const contentType = file.mimetype;
         return await this.s3Service.upload(buffer, key, contentType);
     }
