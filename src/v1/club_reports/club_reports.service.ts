@@ -13,7 +13,13 @@ export class ClubReportsService {
     ) {}
 
     async create(createClubReportDto: CreateClubReportDto) {
-        const report = this.clubReportRepository.create(createClubReportDto);
+        const { club_id, ...reportData } = createClubReportDto;
+
+        const report = this.clubReportRepository.create({
+            ...reportData,
+            club: { id: club_id }, // Club 엔티티의 참조를 설정
+        });
+
         return await this.clubReportRepository.save(report);
     }
 

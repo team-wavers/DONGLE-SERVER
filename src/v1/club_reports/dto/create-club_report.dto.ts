@@ -1,7 +1,7 @@
 import { Column } from 'typeorm';
 
 export class CreateClubReportDto {
-    clubId: number;
+    club_id: number;
 
     @Column({ length: 255 })
     title: string;

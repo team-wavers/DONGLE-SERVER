@@ -99,10 +99,10 @@ export class ClubsController {
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.PRESIDENT)
     async createReport(
-        @Param('id') clubId: number,
+        @Param('id') clubId: string,
         @Body() createClubReportDto: CreateClubReportDto,
     ) {
-        createClubReportDto.clubId = clubId;
+        createClubReportDto.club_id = parseInt(clubId, 10);
         return await this.clubReportsService.create(createClubReportDto);
     }
 
@@ -114,7 +114,7 @@ export class ClubsController {
         @Param('reportId') reportId: number,
         @Body() updateClubReportDto: CreateClubReportDto,
     ) {
-        updateClubReportDto.clubId = clubId;
+        updateClubReportDto.club_id = clubId;
         return await this.clubReportsService.update(
             reportId,
             updateClubReportDto,
