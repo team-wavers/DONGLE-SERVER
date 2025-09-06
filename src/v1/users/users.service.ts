@@ -88,7 +88,7 @@ export class UsersService {
             deleted_at: new Date()
         });
         
-        return { message: `사용자 ID ${id}가 삭제되었습니다.` };
+        return { message: '사용자가 삭제되었습니다.' };
     }
 
     // 로그인 아이디로 사용자 조회 (JWT 인증용)

@@ -249,10 +249,7 @@ export class AuthService {
         try {
             const accessSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
             if (!accessSecret) {
-                return { 
-                    isValid: false, 
-                    error: 'JWT 설정이 올바르지 않습니다.' 
-                };
+                throw new Error('JWT_ACCESS_SECRET 환경변수가 설정되지 않았습니다.');
             }
 
             // 토큰 디코딩 및 서명 검증
@@ -263,10 +260,7 @@ export class AuthService {
             // 사용자 조회
             const user = await this.usersService.findOne(decoded.sub);
             if (!user) {
-                return { 
-                    isValid: false, 
-                    error: '사용자를 찾을 수 없습니다.' 
-                };
+                throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
             }
 
             // 토큰 페이로드와 DB 정보 일치 확인
@@ -276,10 +270,7 @@ export class AuthService {
                 normalizeRole(user.role) !== decoded.role ||
                 user.club_id !== decoded.club_id
             ) {
-                return { 
-                    isValid: false, 
-                    error: '토큰 정보가 일치하지 않습니다.' 
-                };
+                throw new UnauthorizedException('토큰 정보가 일치하지 않습니다.');
             }
 
             return {
