@@ -15,8 +15,14 @@ export class ClubReport {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ type: 'jsonb', nullable: true })
-    content: any;
+    @Column({ type: 'text', nullable: true })
+    content: string;
+
+    @Column({ type: 'text', array: true })
+    image_urls: string[];
+
+    @Column({ type: 'text', nullable: true })
+    title: string;
 
     @ManyToOne(() => Club, (club) => club.reports, {
         nullable: false,

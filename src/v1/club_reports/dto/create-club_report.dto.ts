@@ -1,8 +1,14 @@
 import { Column } from 'typeorm';
 
 export class CreateClubReportDto {
-    clubId: number;
+    club_id: number;
 
-    @Column({ type: 'jsonb', nullable: true })
-    content: any;
+    @Column({ length: 255 })
+    title: string;
+
+    @Column({ type: 'text' })
+    content: string;
+
+    @Column({ type: 'text', array: true })
+    image_urls: string[];
 }

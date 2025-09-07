@@ -13,7 +13,13 @@ export class ClubReportsService {
     ) {}
 
     async create(createClubReportDto: CreateClubReportDto) {
-        const report = this.clubReportRepository.create(createClubReportDto);
+        const { club_id, ...reportData } = createClubReportDto;
+
+        const report = this.clubReportRepository.create({
+            ...reportData,
+            club: { id: club_id }, // Club 엔티티의 참조를 설정
+        });
+
         return await this.clubReportRepository.save(report);
     }
 
@@ -25,11 +31,15 @@ export class ClubReportsService {
         return reports;
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} clubReport`;
+    async findAllByClubId(clubId: number) {
+        const reports = await this.clubReportRepository.find({
+            where: { club: { id: clubId } },
+            order: { createdAt: 'DESC' },
+        });
+        return reports;
     }
 
-    async update(id: number, updateClubReportDto: UpdateClubReportDto) {
+    async update(id: number, updateClubReportDto: CreateClubReportDto) {
         return await this.clubReportRepository.update(id, updateClubReportDto);
     }
 

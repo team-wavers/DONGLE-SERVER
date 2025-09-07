@@ -33,18 +33,18 @@ export class S3Service {
     ): Promise<string> {
         try {
             const uniqueSuffix = randomUUID();
+            const keyWithSuffix = `${key}/${uniqueSuffix}`;
 
             await this.client.send(
                 new PutObjectCommand({
                     Bucket: this.bucket,
-                    Key: key,
+                    Key: keyWithSuffix,
                     Body: buffer,
                     ContentType: contentType,
                     ACL: 'public-read',
                 }),
             );
-
-            return `https://${this.bucket}.s3.amazonaws.com/${key}/${uniqueSuffix}`;
+            return `https://s3.${this.config.get('AWS_REGION')}.amazonaws.com/${this.bucket}/${keyWithSuffix}`;
         } catch (err) {
             throw new InternalServerErrorException('S3 업로드 실패', err);
         }

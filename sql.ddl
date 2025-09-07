@@ -46,9 +46,17 @@ CREATE TABLE clubs (
 CREATE INDEX idx_clubs_president_id
     ON clubs(president_id);
 
+CREATE INDEX idx_clubs_id
+    ON clubs(id);
+
+CREATE INDEX idx_clubs_name
+    ON clubs(name);
+
 CREATE TABLE club_reports (
     id          SERIAL PRIMARY KEY,
-    content     JSONB          ,
+    title       VARCHAR(255)   NOT NULL,
+    content     TEXT          NOT NULL,
+    image_urls  TEXT[],
     club_id     INTEGER        NOT NULL,
     created_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
