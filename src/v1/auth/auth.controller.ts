@@ -68,26 +68,14 @@ export class AuthController {
             return await this.authService.verifyAccessToken(verifyTokenDto.token);
         } catch (error) {
             if (error.name === 'TokenExpiredError') {
-                throw new UnauthorizedException({
-                    message: '토큰이 만료되었습니다.',
-                    errorCode: 'TOKEN_EXPIRED',
-                    type: 'AUTHENTICATION_ERROR'
-                });
+                throw new UnauthorizedException('토큰이 만료되었습니다.');
             } else if (error.name === 'JsonWebTokenError') {
-                throw new BadRequestException({
-                    message: '유효하지 않은 토큰입니다.',
-                    errorCode: 'INVALID_TOKEN',
-                    type: 'VALIDATION_ERROR'
-                });
+                throw new BadRequestException('유효하지 않은 토큰입니다.');
             } else if (error instanceof UnauthorizedException) {
                 // 서비스에서 발생한 UnauthorizedException은 그대로 전달
                 throw error;
             } else {
-                throw new InternalServerErrorException({
-                    message: '토큰 검증 중 오류가 발생했습니다.',
-                    errorCode: 'VERIFICATION_ERROR',
-                    type: 'INTERNAL_ERROR'
-                });
+                throw new InternalServerErrorException('토큰 검증 중 오류가 발생했습니다.');
             }
         }
     }
