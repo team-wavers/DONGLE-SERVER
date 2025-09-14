@@ -8,6 +8,12 @@ async function bootstrap() {
     const config = app.get(ConfigService);
 
     app.useGlobalInterceptors(new TransformResponseInterceptor());
+    // CORS 설정
+    app.enableCors({
+        origin: config.get<string>('CORS_ORIGIN')?.split(','),
+        allowedHeaders: ['Content-Type', 'Authorization'],
+        credentials: true,
+    });
 
     const port = config.get<number>('PORT') || 3000;
     await app.listen(port);
