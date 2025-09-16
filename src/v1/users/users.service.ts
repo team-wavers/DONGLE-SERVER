@@ -44,11 +44,14 @@ export class UsersService {
             club_id: club_id || undefined,
         });
 
+        // 4. 데이터베이스에 저장
+        const savedUser = await this.userRepository.save(user);
+
         if (club_id) {
-            this.clubsService.update(club_id, { president_id: user.id });
+            this.clubsService.update(club_id, { president_id: savedUser.id });
         }
 
-        return user;
+        return savedUser;
     }
 
     findAll() {

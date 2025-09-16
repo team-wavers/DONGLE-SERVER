@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UsersService } from '../../users/users.service';
+import { normalizeRole } from '../constants/roles';
 
 // JWT 인증 전략
 @Injectable()
@@ -44,7 +45,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         }
 
         // 사용자 정보 검증
-        if (user.login_id !== login_id || user.name !== name || user.role !== role || user.club_id !== club_id) {
+        if (user.login_id !== login_id || user.name !== name || normalizeRole(user.role) !== role || user.club_id !== club_id) {
             throw new UnauthorizedException('유효하지 않은 토큰입니다.');
         }
 
