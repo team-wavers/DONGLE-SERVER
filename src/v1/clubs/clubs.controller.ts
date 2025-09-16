@@ -96,8 +96,6 @@ export class ClubsController {
     }
 
     @Get(':id/reports')
-    // @UseGuards(JwtAuthGuard, RoleGuard)
-    // @Roles(ROLES.PRESIDENT)
     async findReportsByClubId(@Param('id') clubId: number) {
         return await this.clubReportsService.findAllByClubId(clubId);
     }
@@ -131,7 +129,7 @@ export class ClubsController {
     // Authorization 로직 설정 필요
     @Delete(':id/reports/:reportId')
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.PRESIDENT)
+    @Roles(ROLES.ADMIN)
     async deleteReport(@Param('reportId') reportId: number) {
         return await this.clubReportsService.remove(reportId);
     }
