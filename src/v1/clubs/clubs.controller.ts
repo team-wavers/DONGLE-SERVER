@@ -129,7 +129,7 @@ export class ClubsController {
     // Authorization 로직 설정 필요
     @Delete(':id/reports/:reportId')
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN)
+    @Roles(ROLES.PRESIDENT)
     async deleteReport(@Param('reportId') reportId: number) {
         return await this.clubReportsService.remove(reportId);
     }
