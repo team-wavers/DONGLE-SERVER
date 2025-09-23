@@ -8,8 +8,6 @@ export class CreateUserDto {
     // 비밀번호 (필수)
     password: string;
 
-    // 소속 클럽 ID (필수)
-    club_id: number;
 
     // 역할(권한) (필수)
     role: string;

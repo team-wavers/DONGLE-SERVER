@@ -17,54 +17,38 @@ export class UsersService {
     ) {}
 
     async create(createUserDto: CreateUserDto) {
-        const { name, login_id, password, role, club_id, phone } =
-            createUserDto;
+        const { name, login_id, password, role, phone } = createUserDto;
         if (!name || !login_id || !password || !role || !phone) {
             throw new Error('필수값이 누락되었습니다.');
         }
 
-        // club_id가 제공된 경우에만 클럽 존재 여부 확인 (관리자는 club_id가 없을 수 있음)
-        if (club_id) {
-            const club = await this.clubsService.findOne(club_id);
-            if (!club) {
-                throw new Error('존재하지 않는 club_id입니다.');
-            }
-        }
-
-        // 2. 비밀번호 해시 처리
+        // 비밀번호 해시 처리
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 3. User 엔티티 생성
+        // User 엔티티 생성 (club_id 없이)
         const user = this.userRepository.create({
             name,
             login_id,
             password: hashedPassword,
             role,
             phone,
-            club_id: club_id || undefined,
         });
 
-        // 4. 데이터베이스에 저장
+        // 데이터베이스에 저장
         const savedUser = await this.userRepository.save(user);
-
-        if (club_id) {
-            this.clubsService.update(club_id, { president_id: savedUser.id });
-        }
 
         return savedUser;
     }
 
     findAll() {
         return this.userRepository.find({ 
-            relations: ['club'],
             where: { deleted_at: IsNull() }
         });
     }
 
     findOne(id: number): Promise<User | null> {
         return this.userRepository.findOne({ 
-            where: { id, deleted_at: IsNull() },
-            relations: ['club']
+            where: { id, deleted_at: IsNull() }
         });
     }
 
@@ -99,8 +83,7 @@ export class UsersService {
     // return: 사용자 또는 null
     async findByLoginId(login_id: string): Promise<User | null> {
         return this.userRepository.findOne({
-            where: { login_id, deleted_at: IsNull() },
-            relations: ['club']
+            where: { login_id, deleted_at: IsNull() }
         });
     }
 

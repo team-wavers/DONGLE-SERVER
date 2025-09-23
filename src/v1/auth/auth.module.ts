@@ -9,6 +9,7 @@ import { RoleGuard } from './guards/role.guard';
 import { UsersModule } from '../users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OneTimeKey } from './entities/one_time_key.entity';
+import { Club } from '../clubs/entities/club.entity';
 
 @Module({
     imports: [
@@ -38,7 +39,7 @@ import { OneTimeKey } from './entities/one_time_key.entity';
             },
             inject: [ConfigService],
         }),
-        TypeOrmModule.forFeature([OneTimeKey]),
+        TypeOrmModule.forFeature([OneTimeKey, Club]),
     ],
       controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RoleGuard],

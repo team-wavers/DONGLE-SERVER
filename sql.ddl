@@ -7,7 +7,6 @@ CREATE TABLE users (
     role            VARCHAR(10) NOT NULL,
     phone           VARCHAR(100),
     refresh_token   VARCHAR(255),
-    club_id         INTEGER,
     created_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     deleted_at      TIMESTAMPTZ
@@ -19,8 +18,6 @@ CREATE INDEX idx_users_id
 CREATE INDEX idx_users_login_id
     ON users(login_id);
 
-CREATE INDEX idx_users_club_id
-    ON users(club_id);
 
 
 -- clubs 테이블

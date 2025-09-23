@@ -11,6 +11,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { User } from '../users/entities/user.entity';
+import { Club } from '../clubs/entities/club.entity';
 import * as bcrypt from 'bcrypt';
 import { normalizeRole } from './constants/roles';
 import { OneTimeKey } from './entities/one_time_key.entity';
@@ -27,6 +28,8 @@ export class AuthService {
         private readonly configService: ConfigService,
         @InjectRepository(OneTimeKey)
         private readonly oneTimeKeyRepository: Repository<OneTimeKey>,
+        @InjectRepository(Club)
+        private readonly clubRepository: Repository<Club>,
     ) {}
 
     // 사용자 로그인
@@ -111,12 +114,25 @@ export class AuthService {
     // user: 사용자 정보
     // return: 토큰 응답
     private async generateTokens(user: User): Promise<TokenResponseDto> {
+        let clubId: number | null = null;
+        
+        // 동아리 회장인 경우에만 관리하는 동아리 ID를 조회
+        if (normalizeRole(user.role) === 'president') {
+            const managedClub = await this.clubRepository
+                .createQueryBuilder('club')
+                .where('club.president_id = :userId', { userId: user.id })
+                .andWhere('club.deleted_at IS NULL')
+                .getOne();
+            clubId = managedClub?.id || null;
+        }
+        // 일반 사용자와 관리자는 club_id = null
+        
         const payload = {
             sub: user.id,
             login_id: user.login_id,
             name: user.name, 
             role: normalizeRole(user.role), // 역할 정규화
-            club_id: user.club_id || null // 클럽 ID 추가 (관리자는 null)
+            club_id: clubId // 동아리 회장만 관리 동아리 ID, 나머지는 null
         };
 
         // 환경변수 검증
@@ -259,13 +275,32 @@ export class AuthService {
         }
 
         // 토큰 페이로드와 DB 정보 일치 확인
+        // 사용자 정보 검증
         if (
             user.login_id !== decoded.login_id ||
             user.name !== decoded.name ||
-            normalizeRole(user.role) !== decoded.role ||
-            user.club_id !== decoded.club_id
+            normalizeRole(user.role) !== decoded.role
         ) {
             throw new UnauthorizedException('토큰 정보가 일치하지 않습니다.');
+        }
+
+        // club_id 검증 (동아리 회장만)
+        if (normalizeRole(user.role) === 'president') {
+            const managedClub = await this.clubRepository
+                .createQueryBuilder('club')
+                .where('club.president_id = :userId', { userId: user.id })
+                .andWhere('club.deleted_at IS NULL')
+                .getOne();
+            const expectedClubId = managedClub?.id || null;
+            
+            if (expectedClubId !== decoded.club_id) {
+                throw new UnauthorizedException('토큰의 club_id가 일치하지 않습니다.');
+            }
+        } else {
+            // 일반 사용자/관리자는 club_id가 null이어야 함
+            if (decoded.club_id !== null) {
+                throw new UnauthorizedException('일반 사용자의 토큰에 club_id가 포함되어서는 안됩니다.');
+            }
         }
 
         return {
@@ -273,7 +308,7 @@ export class AuthService {
             login_id: user.login_id,
             name: user.name,
             role: user.role,
-            club_id: user.club_id
+            club_id: decoded.club_id // JWT의 club_id 값 사용
         };
     }
 }

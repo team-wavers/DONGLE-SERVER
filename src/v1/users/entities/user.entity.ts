@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
-import { Club } from '../../clubs/entities/club.entity';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -24,8 +23,6 @@ export class User {
     @Column({ length: 255, nullable: true })
     refresh_token: string;
 
-    @Column({ nullable: true })
-    club_id: number;
 
     @Column({
         type: 'timestamp with time zone',
@@ -43,6 +40,4 @@ export class User {
     @Column({ type: 'timestamp with time zone', nullable: true })
     deleted_at: Date;
 
-    @OneToOne(() => Club, (club) => club.president)
-    club: Club;
 }
