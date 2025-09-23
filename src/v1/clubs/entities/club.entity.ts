@@ -50,6 +50,9 @@ export class Club {
     @Column({ type: 'text', nullable: true })
     main_activities: string;
 
+    @Column({ nullable: true })
+    president_id: number;
+
     @OneToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'president_id' })
     president: User;
