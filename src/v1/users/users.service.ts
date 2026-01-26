@@ -56,6 +56,11 @@ export class UsersService {
         id: number,
         updateUserDto: UpdateUserDto | { refresh_token: string },
     ): Promise<void> {
+        // 비밀번호가 들어온 경우 암호화 처리
+        const dto = updateUserDto as UpdateUserDto; 
+        if (dto.password) {
+            dto.password = await bcrypt.hash(dto.password, 10);
+        }
         await this.userRepository.update(id, updateUserDto);
     }
 
