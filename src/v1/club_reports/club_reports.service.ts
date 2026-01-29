@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateClubReportDto } from './dto/create-club_report.dto';
-import { UpdateClubReportDto } from './dto/update-club_report.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClubReport } from '../club_reports/entities/club_report.entity';
 import { Repository } from 'typeorm';
@@ -40,7 +39,21 @@ export class ClubReportsService {
     }
 
     async update(id: number, updateClubReportDto: CreateClubReportDto) {
-        return await this.clubReportRepository.update(id, updateClubReportDto);
+        // club_id는 관계 필드이므로 제외하고 업데이트
+        const { club_id, ...updateData } = updateClubReportDto;
+        void club_id;
+
+        const cleanData = Object.fromEntries(
+            Object.entries(updateData).filter(
+                ([, value]) => value !== undefined,
+            ),
+        );
+
+        if (Object.keys(cleanData).length === 0) {
+            throw new Error('수정할 정보가 없습니다.');
+        }
+
+        return await this.clubReportRepository.update(id, cleanData);
     }
 
     async remove(id: number) {

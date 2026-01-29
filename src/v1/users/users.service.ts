@@ -41,14 +41,14 @@ export class UsersService {
     }
 
     findAll() {
-        return this.userRepository.find({ 
-            where: { deleted_at: IsNull() }
+        return this.userRepository.find({
+            where: { deleted_at: IsNull() },
         });
     }
 
     findOne(id: number): Promise<User | null> {
-        return this.userRepository.findOne({ 
-            where: { id, deleted_at: IsNull() }
+        return this.userRepository.findOne({
+            where: { id, deleted_at: IsNull() },
         });
     }
 
@@ -56,25 +56,39 @@ export class UsersService {
         id: number,
         updateUserDto: UpdateUserDto | { refresh_token: string },
     ): Promise<void> {
-        await this.userRepository.update(id, updateUserDto);
+        // 삭제된 사용자는 업데이트 불가
+        const user = await this.userRepository.findOne({
+            where: { id, deleted_at: IsNull() },
+        });
+        if (!user) {
+            throw new Error('사용자를 찾을 수 없습니다.');
+        }
+
+        // 비밀번호가 포함된 경우 해시 처리 (원본 객체 수정 방지)
+        const updateData = { ...updateUserDto };
+        if ('password' in updateData && updateData.password) {
+            updateData.password = await bcrypt.hash(updateData.password, 10);
+        }
+
+        await this.userRepository.update(id, updateData);
     }
 
     // 사용자 소프트삭제 (수동)
     // id: 사용자 ID
     // return: 삭제 결과 메시지
     async remove(id: number): Promise<{ message: string }> {
-        const user = await this.userRepository.findOne({ 
-            where: { id, deleted_at: IsNull() } 
+        const user = await this.userRepository.findOne({
+            where: { id, deleted_at: IsNull() },
         });
         if (!user) {
             throw new Error('사용자를 찾을 수 없습니다.');
         }
 
         // deleted_at 필드에 현재 시간 설정하여 소프트삭제
-        await this.userRepository.update(id, { 
-            deleted_at: new Date()
+        await this.userRepository.update(id, {
+            deleted_at: new Date(),
         });
-        
+
         return { message: '사용자가 삭제되었습니다.' };
     }
 
@@ -83,7 +97,7 @@ export class UsersService {
     // return: 사용자 또는 null
     async findByLoginId(login_id: string): Promise<User | null> {
         return this.userRepository.findOne({
-            where: { login_id, deleted_at: IsNull() }
+            where: { login_id, deleted_at: IsNull() },
         });
     }
 
@@ -96,7 +110,11 @@ export class UsersService {
         password: string,
     ): Promise<User | null> {
         const user = await this.findByLoginId(login_id);
-        if (user && !user.deleted_at && (await bcrypt.compare(password, user.password))) {
+        if (
+            user &&
+            !user.deleted_at &&
+            (await bcrypt.compare(password, user.password))
+        ) {
             return user;
         }
         return null;
