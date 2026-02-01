@@ -51,7 +51,7 @@ export class Club {
     main_activities: string;
 
     @Column({ nullable: true })
-    president_id: number;
+    president_id: number | null;
 
     @OneToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'president_id' })

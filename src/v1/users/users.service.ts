@@ -1,10 +1,10 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
-import { ClubsService } from '../clubs/clubs.service';
+import { Club } from '../clubs/entities/club.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -12,8 +12,8 @@ export class UsersService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
-        @Inject(forwardRef(() => ClubsService))
-        private readonly clubsService: ClubsService,
+        @InjectRepository(Club)
+        private readonly clubRepository: Repository<Club>,
     ) {}
 
     async create(createUserDto: CreateUserDto) {
@@ -83,6 +83,12 @@ export class UsersService {
         if (!user) {
             throw new Error('사용자를 찾을 수 없습니다.');
         }
+
+        // 사용자가 동아리 회장인 경우 회장 연결 해제
+        await this.clubRepository.update(
+            { president_id: id, deleted_at: IsNull() },
+            { president_id: null },
+        );
 
         // deleted_at 필드에 현재 시간 설정하여 소프트삭제
         await this.userRepository.update(id, {
