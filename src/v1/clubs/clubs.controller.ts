@@ -71,7 +71,7 @@ export class ClubsController {
 
     @Post(':id/icons')
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.PRESIDENT)
+    @Roles(ROLES.PRESIDENT, ROLES.ADMIN)
     @UseInterceptors(FileInterceptor('file'))
     async uploadIcon(
         @Param('id') clubId: number,
