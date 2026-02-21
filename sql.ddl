@@ -63,6 +63,25 @@ CREATE TABLE club_reports (
 CREATE INDEX idx_club_reports_club_id
     ON club_reports(club_id);
 
+CREATE TABLE main_banners (
+    id                SERIAL PRIMARY KEY,
+    image_url         VARCHAR(255)   NOT NULL,
+    publish_start_at  TIMESTAMPTZ    NOT NULL,
+    publish_end_at    TIMESTAMPTZ    NOT NULL,
+    is_active         BOOLEAN        NOT NULL DEFAULT TRUE,
+    created_at        TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    deleted_at        TIMESTAMPTZ,
+    CONSTRAINT chk_main_banners_publish_period
+        CHECK (publish_start_at < publish_end_at)
+);
+
+CREATE INDEX idx_main_banners_publish_start_at
+    ON main_banners(publish_start_at);
+
+CREATE INDEX idx_main_banners_is_active
+    ON main_banners(is_active);
+
 CREATE TABLE one_time_keys (
     id          SERIAL PRIMARY KEY,
     key         VARCHAR(255) NOT NULL,
