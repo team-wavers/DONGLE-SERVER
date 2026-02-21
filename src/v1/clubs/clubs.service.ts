@@ -80,6 +80,24 @@ export class ClubsService {
         return result;
     }
 
+    // 동아리 아이콘 URL 저장
+    async updateIconUrl(
+        clubId: number,
+        iconUrl: string,
+    ): Promise<{ icon_url: string }> {
+        const result = await this.clubRepository.update(
+            { id: clubId, deleted_at: IsNull() },
+            { icon_url: iconUrl },
+        );
+        if (result.affected === 0) {
+            throw new HttpException(
+                '해당 동아리가 존재하지 않습니다.',
+                HttpStatus.BAD_REQUEST,
+            );
+        }
+        return { icon_url: iconUrl };
+    }
+
     // 고유 키를 DB에 저장 → URL 발급 → 폼 제출 시 키 대조
     async createRegistrationUrl() {
         const key = randomUUID();
