@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -20,6 +20,24 @@ export class UsersService {
         const { name, login_id, password, role, phone } = createUserDto;
         if (!name || !login_id || !password || !role || !phone) {
             throw new Error('필수값이 누락되었습니다.');
+        }
+
+        // 로그인 아이디 중복 검증
+        const existingByLoginId = await this.userRepository.findOne({
+            where: { login_id, deleted_at: IsNull() },
+        });
+        if (existingByLoginId) {
+            throw new ConflictException('이미 사용 중인 로그인 아이디입니다.');
+        }
+
+        // 전화번호 중복 검증
+        if (phone) {
+            const existingByPhone = await this.userRepository.findOne({
+                where: { phone, deleted_at: IsNull() },
+            });
+            if (existingByPhone) {
+                throw new ConflictException('이미 사용 중인 전화번호입니다.');
+            }
         }
 
         // 비밀번호 해시 처리
