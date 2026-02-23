@@ -1,5 +1,6 @@
 import {
     Controller,
+    ForbiddenException,
     Get,
     Post,
     Body,
@@ -9,8 +10,6 @@ import {
     UseInterceptors,
     UploadedFile,
     UseGuards,
-    HttpException,
-    HttpStatus,
     Request,
 } from '@nestjs/common';
 import { ClubsService } from './clubs.service';
@@ -22,7 +21,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { ROLES } from '../auth/constants/roles';
+import { ROLES, normalizeRole } from '../auth/constants/roles';
 import { S3Service } from '../../common/lib/s3-uploads';
 
 @Controller()
@@ -76,7 +75,9 @@ export class ClubsController {
     async uploadIcon(
         @Param('id') clubId: number,
         @UploadedFile() file: Express.Multer.File,
+        @Request() req,
     ) {
+        this.assertClubWritePermission(req, Number(clubId));
         const url = await this.s3Service.upload(
             file.buffer,
             'club-icons',
@@ -94,6 +95,7 @@ export class ClubsController {
         @UploadedFile() file: Express.Multer.File,
         @Request() req,
     ) {
+        this.assertClubWritePermission(req, Number(clubId));
         const buffer = file.buffer;
         const key = `club-reports`;
         const contentType = file.mimetype;
@@ -111,7 +113,9 @@ export class ClubsController {
     async createReport(
         @Param('id') clubId: string,
         @Body() createClubReportDto: CreateClubReportDto,
+        @Request() req,
     ) {
+        this.assertClubWritePermission(req, Number(clubId));
         createClubReportDto.club_id = parseInt(clubId, 10);
         return await this.clubReportsService.create(createClubReportDto);
     }
@@ -123,7 +127,9 @@ export class ClubsController {
         @Param('id') clubId: number,
         @Param('reportId') reportId: number,
         @Body() updateClubReportDto: CreateClubReportDto,
+        @Request() req,
     ) {
+        this.assertClubWritePermission(req, Number(clubId));
         updateClubReportDto.club_id = clubId;
         return await this.clubReportsService.update(
             reportId,
@@ -131,11 +137,15 @@ export class ClubsController {
         );
     }
 
-    // Authorization 로직 설정 필요
     @Delete(':id/reports/:reportId')
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.PRESIDENT)
-    async deleteReport(@Param('reportId') reportId: number) {
+    @Roles(ROLES.PRESIDENT, ROLES.ADMIN)
+    async deleteReport(
+        @Param('id') clubId: number,
+        @Param('reportId') reportId: number,
+        @Request() req,
+    ) {
+        this.assertClubWritePermission(req, Number(clubId));
         return await this.clubReportsService.remove(reportId);
     }
 
@@ -154,7 +164,9 @@ export class ClubsController {
     async update(
         @Param('id') id: number,
         @Body() updateClubDto: UpdateClubDto,
+        @Request() req,
     ) {
+        this.assertClubWritePermission(req, Number(id));
         try {
             return await this.clubsService.update(id, updateClubDto);
         } catch (error) {
@@ -171,5 +183,20 @@ export class ClubsController {
         } catch (error) {
             throw error;
         }
+    }
+
+    private assertClubWritePermission(req, clubId: number): void {
+        const role = normalizeRole(req.user.role);
+        if (role === ROLES.ADMIN) {
+            return;
+        }
+
+        if (role === ROLES.PRESIDENT && req.user.club_id === clubId) {
+            return;
+        }
+
+        throw new ForbiddenException(
+            '본인이 관리하는 동아리에 대해서만 수정할 수 있습니다.',
+        );
     }
 }

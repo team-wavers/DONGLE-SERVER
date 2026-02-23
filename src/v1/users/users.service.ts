@@ -76,6 +76,10 @@ export class UsersService {
         return savedUser;
     }
 
+    async hasAnyUser(): Promise<boolean> {
+        return (await this.userRepository.count()) > 0;
+    }
+
     findAll() {
         return this.userRepository.find({
             where: { deleted_at: IsNull() },
