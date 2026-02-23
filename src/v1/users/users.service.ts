@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository, IsNull, Not, FindOptionsWhere } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -16,11 +16,47 @@ export class UsersService {
         private readonly clubRepository: Repository<Club>,
     ) {}
 
+    /**
+     * 로그인 아이디·전화번호 중복 검증 (create/update 공용)
+     * @param excludeUserId 수정 시 현재 사용자 ID — 이 사용자는 중복 대상에서 제외
+     */
+    private async checkDuplicateLoginIdAndPhone(
+        login_id?: string,
+        phone?: string,
+        excludeUserId?: number,
+    ): Promise<void> {
+        const baseWhere: FindOptionsWhere<User> = {
+            deleted_at: IsNull(),
+            ...(excludeUserId != null && { id: Not(excludeUserId) }),
+        };
+
+        if (login_id) {
+            const existing = await this.userRepository.findOne({
+                where: { ...baseWhere, login_id },
+            });
+            if (existing) {
+                throw new ConflictException(
+                    '이미 사용 중인 로그인 아이디입니다.',
+                );
+            }
+        }
+        if (phone) {
+            const existing = await this.userRepository.findOne({
+                where: { ...baseWhere, phone },
+            });
+            if (existing) {
+                throw new ConflictException('이미 사용 중인 전화번호입니다.');
+            }
+        }
+    }
+
     async create(createUserDto: CreateUserDto) {
         const { name, login_id, password, role, phone } = createUserDto;
         if (!name || !login_id || !password || !role || !phone) {
             throw new Error('필수값이 누락되었습니다.');
         }
+
+        await this.checkDuplicateLoginIdAndPhone(login_id, phone);
 
         // 비밀번호 해시 처리
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -64,8 +100,14 @@ export class UsersService {
             throw new Error('사용자를 찾을 수 없습니다.');
         }
 
-        // 비밀번호가 포함된 경우 해시 처리 (원본 객체 수정 방지)
         const updateData = { ...updateUserDto };
+        const login_id =
+            'login_id' in updateUserDto ? updateUserDto.login_id : undefined;
+        const phone =
+            'phone' in updateUserDto ? updateUserDto.phone : undefined;
+
+        await this.checkDuplicateLoginIdAndPhone(login_id, phone, id);
+
         if ('password' in updateData && updateData.password) {
             updateData.password = await bcrypt.hash(updateData.password, 10);
         }

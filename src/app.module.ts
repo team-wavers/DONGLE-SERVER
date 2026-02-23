@@ -10,6 +10,7 @@ import { ClubReportsModule } from './v1/club_reports/club_reports.module';
 import { AuthModule } from './v1/auth/auth.module';
 import { HealthModule } from './common/health/health.module';
 import { getRequiredEnv } from './common/lib/utils';
+import { MainBannersModule } from './v1/main_banners/main_banners.module';
 
 @Module({
     imports: [
@@ -39,6 +40,7 @@ import { getRequiredEnv } from './common/lib/utils';
                     { path: 'users', module: UsersModule },
                     { path: 'clubs', module: ClubsModule },
                     { path: 'club-reports', module: ClubReportsModule },
+                    { path: 'main-banners', module: MainBannersModule },
                     { path: 'auth', module: AuthModule },
                     { path: 'healthCheck', module: HealthModule },
                 ],
@@ -49,6 +51,7 @@ import { getRequiredEnv } from './common/lib/utils';
         UsersModule,
         ClubsModule,
         ClubReportsModule,
+        MainBannersModule,
         AuthModule,
     ],
     controllers: [AppController],
