@@ -65,17 +65,17 @@ export class AuthService {
         refreshTokenDto: RefreshTokenDto,
     ): Promise<TokenResponseDto> {
         const { refreshToken } = refreshTokenDto;
+        const refreshSecret =
+            this.configService.get<string>('JWT_REFRESH_SECRET');
+
+        if (!refreshSecret) {
+            throw new Error(
+                'JWT_REFRESH_SECRET 환경변수가 설정되지 않았습니다.',
+            );
+        }
 
         try {
             // 리프레시 토큰 검증
-            const refreshSecret =
-                this.configService.get<string>('jwt_refresh_secret');
-            if (!refreshSecret) {
-                throw new Error(
-                    'jwt_refresh_secret 환경변수가 설정되지 않았습니다.',
-                );
-            }
-
             const decoded = this.jwtService.verify(refreshToken, {
                 secret: refreshSecret,
             });
@@ -104,9 +104,22 @@ export class AuthService {
 
             return tokens;
         } catch (error) {
-            throw new UnauthorizedException(
-                '유효하지 않은 리프레시 토큰입니다.',
-            );
+            if (error instanceof UnauthorizedException) {
+                throw error;
+            }
+
+            if (
+                error instanceof Error &&
+                (error.name === 'TokenExpiredError' ||
+                    error.name === 'JsonWebTokenError' ||
+                    error.name === 'NotBeforeError')
+            ) {
+                throw new UnauthorizedException(
+                    '유효하지 않은 리프레시 토큰입니다.',
+                );
+            }
+
+            throw error;
         }
     }
 
