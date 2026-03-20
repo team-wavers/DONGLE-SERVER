@@ -1,0 +1,82 @@
+name: Deploy Backend Prod
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: backend-prod-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      NODE_VERSION: '22'
+      REMOTE_APP_DIR: /home/ec2-user/dongle.server.prod
+      REMOTE_ENV_FILE: .env.production
+      PM2_CONFIG: ecosystem.prod.config.js
+      HEALTHCHECK_URL: http://127.0.0.1:5000/v1/healthCheck
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Test
+        run: yarn test --runInBand
+
+      - name: Build
+        run: yarn build
+
+      - name: Package release
+        run: |
+          tar -czf backend-prod.tar.gz \
+            dist \
+            package.json \
+            yarn.lock \
+            ecosystem.prod.config.js
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/lightsail.key
+          chmod 600 ~/.ssh/lightsail.key
+          ssh-keyscan -H "${{ secrets.LIGHTSAIL_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload release
+        run: |
+          scp -i ~/.ssh/lightsail.key backend-prod.tar.gz \
+            "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/tmp/backend-prod.tar.gz"
+
+      - name: Deploy on Lightsail
+        run: |
+          ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" <<EOF
+            set -e
+            mkdir -p "${{ env.REMOTE_APP_DIR }}"
+            cd "${{ env.REMOTE_APP_DIR }}"
+
+            test -f "${{ env.REMOTE_ENV_FILE }}"
+
+            rm -rf dist
+            tar -xzf /tmp/backend-prod.tar.gz -C "${{ env.REMOTE_APP_DIR }}"
+            rm -f /tmp/backend-prod.tar.gz
+
+            yarn install --frozen-lockfile --production=true
+            pm2 startOrReload "${{ env.PM2_CONFIG }}" --update-env
+            curl --fail --silent "${{ env.HEALTHCHECK_URL }}" >/dev/null
+          EOF
