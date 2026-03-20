@@ -72,5 +72,11 @@ jobs:
 
             yarn install --frozen-lockfile --production=true
             pm2 startOrReload "${{ env.PM2_CONFIG }}" --update-env
-            curl --fail --silent "${{ env.HEALTHCHECK_URL }}" >/dev/null
+            for i in $(seq 1 15); do
+              if curl --fail --silent "${{ env.HEALTHCHECK_URL }}" >/dev/null; then
+                exit 0
+              fi
+              sleep 2
+            done
+            exit 1
           EOF
