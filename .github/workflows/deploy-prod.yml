@@ -61,7 +61,7 @@ jobs:
 
       - name: Deploy on Lightsail
         run: |
-          ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" /bin/bash <<EOF
+          ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" /bin/bash <<'EOF'
           set -euo pipefail
           mkdir -p "${{ env.REMOTE_APP_DIR }}"
           cd "${{ env.REMOTE_APP_DIR }}"
