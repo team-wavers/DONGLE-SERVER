@@ -1,4 +1,8 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+    ConflictException,
+    ForbiddenException,
+    Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, Not, FindOptionsWhere } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -82,11 +86,17 @@ export class UsersService {
 
     findAll() {
         return this.userRepository.find({
-            where: { deleted_at: IsNull() },
+            where: { deleted_at: IsNull(), is_system: false },
         });
     }
 
     findOne(id: number): Promise<User | null> {
+        return this.userRepository.findOne({
+            where: { id, deleted_at: IsNull(), is_system: false },
+        });
+    }
+
+    findOneIncludingSystem(id: number): Promise<User | null> {
         return this.userRepository.findOne({
             where: { id, deleted_at: IsNull() },
         });
@@ -102,6 +112,9 @@ export class UsersService {
         });
         if (!user) {
             throw new Error('사용자를 찾을 수 없습니다.');
+        }
+        if (user.is_system) {
+            throw new ForbiddenException('시스템 계정은 수정할 수 없습니다.');
         }
 
         const updateData = { ...updateUserDto };
@@ -128,6 +141,9 @@ export class UsersService {
         });
         if (!user) {
             throw new Error('사용자를 찾을 수 없습니다.');
+        }
+        if (user.is_system) {
+            throw new ForbiddenException('시스템 계정은 삭제할 수 없습니다.');
         }
 
         // 사용자가 동아리 회장인 경우 회장 연결 해제
@@ -179,7 +195,10 @@ export class UsersService {
         userId: number,
         refreshToken: string,
     ): Promise<void> {
-        await this.update(userId, { refresh_token: refreshToken });
+        await this.userRepository.update(
+            { id: userId, deleted_at: IsNull() },
+            { refresh_token: refreshToken },
+        );
     }
 
     // 리프레시 토큰으로 사용자 조회 (JWT 인증용)

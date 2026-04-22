@@ -12,7 +12,6 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { User } from '../users/entities/user.entity';
 import { Club } from '../clubs/entities/club.entity';
-import * as bcrypt from 'bcrypt';
 import { normalizeRole } from './constants/roles';
 import { OneTimeKey } from './entities/one_time_key.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -81,7 +80,9 @@ export class AuthService {
             });
 
             // 사용자 조회
-            const user = await this.usersService.findOne(decoded.sub);
+            const user = await this.usersService.findOneIncludingSystem(
+                decoded.sub,
+            );
             if (!user) {
                 throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
             }
@@ -282,7 +283,9 @@ export class AuthService {
         });
 
         // 사용자 조회
-        const user = await this.usersService.findOne(decoded.sub);
+        const user = await this.usersService.findOneIncludingSystem(
+            decoded.sub,
+        );
         if (!user) {
             throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
         }

@@ -7,6 +7,7 @@ CREATE TABLE users (
     role            VARCHAR(10) NOT NULL,
     phone           VARCHAR(100),
     refresh_token   VARCHAR(255),
+    is_system       BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     deleted_at      TIMESTAMPTZ
