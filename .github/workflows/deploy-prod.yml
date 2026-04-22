@@ -13,6 +13,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: production
 
     env:
       NODE_VERSION: '22'
@@ -71,6 +73,7 @@ jobs:
           rm -f /tmp/backend-prod.tar.gz
 
           yarn install --frozen-lockfile --production=true </dev/null
+          NODE_ENV=production yarn migration:run </dev/null
           pm2 startOrReload "${{ env.PM2_CONFIG }}" --update-env </dev/null
 
           for i in $(seq 1 15); do

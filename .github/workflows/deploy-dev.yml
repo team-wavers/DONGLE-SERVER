@@ -71,6 +71,7 @@ jobs:
           rm -f /tmp/backend-dev.tar.gz
 
           yarn install --frozen-lockfile --production=true </dev/null
+          NODE_ENV=development yarn migration:run </dev/null
           pm2 startOrReload "${{ env.PM2_CONFIG }}" --update-env </dev/null
 
           for i in $(seq 1 15); do
