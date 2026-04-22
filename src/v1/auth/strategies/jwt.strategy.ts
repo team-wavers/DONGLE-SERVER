@@ -44,7 +44,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         const { sub: userId, login_id, name, role, club_id } = payload;
 
         // 사용자 존재 여부 확인
-        const user = await this.usersService.findOne(userId);
+        const user = await this.usersService.findOneIncludingSystem(userId);
         if (!user) {
             throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
         }

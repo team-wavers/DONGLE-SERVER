@@ -23,6 +23,8 @@ export class User {
     @Column({ length: 255, nullable: true })
     refresh_token: string;
 
+    @Column({ default: false })
+    is_system: boolean;
 
     @Column({
         type: 'timestamp with time zone',

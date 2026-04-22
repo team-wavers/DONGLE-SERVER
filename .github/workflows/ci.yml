@@ -30,3 +30,12 @@ jobs:
 
       - name: Build
         run: yarn build
+
+      - name: Lint
+        run: yarn lint:check
+
+      - name: Test
+        run: yarn test --runInBand
+
+      - name: Check migrations
+        run: yarn migration:check
