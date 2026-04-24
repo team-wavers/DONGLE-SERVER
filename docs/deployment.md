@@ -21,16 +21,22 @@
 배포 워크플로우는 아래 순서로 동작합니다.
 
 1. 의존성 설치
-2. `yarn build`
-3. `dist`, `package.json`, `yarn.lock`, PM2 설정 파일 압축
-4. Lightsail로 업로드
-5. 서버에서 압축 해제
-6. `yarn install --frozen-lockfile --production=true`
-7. `NODE_ENV=<environment> yarn migration:run`
-8. `pm2 startOrReload ... --update-env`
-9. 헬스체크 확인
+2. 개발 배포는 `yarn verify:fast`
+3. `yarn build`
+4. `dist`, `package.json`, `yarn.lock`, PM2 설정 파일 압축
+5. Lightsail로 업로드
+6. 서버에서 압축 해제
+7. `yarn install --frozen-lockfile --production=true`
+8. `NODE_ENV=<environment> yarn migration:run`
+9. `pm2 startOrReload ... --update-env`
+10. 헬스체크 확인
 
 운영 배포는 GitHub Environment `production` 승인 후 진행됩니다. 저장소 설정에서 `Settings > Environments > production`을 만들고 `Required reviewers`를 지정해야 합니다.
+
+수동 실행(`workflow_dispatch`)도 브랜치 정책을 따릅니다.
+
+- 개발 배포는 `develop` ref에서만 실행됩니다.
+- 운영 배포는 `main` ref에서만 실행됩니다.
 
 ## GitHub Secrets
 
@@ -114,6 +120,7 @@ pm2 startup
 
 - `.env.production`, `.env.development`는 저장소에 커밋하지 않습니다.
 - 운영 비밀값은 GitHub Secrets보다 서버 내 환경파일로 관리하는 편이 안전합니다.
-- 현재 워크플로우는 배포 우선을 위해 `lint`, `test` 단계를 제외한 상태입니다.
+- 개발 배포 워크플로우는 배포 전에 `yarn verify:fast`를 실행합니다.
+- 운영 배포 워크플로우는 현재 배포 우선을 위해 `lint`, `test` 단계를 제외한 상태입니다.
 - DB 설정은 `synchronize: false`입니다. 스키마 변경은 TypeORM migration으로 추가하고, 배포 중 앱 재시작 전에 실행합니다.
 - 운영 배포 승인 전에 migration 내용을 확인하세요. `down` migration은 롤백 보조용이며, 운영 데이터가 있는 컬럼 삭제는 별도 판단이 필요합니다.
