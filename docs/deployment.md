@@ -29,7 +29,8 @@
 7. `yarn install --frozen-lockfile --production=true`
 8. `NODE_ENV=<environment> yarn migration:run`
 9. `pm2 startOrReload ... --update-env`
-10. 헬스체크 확인
+10. 내부 헬스체크 확인
+11. 외부 헬스체크 확인
 
 운영 배포는 GitHub Environment `production` 승인 후 진행됩니다. 저장소 설정에서 `Settings > Environments > production`을 만들고 `Required reviewers`를 지정해야 합니다.
 
@@ -45,6 +46,8 @@
 - `LIGHTSAIL_HOST`
 - `LIGHTSAIL_USER`
 - `LIGHTSAIL_SSH_KEY`
+- `DEV_EXTERNAL_HEALTHCHECK_URL`
+- `PROD_EXTERNAL_HEALTHCHECK_URL`
 
 프론트에서 쓰던 `LIGHTSAIL_HOST`, `LIGHTSAIL_SSH_KEY`는 그대로 재사용해도 됩니다.  
 백엔드에서는 SSH 접속용 사용자 계정인 `LIGHTSAIL_USER`를 추가로 두는 것을 권장합니다.
@@ -116,11 +119,14 @@ pm2 startup
 
 외부 도메인에서는 Nginx를 통해 API 도메인으로 프록시하는 구성을 권장합니다.
 
+개발 배포 워크플로우는 내부 헬스체크 성공 후 `DEV_EXTERNAL_HEALTHCHECK_URL`로 전달된 외부 URL도 최대 15회 재시도하며 확인합니다.
+운영 배포 워크플로우는 내부 헬스체크 성공 후 `PROD_EXTERNAL_HEALTHCHECK_URL`로 전달된 외부 URL도 최대 15회 재시도하며 확인합니다.
+
 ## 주의사항
 
 - `.env.production`, `.env.development`는 저장소에 커밋하지 않습니다.
 - 운영 비밀값은 GitHub Secrets보다 서버 내 환경파일로 관리하는 편이 안전합니다.
 - 개발 배포 워크플로우는 배포 전에 `yarn verify:fast`를 실행합니다.
-- 운영 배포 워크플로우는 현재 배포 우선을 위해 `lint`, `test` 단계를 제외한 상태입니다.
+- 운영 배포 워크플로우는 현재 배포 우선을 위해 `lint`, `test` 단계를 제외한 상태이지만, 배포 후 외부 헬스체크는 수행합니다.
 - DB 설정은 `synchronize: false`입니다. 스키마 변경은 TypeORM migration으로 추가하고, 배포 중 앱 재시작 전에 실행합니다.
 - 운영 배포 승인 전에 migration 내용을 확인하세요. `down` migration은 롤백 보조용이며, 운영 데이터가 있는 컬럼 삭제는 별도 판단이 필요합니다.

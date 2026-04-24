@@ -21,6 +21,7 @@ jobs:
       REMOTE_ENV_FILE: .env.development
       PM2_CONFIG: ecosystem.dev.config.js
       HEALTHCHECK_URL: http://127.0.0.1:5001/v1/healthCheck
+      EXTERNAL_HEALTHCHECK_URL: ${{ secrets.DEV_EXTERNAL_HEALTHCHECK_URL }}
 
     steps:
       - name: Checkout
@@ -87,3 +88,17 @@ jobs:
 
           exit 1
           EOF
+
+      - name: Check external health
+        run: |
+          set -euo pipefail
+          test -n "${EXTERNAL_HEALTHCHECK_URL}"
+
+          for i in $(seq 1 15); do
+            if curl --fail --silent "${EXTERNAL_HEALTHCHECK_URL}" >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          exit 1
