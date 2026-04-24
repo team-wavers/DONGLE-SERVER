@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'workflow_dispatch' || github.ref_name == 'develop'
     runs-on: ubuntu-latest
 
     env:
@@ -33,6 +34,9 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
+
+      - name: Verify fast
+        run: yarn verify:fast
 
       - name: Build
         run: yarn build
