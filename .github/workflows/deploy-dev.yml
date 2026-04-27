@@ -1,0 +1,104 @@
+name: Deploy Backend Dev
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: backend-dev-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.event_name != 'workflow_dispatch' || github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+
+    env:
+      NODE_VERSION: '22'
+      REMOTE_APP_DIR: /home/ec2-user/dongle.server.dev
+      REMOTE_ENV_FILE: .env.development
+      PM2_CONFIG: ecosystem.dev.config.js
+      HEALTHCHECK_URL: http://127.0.0.1:5001/v1/healthCheck
+      EXTERNAL_HEALTHCHECK_URL: ${{ secrets.DEV_EXTERNAL_HEALTHCHECK_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Verify fast
+        run: yarn verify:fast
+
+      - name: Build
+        run: yarn build
+
+      - name: Package release
+        run: |
+          tar -czf backend-dev.tar.gz \
+            dist \
+            package.json \
+            yarn.lock \
+            ecosystem.dev.config.js
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/lightsail.key
+          chmod 600 ~/.ssh/lightsail.key
+          ssh-keyscan -H "${{ secrets.LIGHTSAIL_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload release
+        run: |
+          scp -i ~/.ssh/lightsail.key backend-dev.tar.gz \
+            "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/tmp/backend-dev.tar.gz"
+
+      - name: Deploy on Lightsail
+        run: |
+          ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" /bin/bash <<'EOF'
+          set -euo pipefail
+          mkdir -p "${{ env.REMOTE_APP_DIR }}"
+          cd "${{ env.REMOTE_APP_DIR }}"
+
+          test -f "${{ env.REMOTE_ENV_FILE }}"
+
+          rm -rf dist
+          tar -xzf /tmp/backend-dev.tar.gz -C "${{ env.REMOTE_APP_DIR }}"
+          rm -f /tmp/backend-dev.tar.gz
+
+          yarn install --frozen-lockfile --production=true </dev/null
+          NODE_ENV=development yarn migration:run </dev/null
+          pm2 startOrReload "${{ env.PM2_CONFIG }}" --update-env </dev/null
+
+          for i in $(seq 1 15); do
+            if curl --fail --silent "${{ env.HEALTHCHECK_URL }}" >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          exit 1
+          EOF
+
+      - name: Check external health
+        run: |
+          set -euo pipefail
+          test -n "${EXTERNAL_HEALTHCHECK_URL}"
+
+          for i in $(seq 1 15); do
+            if curl --fail --silent "${EXTERNAL_HEALTHCHECK_URL}" >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          exit 1

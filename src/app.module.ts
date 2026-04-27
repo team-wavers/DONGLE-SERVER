@@ -1,10 +1,60 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RouterModule } from '@nestjs/core';
+import { UsersModule } from './v1/users/users.module';
+import { ClubsModule } from './v1/clubs/clubs.module';
+import { ClubReportsModule } from './v1/club_reports/club_reports.module';
+import { AuthModule } from './v1/auth/auth.module';
+import { HealthModule } from './common/health/health.module';
+import { getRequiredEnv } from './common/lib/utils';
+import { MainBannersModule } from './v1/main_banners/main_banners.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [
+        ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: `.env.${process.env.NODE_ENV}`,
+        }),
+        TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                type: 'postgres',
+                host: getRequiredEnv(configService, 'DB_HOST'),
+                port: parseInt(getRequiredEnv(configService, 'DB_PORT')),
+                username: getRequiredEnv(configService, 'DB_USERNAME'),
+                password: getRequiredEnv(configService, 'DB_PASSWORD'),
+                database: getRequiredEnv(configService, 'DB_NAME'),
+                autoLoadEntities: true,
+                // entities: [__dirname + '/**/*.entity{.ts}'],
+                synchronize: false,
+            }),
+        }),
+        RouterModule.register([
+            {
+                path: 'v1',
+                children: [
+                    { path: 'users', module: UsersModule },
+                    { path: 'clubs', module: ClubsModule },
+                    { path: 'club-reports', module: ClubReportsModule },
+                    { path: 'main-banners', module: MainBannersModule },
+                    { path: 'auth', module: AuthModule },
+                    { path: 'healthCheck', module: HealthModule },
+                ],
+            },
+        ]),
+
+        HealthModule,
+        UsersModule,
+        ClubsModule,
+        ClubReportsModule,
+        MainBannersModule,
+        AuthModule,
+    ],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}
