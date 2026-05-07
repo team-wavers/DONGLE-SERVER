@@ -1,98 +1,90 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# DONGLE-SERVER
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+DONGLE 서비스의 NestJS 기반 백엔드 API 서버입니다. 동아리, 사용자, 활동보고서, 메인 배너, 인증, 헬스체크 API를 제공하고 PostgreSQL, TypeORM migration, S3 업로드 연동을 사용합니다.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 프로젝트 개요
 
-## Description
+- **런타임**: Node.js 22, NestJS 11, TypeScript
+- **데이터베이스**: PostgreSQL + TypeORM (`synchronize: false`)
+- **스토리지**: AWS S3 이미지 업로드
+- **API prefix**: 주요 API는 `v1` 라우터 아래에 등록됩니다.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 주요 모듈
 
-## Project setup
+- `users`: 사용자 생성, 조회, 수정, 삭제와 관리자/회장 권한 규칙을 담당합니다.
+- `clubs`: 동아리 CRUD, 동아리 등록 URL 생성, 아이콘 업로드, 동아리별 활동보고서 흐름을 담당합니다.
+- `club_reports`: 활동보고서 데이터의 생성, 조회, 수정, 삭제 계약을 담당합니다.
+- `main_banners`: 메인 배너 조회와 관리자용 배너 생성, 수정, 삭제, 이미지 업로드를 담당합니다.
+- `auth`: 로그인, access/refresh token 발급 및 검증, 로그아웃, JWT guard/strategy를 담당합니다.
+- `health`: 배포와 운영 확인을 위한 `/v1/healthCheck` 응답을 제공합니다.
+
+## 로컬 실행
+
+### 1. 의존성 설치
 
 ```bash
-$ yarn install
+yarn install
 ```
 
-## Compile and run the project
+### 2. 환경변수 파일 준비
+
+앱은 `NODE_ENV` 값에 따라 `.env.${NODE_ENV}` 파일을 읽습니다. 로컬 개발 기본 명령인 `yarn start:dev`는 `NODE_ENV=local`로 실행되므로, 저장소 루트에 `.env.local`을 준비합니다.
 
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+cp .env.sample .env.local
 ```
 
-## Run tests
+`.env.sample`에는 필요한 환경변수 키가 정리되어 있습니다. 실제 실행 전 `.env.local`의 빈 값을 로컬 DB, S3, JWT, CORS 설정에 맞게 채워야 합니다. 배포 환경에서는 같은 기준으로 `.env.development` 또는 `.env.production`을 서버에 배치하되, `.env.*` 파일은 저장소에 커밋하지 않습니다.
+
+### 3. 개발 서버 실행
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+yarn start:dev
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+일반 시작 명령을 직접 사용할 때는 사용할 환경 파일 이름에 맞춰 `NODE_ENV`를 지정합니다.
 
 ```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
+NODE_ENV=local yarn start
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 검증
 
-## Resources
+기본 검증 진입점은 `yarn verify:fast`입니다. 이 명령은 문서 계약 확인, 타입 검사, Jest 테스트를 순서대로 실행합니다.
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+yarn verify:fast
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+필요하면 하위 명령을 개별 실행할 수 있습니다.
 
-## Support
+```bash
+yarn type
+yarn test
+yarn test:e2e
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Build와 migration
 
-## Stay in touch
+TypeORM CLI는 빌드 산출물의 `dist/database/data-source.js`를 기준으로 migration을 실행합니다. 따라서 migration 명령을 배포 산출물 또는 로컬 빌드 결과에 대해 확인할 때는 먼저 빌드합니다.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+yarn build
+yarn migration:check
+```
 
-## License
+migration 적용, 롤백, 상태 확인은 대상 환경의 `.env.${NODE_ENV}` 파일이 준비된 상태에서 실행합니다.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+NODE_ENV=local yarn migration:show
+NODE_ENV=local yarn migration:run
+NODE_ENV=local yarn migration:revert
+```
+
+배포 전에는 `yarn build` 이후 `yarn migration:check` 순서로 migration 산출물과 설정을 확인한 뒤, 실제 대상 환경에서 `NODE_ENV=<environment> yarn migration:run`을 실행합니다.
+
+## 참고 문서
+
+- [초기 관리자 계정 생성](docs/bootstrap-admin.md)
+- [배포 가이드](docs/deployment.md)
+- [평가/검증 문서](docs/evals/README.md)
