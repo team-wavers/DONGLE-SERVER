@@ -1,5 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
+import { BadRequestException } from '@nestjs/common';
+import { createValidationPipe } from '../common/create-validation-pipe';
 import { LoginDto } from './auth/dto/login.dto';
 import { RefreshTokenDto } from './auth/dto/refresh-token.dto';
 import { VerifyTokenDto } from './auth/dto/verify-token.dto';
@@ -18,7 +20,33 @@ const validatePlain = <T extends object>(
     payload: object,
 ) => validateSync(plainToInstance(dtoClass, payload));
 
+const validationPipe = createValidationPipe();
+
+const transformBody = <T extends object>(
+    dtoClass: new () => T,
+    payload: object,
+) =>
+    validationPipe.transform(payload, {
+        metatype: dtoClass,
+        type: 'body',
+    });
+
 describe('DTO runtime validation rules', () => {
+    describe('global ValidationPipe behavior', () => {
+        it('rejects body fields that are not declared by the DTO', async () => {
+            await expect(
+                transformBody(CreateUserDto, {
+                    name: '관리자',
+                    login_id: 'admin',
+                    password: 'password',
+                    role: 'admin',
+                    phone: '010-0000-0000',
+                    unknown: 'field',
+                }),
+            ).rejects.toBeInstanceOf(BadRequestException);
+        });
+    });
+
     describe('CreateClubDto', () => {
         it('requires key, name, and category strings', () => {
             const errors = validationPropertyNames(new CreateClubDto());
