@@ -36,7 +36,9 @@ export class ClubsService {
     }
 
     async findAll() {
-        return await this.clubRepository.find();
+        return await this.clubRepository.find({
+            where: { deleted_at: IsNull() },
+        });
     }
 
     async findOne(id: number) {
@@ -57,7 +59,10 @@ export class ClubsService {
             }
         }
 
-        const result = await this.clubRepository.update(id, updateClubDto);
+        const result = await this.clubRepository.update(
+            { id, deleted_at: IsNull() },
+            updateClubDto,
+        );
         if (result.affected === 0) {
             throw new HttpException(
                 '해당 동아리가 존재하지 않습니다.',
@@ -68,9 +73,12 @@ export class ClubsService {
     }
 
     async delete(id: number) {
-        const result = await this.clubRepository.update(id, {
-            deleted_at: new Date(),
-        });
+        const result = await this.clubRepository.update(
+            { id, deleted_at: IsNull() },
+            {
+                deleted_at: new Date(),
+            },
+        );
         if (result.affected === 0) {
             throw new HttpException(
                 '해당 동아리가 존재하지 않습니다.',
