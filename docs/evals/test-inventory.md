@@ -19,6 +19,7 @@
 | users        | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)                      | code-graded | 사용자 controller 계약                             |
 | club reports | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)       | code-graded | 활동보고서 service 계약                            |
 | club reports | [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts) | code-graded | 활동보고서 controller 계약                         |
+| validation   | [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)                                | code-graded | 요청 DTO 필수/선택/타입 런타임 validation 계약     |
 | auth         | [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)                               | code-graded | 로그인 실패/성공, refresh token 실패/rotation 계약 |
 | auth         | [jwt.strategy.spec.ts](../../src/v1/auth/strategies/jwt.strategy.spec.ts)                    | code-graded | JWT payload 사용자 정보/club_id 검증 계약          |
 

@@ -79,6 +79,25 @@
 
 - [jwt.strategy.spec.ts](../../src/v1/auth/strategies/jwt.strategy.spec.ts)
 
+## DTO Validation
+
+### 전역 요청 payload 검증
+
+- 앱 부트스트랩은 전역 `ValidationPipe`를 등록해 DTO 데코레이터 기반 런타임 검증을 수행해야 한다.
+- 전역 검증은 DTO에 정의되지 않은 body 필드를 거부하고, 라우트/쿼리 primitive 값 변환을 허용해야 한다.
+- `CreateClubDto`는 `key`, `name`, `category`를 필수 문자열로 받고, `sns`, `tags`, `is_recruiting`, `location`, `recruit_start`, `recruit_end`, `description`, `main_activities`, `president_id`는 선택 필드이되 선언된 런타임 타입을 지켜야 한다.
+- `UpdateClubDto`는 `CreateClubDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
+- `CreateUserDto`는 `name`, `login_id`, `password`, `role`, `phone`을 필수 문자열로 받고, `refresh_token`은 선택 문자열로 받아야 한다.
+- `UpdateUserDto`는 `CreateUserDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
+- `UpsertMainBannerDto`는 `image_url`, `publish_start_at`, `publish_end_at`을 필수 문자열로 받고 `is_active`를 필수 boolean으로 받아야 한다.
+- auth 요청 DTO는 `LoginDto.login_id`, `LoginDto.password`, `RefreshTokenDto.refreshToken`, `VerifyTokenDto.token`을 필수 문자열로 받아야 한다.
+- `CreateClubReportDto`는 route parameter에서 주입되는 `club_id`를 선택 number로 두고, `title`, `content`, `image_urls`를 각각 필수 문자열/문자열 배열로 검증해야 한다.
+- DTO에는 persistence 전용 TypeORM column metadata를 두지 않고 entity에만 유지해야 한다.
+
+관련 테스트:
+
+- [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)
+
 ## HTTP Lifecycle
 
 ### 앱 부트스트랩
