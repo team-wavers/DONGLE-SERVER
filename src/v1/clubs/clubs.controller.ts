@@ -23,6 +23,10 @@ import { RoleGuard } from '../auth/guards/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ROLES, normalizeRole } from '../auth/constants/roles';
 import { S3Service } from '../../common/lib/s3-uploads';
+import {
+    IMAGE_UPLOAD_INTERCEPTOR_OPTIONS,
+    validateImageUploadFile,
+} from '../../common/lib/upload-file-validation';
 
 @Controller()
 export class ClubsController {
@@ -71,13 +75,14 @@ export class ClubsController {
     @Post(':id/icons')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.PRESIDENT, ROLES.ADMIN)
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(FileInterceptor('file', IMAGE_UPLOAD_INTERCEPTOR_OPTIONS))
     async uploadIcon(
         @Param('id') clubId: number,
-        @UploadedFile() file: Express.Multer.File,
+        @UploadedFile() file: Express.Multer.File | undefined,
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
+        validateImageUploadFile(file);
         const url = await this.s3Service.upload(
             file.buffer,
             'club-icons',
@@ -89,13 +94,14 @@ export class ClubsController {
     @Post(':id/report-images')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.PRESIDENT)
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(FileInterceptor('file', IMAGE_UPLOAD_INTERCEPTOR_OPTIONS))
     async uploadReportImage(
         @Param('id') clubId: number,
-        @UploadedFile() file: Express.Multer.File,
+        @UploadedFile() file: Express.Multer.File | undefined,
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
+        validateImageUploadFile(file);
         const buffer = file.buffer;
         const key = `club-reports`;
         const contentType = file.mimetype;
