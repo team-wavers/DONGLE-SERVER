@@ -17,20 +17,43 @@
 
 1. 의존성 설치
 2. `yarn build`
+3. `yarn lint:check`
+4. `yarn test --runInBand`
+5. `yarn migration:check`
 
-배포 워크플로우는 아래 순서로 동작합니다.
+개발 배포 워크플로우는 아래 순서로 동작합니다.
 
 1. 의존성 설치
-2. 개발 배포는 `yarn verify:fast`
+2. `yarn verify:fast`
 3. `yarn build`
 4. `dist`, `package.json`, `yarn.lock`, PM2 설정 파일 압축
 5. Lightsail로 업로드
 6. 서버에서 압축 해제
 7. `yarn install --frozen-lockfile --production=true`
-8. `NODE_ENV=<environment> yarn migration:run`
+8. `NODE_ENV=development yarn migration:run`
 9. `pm2 startOrReload ... --update-env`
 10. 내부 헬스체크 확인
 11. 외부 헬스체크 확인
+
+운영 배포 워크플로우는 아래 순서로 동작합니다.
+
+1. `verify:fast` job에서 의존성 설치
+2. `verify:fast` job에서 배포 산출물 생성 전 `yarn verify:fast`
+3. migration 검증 job에서 의존성 설치
+4. migration 검증 job에서 `yarn build`
+5. migration 검증 job에서 `yarn migration:check`
+6. 배포 job에서 의존성 설치
+7. 배포 job에서 `yarn build`
+8. `dist`, `package.json`, `yarn.lock`, PM2 설정 파일 압축
+9. Lightsail로 업로드
+10. 서버에서 압축 해제
+11. `yarn install --frozen-lockfile --production=true`
+12. `NODE_ENV=production yarn migration:run`
+13. `pm2 startOrReload ... --update-env`
+14. 내부 헬스체크 확인
+15. 외부 헬스체크 확인
+
+운영 배포에서는 `verify:fast` job이 `verify:docs`, `type`, `test`를 필수 gate로 실행합니다. migration 검증은 별도 job으로 분리하되, TypeORM 설정이 빌드 산출물의 `dist/database/data-source.js`를 사용하므로 반드시 `yarn build` 이후 `yarn migration:check` 순서로 실행합니다.
 
 운영 배포는 GitHub Environment `production` 승인 후 진행됩니다. 저장소 설정에서 `Settings > Environments > production`을 만들고 `Required reviewers`를 지정해야 합니다.
 
@@ -127,6 +150,7 @@ pm2 startup
 - `.env.production`, `.env.development`는 저장소에 커밋하지 않습니다.
 - 운영 비밀값은 GitHub Secrets보다 서버 내 환경파일로 관리하는 편이 안전합니다.
 - 개발 배포 워크플로우는 배포 전에 `yarn verify:fast`를 실행합니다.
-- 운영 배포 워크플로우는 현재 배포 우선을 위해 `lint`, `test` 단계를 제외한 상태이지만, 배포 후 외부 헬스체크는 수행합니다.
+- 운영 배포 워크플로우는 배포 산출물 생성 전에 `yarn verify:fast`를 필수 gate로 실행하며, `verify:docs`, `type`, `test`를 통과해야 배포 job이 시작됩니다.
+- 운영 migration 검증은 별도 job에서 수행하고, `yarn build` 이후 `yarn migration:check` 순서를 유지합니다.
 - DB 설정은 `synchronize: false`입니다. 스키마 변경은 TypeORM migration으로 추가하고, 배포 중 앱 재시작 전에 실행합니다.
 - 운영 배포 승인 전에 migration 내용을 확인하세요. `down` migration은 롤백 보조용이며, 운영 데이터가 있는 컬럼 삭제는 별도 판단이 필요합니다.
