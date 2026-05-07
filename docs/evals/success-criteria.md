@@ -23,7 +23,9 @@
 ### 동아리 관리
 
 - 동아리 목록, 단건 조회, 생성, 수정, 삭제 흐름은 service 계약을 유지해야 한다.
+- 동아리 목록 조회는 삭제되지 않은 동아리만 반환해야 하며, 수정/삭제는 이미 삭제된 동아리를 거부해야 한다.
 - controller는 service 결과와 예외를 의도한 HTTP 흐름으로 전달해야 한다.
+- 동아리 이미지 업로드는 파일 누락과 허용되지 않은 MIME 타입을 거부하고, 허용된 이미지 파일만 S3 업로드와 service 갱신으로 전달해야 한다.
 
 관련 테스트:
 
@@ -49,11 +51,38 @@
 
 - 활동보고서 목록, 단건 조회, 생성, 수정, 삭제 흐름은 service 계약을 유지해야 한다.
 - controller는 업로드 파일과 요청 payload를 service 계약에 맞게 전달해야 한다.
+- 업로드 이미지는 `image/jpeg`, `image/png`, `image/webp`만 허용해야 한다.
 
 관련 테스트:
 
 - [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)
 - [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts)
+
+## Main Banners
+
+### 메인 배너 관리
+
+- 메인 배너 생성은 `image_url`, `publish_start_at`, `publish_end_at`, `is_active` 필수값을 검증하고 저장 payload로 변환해야 한다.
+- 메인 배너 수정은 삭제되지 않은 기존 배너만 갱신하고, 대상이 없으면 Bad Request로 거부해야 한다.
+- 메인 배너 삭제는 삭제되지 않은 기존 배너만 soft delete 처리하고, 대상이 없으면 Bad Request로 거부해야 한다.
+- 활성 목록 조회는 삭제되지 않고 `is_active`가 true이며 현재 시간이 공개 시작일과 종료일 사이에 있는 배너만 최신 공개 시작일 순으로 반환해야 한다.
+- 날짜 입력은 날짜만 있는 값, 분/초 단위 날짜-시간, 명시적 timezone 값을 지원하고 timezone이 없으면 Seoul 기준으로 파싱해야 한다.
+- 날짜 형식이 올바르지 않거나 공개 시작일이 종료일과 같거나 늦으면 Bad Request로 거부해야 한다.
+- `is_active`는 boolean 타입만 허용해야 한다.
+
+관련 테스트:
+
+- [main_banners.service.spec.ts](../../src/v1/main_banners/main_banners.service.spec.ts)
+
+### 메인 배너 이미지 업로드
+
+- 이미지 업로드 controller는 `file` 누락을 Bad Request로 거부해야 한다.
+- 이미지 업로드 controller는 `image/jpeg`, `image/png`, `image/webp`만 허용하고 그 외 MIME은 Bad Request로 거부해야 한다.
+- 정상 이미지 업로드는 S3 업로드 결과를 `image_url` payload로 반환해야 한다.
+
+관련 테스트:
+
+- [main_banners.controller.spec.ts](../../src/v1/main_banners/main_banners.controller.spec.ts)
 
 ## Auth
 

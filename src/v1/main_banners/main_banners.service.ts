@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { MainBanner } from './entities/main_banner.entity';
 import { UpsertMainBannerDto } from './dto/upsert-main-banner.dto';
 
@@ -54,9 +54,14 @@ export class MainBannersService {
     }
 
     async findActive() {
+        const now = new Date();
+
         return await this.mainBannerRepository.find({
             where: {
                 deleted_at: IsNull(),
+                is_active: true,
+                publish_start_at: LessThanOrEqual(now),
+                publish_end_at: MoreThanOrEqual(now),
             },
             order: {
                 publish_start_at: 'DESC',
