@@ -10,18 +10,20 @@
 
 ## 기본 테스트
 
-| 영역 | 파일 | 검증 방식 | 비고 |
-| --- | --- | --- | --- |
-| app | [app.controller.spec.ts](../../src/app.controller.spec.ts) | code-graded | 기본 컨트롤러 응답 |
-| clubs | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts) | code-graded | 동아리 service 계약 |
-| clubs | [clubs.controller.spec.ts](../../src/v1/clubs/clubs.controller.spec.ts) | code-graded | 동아리 controller 계약 |
-| users | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts) | code-graded | 사용자 service 계약 |
-| users | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts) | code-graded | 사용자 controller 계약 |
-| club reports | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts) | code-graded | 활동보고서 service 계약 |
-| club reports | [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts) | code-graded | 활동보고서 controller 계약 |
+| 영역         | 파일                                                                                         | 검증 방식   | 비고                                               |
+| ------------ | -------------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------- |
+| app          | [app.controller.spec.ts](../../src/app.controller.spec.ts)                                   | code-graded | 기본 컨트롤러 응답                                 |
+| clubs        | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                            | code-graded | 동아리 service 계약                                |
+| clubs        | [clubs.controller.spec.ts](../../src/v1/clubs/clubs.controller.spec.ts)                      | code-graded | 동아리 controller 계약                             |
+| users        | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)                            | code-graded | 사용자 service 계약                                |
+| users        | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)                      | code-graded | 사용자 controller 계약                             |
+| club reports | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)       | code-graded | 활동보고서 service 계약                            |
+| club reports | [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts) | code-graded | 활동보고서 controller 계약                         |
+| auth         | [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)                               | code-graded | 로그인 실패/성공, refresh token 실패/rotation 계약 |
+| auth         | [jwt.strategy.spec.ts](../../src/v1/auth/strategies/jwt.strategy.spec.ts)                    | code-graded | JWT payload 사용자 정보/club_id 검증 계약          |
 
 ## 잔존 E2E
 
-| 영역 | 파일 | 현재 목적 | 상태 |
-| --- | --- | --- | --- |
-| app | [app.e2e-spec.ts](../../test/app.e2e-spec.ts) | Nest 앱 부트스트랩과 기본 HTTP lifecycle 확인 | 유지 |
+| 영역 | 파일                                          | 현재 목적                                     | 상태 |
+| ---- | --------------------------------------------- | --------------------------------------------- | ---- |
+| app  | [app.e2e-spec.ts](../../test/app.e2e-spec.ts) | Nest 앱 부트스트랩과 기본 HTTP lifecycle 확인 | 유지 |

@@ -16,8 +16,7 @@
 
 ## 우선순위 높은 공백
 
-- auth service의 로그인 실패, refresh token, JWT payload 분기
-- JWT strategy의 사용자 조회 실패와 비활성/삭제 사용자 처리
+- JWT strategy의 비활성/삭제 사용자 처리
 - S3 업로드 helper의 key 생성, MIME 검증, 실패 응답 mapping
 - TypeORM entity와 DTO 사이 payload mapping 규칙
 - DB 제약과 service validation이 겹치는 중복/무결성 에러 처리

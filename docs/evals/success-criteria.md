@@ -15,6 +15,7 @@
 - 루트 컨트롤러는 앱의 기본 응답을 반환해야 한다.
 
 관련 테스트:
+
 - [app.controller.spec.ts](../../src/app.controller.spec.ts)
 
 ## Clubs
@@ -25,6 +26,7 @@
 - controller는 service 결과와 예외를 의도한 HTTP 흐름으로 전달해야 한다.
 
 관련 테스트:
+
 - [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)
 - [clubs.controller.spec.ts](../../src/v1/clubs/clubs.controller.spec.ts)
 
@@ -37,6 +39,7 @@
 - 사용자 중복, 역할, 식별자 조건은 service 계약대로 처리되어야 한다.
 
 관련 테스트:
+
 - [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)
 - [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)
 
@@ -48,8 +51,33 @@
 - controller는 업로드 파일과 요청 payload를 service 계약에 맞게 전달해야 한다.
 
 관련 테스트:
+
 - [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)
 - [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts)
+
+## Auth
+
+### 로그인과 refresh token
+
+- 로그인은 사용자 검증 실패 시 토큰을 생성하거나 refresh token을 저장하지 않고 거부해야 한다.
+- 로그인 성공 시 access/refresh token을 생성하고 생성된 refresh token을 사용자 저장소에 저장해야 한다.
+- refresh token 재발급은 만료/invalid token, 저장된 token 불일치, 사용자 없음 상태를 거부해야 한다.
+- refresh token 재발급 성공 시 token rotation을 수행하고 새 refresh token을 사용자 저장소에 저장해야 한다.
+
+관련 테스트:
+
+- [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)
+
+### JWT payload 검증
+
+- JWT payload는 사용자 존재 여부와 `login_id`/`name`/`role` 일치 여부를 검증해야 한다.
+- president payload의 `club_id`는 현재 관리 중인 동아리 ID와 일치해야 한다.
+- president가 아닌 사용자의 payload에는 `club_id`가 포함되면 안 된다.
+- 정상 payload는 인증 컨텍스트에서 사용할 사용자 식별 정보로 변환되어야 한다.
+
+관련 테스트:
+
+- [jwt.strategy.spec.ts](../../src/v1/auth/strategies/jwt.strategy.spec.ts)
 
 ## HTTP Lifecycle
 
@@ -58,4 +86,5 @@
 - Nest 앱은 테스트 환경에서 정상 부팅되어 기본 HTTP 요청을 처리해야 한다.
 
 관련 테스트:
+
 - [app.e2e-spec.ts](../../test/app.e2e-spec.ts)
