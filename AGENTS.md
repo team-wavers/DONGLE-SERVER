@@ -1,7 +1,22 @@
 ## PR Review
-- Codex가 GitHub PR 리뷰를 작성할 때는 항상 한국어로 작성한다.
+- AI 코딩 에이전트가 GitHub PR 리뷰를 작성할 때는 항상 한국어로 작성한다.
 - 리뷰 요약, 지적 사항, 변경 제안은 모두 한국어로 작성한다.
 - 코드 식별자, 에러 메시지, 로그, 커밋 해시는 원문 그대로 유지한다.
+
+## Commit and PR
+- AI 코딩 에이전트가 커밋 메시지를 작성할 때는 항상 한국어로 작성한다.
+- AI 코딩 에이전트가 PR 제목과 PR 본문을 작성할 때는 항상 한국어로 작성한다.
+- 코드 식별자, 파일 경로, 에러 메시지, 로그, 커밋 해시는 원문 그대로 유지한다.
+- PR 본문에는 변경 요약, 검증 결과, 남은 리스크를 한국어로 작성한다.
+
+## Coding Behavior
+- AI 코딩 에이전트는 구현 전에 요구사항, 가정, 성공 기준을 짧게 정리한다.
+- 요구사항이 모호하거나 여러 해석이 가능하면 임의로 결정하지 말고 먼저 질문한다.
+- 요청 범위를 벗어난 기능, 설정, 추상화, 리팩터링을 추가하지 않는다.
+- 기존 코드 스타일과 구조를 우선 따르고, 선호하는 방식이라는 이유만으로 주변 코드를 바꾸지 않는다.
+- 변경한 모든 라인은 사용자 요청이나 검증 실패 해결과 직접 연결되어야 한다.
+- 변경으로 인해 새로 생긴 미사용 import, 변수, helper는 정리하되, 기존 dead code는 요청이 없으면 삭제하지 않는다.
+- 복잡한 작업은 성공 기준과 검증 방법을 먼저 정하고, 검증이 통과할 때까지 반복한다.
 
 ## Harness Contract
 - 시작 전에 [docs/evals/README.md](docs/evals/README.md), [docs/evals/success-criteria.md](docs/evals/success-criteria.md), [docs/evals/test-inventory.md](docs/evals/test-inventory.md), [docs/evals/known-gaps.md](docs/evals/known-gaps.md), [docs/evals/roadmap.md](docs/evals/roadmap.md) 를 먼저 확인한다.
