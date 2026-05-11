@@ -187,6 +187,28 @@ describe('DTO runtime validation rules', () => {
                 ]),
             );
         });
+
+        it('validates link_url length before persistence', () => {
+            const validErrors = validatePlain(UpsertMainBannerDto, {
+                image_url: 'https://cdn.example.com/banner.webp',
+                link_url: 'https://www.dongle.example.com/notices/1',
+                publish_start_at: '2026-05-01 09:00:00',
+                publish_end_at: '2026-05-31 23:59:59',
+                is_active: true,
+            });
+            const invalidErrors = validatePlain(UpsertMainBannerDto, {
+                image_url: 'https://cdn.example.com/banner.webp',
+                link_url: 'a'.repeat(2049),
+                publish_start_at: '2026-05-01 09:00:00',
+                publish_end_at: '2026-05-31 23:59:59',
+                is_active: true,
+            });
+
+            expect(validErrors).toHaveLength(0);
+            expect(invalidErrors.map((error) => error.property)).toContain(
+                'link_url',
+            );
+        });
     });
 
     describe('auth DTOs', () => {

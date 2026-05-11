@@ -53,6 +53,17 @@ export class MainBannersService {
         return result;
     }
 
+    async findAllForAdmin() {
+        return await this.mainBannerRepository.find({
+            where: {
+                deleted_at: IsNull(),
+            },
+            order: {
+                created_at: 'DESC',
+            },
+        });
+    }
+
     async findActive() {
         const now = new Date();
 

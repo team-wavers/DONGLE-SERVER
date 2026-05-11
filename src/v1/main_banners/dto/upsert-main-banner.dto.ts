@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpsertMainBannerDto {
     @IsString()
@@ -6,6 +6,7 @@ export class UpsertMainBannerDto {
 
     @IsString()
     @IsOptional()
+    @MaxLength(2048)
     link_url?: string;
 
     @IsString()

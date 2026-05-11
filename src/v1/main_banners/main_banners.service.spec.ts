@@ -235,6 +235,28 @@ describe('MainBannersService', () => {
         });
     });
 
+    describe('findAllForAdmin', () => {
+        it('삭제되지 않은 모든 배너를 최신 생성일 순으로 조회한다', async () => {
+            const banners = [
+                { id: 2, is_active: false },
+                { id: 1, is_active: true },
+            ];
+            repository.find.mockResolvedValue(banners);
+
+            const result = await service.findAllForAdmin();
+
+            expect(repository.find).toHaveBeenCalledWith({
+                where: {
+                    deleted_at: expect.any(FindOperator),
+                },
+                order: {
+                    created_at: 'DESC',
+                },
+            });
+            expect(result).toBe(banners);
+        });
+    });
+
     describe('findActive', () => {
         beforeEach(() => {
             jest.useFakeTimers().setSystemTime(new Date('2026-05-07T12:00:00Z'));
