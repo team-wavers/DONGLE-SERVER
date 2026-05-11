@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+    HttpException,
+    HttpStatus,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { MainBanner } from './entities/main_banner.entity';
@@ -62,6 +67,18 @@ export class MainBannersService {
                 created_at: 'DESC',
             },
         });
+    }
+
+    async findOneForAdmin(id: number) {
+        const banner = await this.mainBannerRepository.findOne({
+            where: { id, deleted_at: IsNull() },
+        });
+
+        if (!banner) {
+            throw new NotFoundException('해당 배너가 존재하지 않습니다.');
+        }
+
+        return banner;
     }
 
     async findActive() {

@@ -18,12 +18,14 @@ describe('ClubsService', () => {
     let service: ClubsService;
     let clubRepository: {
         find: jest.Mock;
+        findOne: jest.Mock;
         update: jest.Mock;
     };
 
     beforeEach(async () => {
         clubRepository = {
             find: jest.fn(),
+            findOne: jest.fn(),
             update: jest.fn(),
         };
 
@@ -64,6 +66,27 @@ describe('ClubsService', () => {
 
         expect(clubRepository.find).toHaveBeenCalledWith({
             where: { deleted_at: IsNull() },
+        });
+    });
+
+    it('findOne은 삭제되지 않은 동아리 단건을 조회한다', async () => {
+        const club = { id: 1, name: '동아리', deleted_at: null };
+        clubRepository.findOne.mockResolvedValue(club);
+
+        await expect(service.findOne(1)).resolves.toBe(club);
+
+        expect(clubRepository.findOne).toHaveBeenCalledWith({
+            where: { id: 1, deleted_at: IsNull() },
+            relations: ['president', 'reports'],
+        });
+    });
+
+    it('findOne은 대상이 없으면 Not Found를 던진다', async () => {
+        clubRepository.findOne.mockResolvedValue(null);
+
+        await expect(service.findOne(404)).rejects.toMatchObject({
+            status: HttpStatus.NOT_FOUND,
+            message: '해당 동아리가 존재하지 않습니다.',
         });
     });
 

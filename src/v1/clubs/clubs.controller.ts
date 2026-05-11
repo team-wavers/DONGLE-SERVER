@@ -113,6 +113,17 @@ export class ClubsController {
         return await this.clubReportsService.findAllByClubId(clubId);
     }
 
+    @Get(':id/reports/:reportId')
+    async findReportById(
+        @Param('id') clubId: number,
+        @Param('reportId') reportId: number,
+    ) {
+        return await this.clubReportsService.findOneByClubId(
+            Number(clubId),
+            Number(reportId),
+        );
+    }
+
     @Post(':id/reports')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.PRESIDENT)

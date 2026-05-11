@@ -2,6 +2,7 @@ import {
     ConflictException,
     ForbiddenException,
     Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, Not, FindOptionsWhere } from 'typeorm';
@@ -90,10 +91,16 @@ export class UsersService {
         });
     }
 
-    findOne(id: number): Promise<User | null> {
-        return this.userRepository.findOne({
+    async findOne(id: number): Promise<User> {
+        const user = await this.userRepository.findOne({
             where: { id, deleted_at: IsNull(), is_system: false },
         });
+
+        if (!user) {
+            throw new NotFoundException('사용자를 찾을 수 없습니다.');
+        }
+
+        return user;
     }
 
     findOneIncludingSystem(id: number): Promise<User | null> {

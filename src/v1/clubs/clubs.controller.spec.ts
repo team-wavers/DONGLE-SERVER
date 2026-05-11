@@ -9,7 +9,11 @@ import { ClubsService } from './clubs.service';
 describe('ClubsController', () => {
     let controller: ClubsController;
     let clubsService: {
+        findOne: jest.Mock;
         updateIconUrl: jest.Mock;
+    };
+    let clubReportsService: {
+        findOneByClubId: jest.Mock;
     };
     let s3Service: {
         upload: jest.Mock;
@@ -30,7 +34,11 @@ describe('ClubsController', () => {
 
     beforeEach(async () => {
         clubsService = {
+            findOne: jest.fn(),
             updateIconUrl: jest.fn(),
+        };
+        clubReportsService = {
+            findOneByClubId: jest.fn(),
         };
         s3Service = {
             upload: jest.fn(),
@@ -45,7 +53,7 @@ describe('ClubsController', () => {
                 },
                 {
                     provide: ClubReportsService,
-                    useValue: {},
+                    useValue: clubReportsService,
                 },
                 {
                     provide: S3Service,
@@ -59,6 +67,33 @@ describe('ClubsController', () => {
 
     it('should be defined', () => {
         expect(controller).toBeDefined();
+    });
+
+    describe('findOne', () => {
+        it('동아리 단건 조회를 service에 위임한다', async () => {
+            const club = { id: 1, name: '동아리' };
+            clubsService.findOne.mockResolvedValue(club);
+
+            const result = await controller.findOne(1);
+
+            expect(clubsService.findOne).toHaveBeenCalledWith(1);
+            expect(result).toBe(club);
+        });
+    });
+
+    describe('findReportById', () => {
+        it('동아리 하위 활동보고서 단건 조회를 service에 위임한다', async () => {
+            const report = { id: 7, club: { id: 1 } };
+            clubReportsService.findOneByClubId.mockResolvedValue(report);
+
+            const result = await controller.findReportById(1, 7);
+
+            expect(clubReportsService.findOneByClubId).toHaveBeenCalledWith(
+                1,
+                7,
+            );
+            expect(result).toBe(report);
+        });
     });
 
     describe('uploadIcon', () => {

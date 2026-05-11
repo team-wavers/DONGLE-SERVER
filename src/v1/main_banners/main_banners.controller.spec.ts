@@ -6,7 +6,10 @@ import { MainBannersService } from './main_banners.service';
 describe('MainBannersController', () => {
     let controller: MainBannersController;
     let mainBannersService: jest.Mocked<
-        Pick<MainBannersService, 'findActive' | 'findAllForAdmin'>
+        Pick<
+            MainBannersService,
+            'findActive' | 'findAllForAdmin' | 'findOneForAdmin'
+        >
     >;
     let s3Service: jest.Mocked<Pick<S3Service, 'upload'>>;
 
@@ -14,6 +17,7 @@ describe('MainBannersController', () => {
         mainBannersService = {
             findActive: jest.fn(),
             findAllForAdmin: jest.fn(),
+            findOneForAdmin: jest.fn(),
         };
         s3Service = {
             upload: jest.fn(),
@@ -50,6 +54,20 @@ describe('MainBannersController', () => {
 
             expect(mainBannersService.findAllForAdmin).toHaveBeenCalledTimes(1);
             expect(result).toBe(banners);
+        });
+    });
+
+    describe('findOneForAdmin', () => {
+        it('관리자용 배너 단건 조회를 service에 위임한다', async () => {
+            const banner = { id: 7 };
+            mainBannersService.findOneForAdmin.mockResolvedValue(
+                banner as never,
+            );
+
+            const result = await controller.findOneForAdmin(7);
+
+            expect(mainBannersService.findOneForAdmin).toHaveBeenCalledWith(7);
+            expect(result).toBe(banner);
         });
     });
 
