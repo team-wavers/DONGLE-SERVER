@@ -1,14 +1,60 @@
+import { Type } from 'class-transformer';
+import {
+    IsArray,
+    IsBoolean,
+    IsDate,
+    IsNumber,
+    IsObject,
+    IsOptional,
+    IsString,
+} from 'class-validator';
+
 export class CreateClubDto {
+    @IsString()
     key: string; // 일회용 키
+
+    @IsString()
     name: string;
+
+    @IsString()
     category: string;
+
+    @IsOptional()
+    @IsObject()
     sns?: Record<string, string>;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
     tags?: string[];
+
+    @IsOptional()
+    @IsBoolean()
     is_recruiting?: boolean;
+
+    @IsOptional()
+    @IsString()
     location?: string;
+
+    @IsOptional()
+    @Type(() => Date)
+    @IsDate()
     recruit_start?: Date;
+
+    @IsOptional()
+    @Type(() => Date)
+    @IsDate()
     recruit_end?: Date;
+
+    @IsOptional()
+    @IsString()
     description?: string;
+
+    @IsOptional()
+    @IsString()
     main_activities?: string;
+
+    @IsOptional()
+    @IsNumber()
     president_id?: number;
 }
