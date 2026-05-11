@@ -63,6 +63,7 @@
 ### 메인 배너 관리
 
 - 메인 배너 생성은 `image_url`, `publish_start_at`, `publish_end_at`, `is_active` 필수값을 검증하고 저장 payload로 변환해야 한다.
+- 메인 배너 생성과 수정은 선택 입력값인 `link_url`을 저장 payload로 전달해야 하며, 값이 없거나 공백이면 `null`로 정규화해야 한다.
 - 메인 배너 수정은 삭제되지 않은 기존 배너만 갱신하고, 대상이 없으면 Bad Request로 거부해야 한다.
 - 메인 배너 삭제는 삭제되지 않은 기존 배너만 soft delete 처리하고, 대상이 없으면 Bad Request로 거부해야 한다.
 - 활성 목록 조회는 삭제되지 않고 `is_active`가 true이며 현재 시간이 공개 시작일과 종료일 사이에 있는 배너만 최신 공개 시작일 순으로 반환해야 한다.

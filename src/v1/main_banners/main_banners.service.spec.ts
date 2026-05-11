@@ -17,6 +17,7 @@ describe('MainBannersService', () => {
 
     const validDto = {
         image_url: 'https://cdn.example.com/banner.webp',
+        link_url: 'https://www.dongle.example.com/notices/1',
         publish_start_at: '2026-05-01 09:00:00',
         publish_end_at: '2026-05-31 23:59:59',
         is_active: true,
@@ -42,6 +43,7 @@ describe('MainBannersService', () => {
 
             const expectedPayload = {
                 image_url: validDto.image_url,
+                link_url: validDto.link_url,
                 publish_start_at: seoulDate('2026-05-01T09:00:00'),
                 publish_end_at: seoulDate('2026-05-31T23:59:59'),
                 is_active: true,
@@ -53,6 +55,19 @@ describe('MainBannersService', () => {
                 ...expectedPayload,
             });
             expect(result).toEqual({ id: 1, ...expectedPayload });
+        });
+
+        it('link_url이 없거나 공백이면 null payload로 저장한다', async () => {
+            await service.create({
+                ...validDto,
+                link_url: '   ',
+            });
+
+            expect(repository.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    link_url: null,
+                }),
+            );
         });
 
         it('날짜만 입력되면 Seoul 자정 기준 Date payload로 변환한다', async () => {
@@ -172,7 +187,10 @@ describe('MainBannersService', () => {
 
             expect(repository.update).toHaveBeenCalledWith(
                 expect.objectContaining({ id: 7 }),
-                expect.objectContaining({ image_url: validDto.image_url }),
+                expect.objectContaining({
+                    image_url: validDto.image_url,
+                    link_url: validDto.link_url,
+                }),
             );
             expect(repository.findOne).toHaveBeenCalledWith({
                 where: expect.objectContaining({ id: 7 }),

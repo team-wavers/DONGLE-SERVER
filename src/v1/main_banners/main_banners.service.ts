@@ -84,6 +84,7 @@ export class MainBannersService {
 
         return {
             image_url: dto.image_url,
+            link_url: dto.link_url?.trim() || null,
             publish_start_at: publishStartAt,
             publish_end_at: publishEndAt,
             is_active: dto.is_active,
