@@ -1,14 +1,17 @@
-import { Column } from 'typeorm';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateClubReportDto {
+    @IsOptional()
+    @IsNumber()
     club_id: number;
 
-    @Column({ length: 255 })
+    @IsString()
     title: string;
 
-    @Column({ type: 'text' })
+    @IsString()
     content: string;
 
-    @Column({ type: 'text', array: true })
+    @IsArray()
+    @IsString({ each: true })
     image_urls: string[];
 }

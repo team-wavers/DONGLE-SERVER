@@ -1,12 +1,14 @@
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
+import { createValidationPipe } from './common/create-validation-pipe';
 import { TransformResponseInterceptor } from './common/response.interceptor';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const config = app.get(ConfigService);
 
+    app.useGlobalPipes(createValidationPipe());
     app.useGlobalInterceptors(new TransformResponseInterceptor());
     // CORS 설정
     app.enableCors({
