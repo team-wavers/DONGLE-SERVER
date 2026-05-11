@@ -15,6 +15,9 @@ export class MainBanner {
     @Column({ type: 'varchar', length: 255 })
     image_url: string;
 
+    @Column({ type: 'varchar', length: 2048, nullable: true })
+    link_url?: string | null;
+
     @Column({ type: 'timestamp with time zone' })
     publish_start_at: Date;
 

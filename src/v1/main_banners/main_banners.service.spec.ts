@@ -17,6 +17,7 @@ describe('MainBannersService', () => {
 
     const validDto = {
         image_url: 'https://cdn.example.com/banner.webp',
+        link_url: 'https://www.dongle.example.com/notices/1',
         publish_start_at: '2026-05-01 09:00:00',
         publish_end_at: '2026-05-31 23:59:59',
         is_active: true,
@@ -42,6 +43,7 @@ describe('MainBannersService', () => {
 
             const expectedPayload = {
                 image_url: validDto.image_url,
+                link_url: validDto.link_url,
                 publish_start_at: seoulDate('2026-05-01T09:00:00'),
                 publish_end_at: seoulDate('2026-05-31T23:59:59'),
                 is_active: true,
@@ -53,6 +55,19 @@ describe('MainBannersService', () => {
                 ...expectedPayload,
             });
             expect(result).toEqual({ id: 1, ...expectedPayload });
+        });
+
+        it('link_url이 없거나 공백이면 null payload로 저장한다', async () => {
+            await service.create({
+                ...validDto,
+                link_url: '   ',
+            });
+
+            expect(repository.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    link_url: null,
+                }),
+            );
         });
 
         it('날짜만 입력되면 Seoul 자정 기준 Date payload로 변환한다', async () => {
@@ -172,7 +187,10 @@ describe('MainBannersService', () => {
 
             expect(repository.update).toHaveBeenCalledWith(
                 expect.objectContaining({ id: 7 }),
-                expect.objectContaining({ image_url: validDto.image_url }),
+                expect.objectContaining({
+                    image_url: validDto.image_url,
+                    link_url: validDto.link_url,
+                }),
             );
             expect(repository.findOne).toHaveBeenCalledWith({
                 where: expect.objectContaining({ id: 7 }),
@@ -214,6 +232,28 @@ describe('MainBannersService', () => {
                 status: HttpStatus.BAD_REQUEST,
                 message: '해당 배너가 존재하지 않습니다.',
             });
+        });
+    });
+
+    describe('findAllForAdmin', () => {
+        it('삭제되지 않은 모든 배너를 최신 생성일 순으로 조회한다', async () => {
+            const banners = [
+                { id: 2, is_active: false },
+                { id: 1, is_active: true },
+            ];
+            repository.find.mockResolvedValue(banners);
+
+            const result = await service.findAllForAdmin();
+
+            expect(repository.find).toHaveBeenCalledWith({
+                where: {
+                    deleted_at: expect.any(FindOperator),
+                },
+                order: {
+                    created_at: 'DESC',
+                },
+            });
+            expect(result).toBe(banners);
         });
     });
 

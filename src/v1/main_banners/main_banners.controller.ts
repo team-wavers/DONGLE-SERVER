@@ -35,6 +35,13 @@ export class MainBannersController {
         return await this.mainBannersService.findActive();
     }
 
+    @Get('admin')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.ADMIN)
+    async findAllForAdmin() {
+        return await this.mainBannersService.findAllForAdmin();
+    }
+
     @Post()
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.ADMIN)

@@ -5,17 +5,52 @@ import { MainBannersService } from './main_banners.service';
 
 describe('MainBannersController', () => {
     let controller: MainBannersController;
+    let mainBannersService: jest.Mocked<
+        Pick<MainBannersService, 'findActive' | 'findAllForAdmin'>
+    >;
     let s3Service: jest.Mocked<Pick<S3Service, 'upload'>>;
 
     beforeEach(() => {
+        mainBannersService = {
+            findActive: jest.fn(),
+            findAllForAdmin: jest.fn(),
+        };
         s3Service = {
             upload: jest.fn(),
         };
 
         controller = new MainBannersController(
-            {} as MainBannersService,
+            mainBannersService as unknown as MainBannersService,
             s3Service as unknown as S3Service,
         );
+    });
+
+    describe('findActive', () => {
+        it('사용자용 활성 운영 배너 조회를 service에 위임한다', async () => {
+            const activeBanners = [{ id: 1 }];
+            mainBannersService.findActive.mockResolvedValue(
+                activeBanners as never,
+            );
+
+            const result = await controller.findActive();
+
+            expect(mainBannersService.findActive).toHaveBeenCalledTimes(1);
+            expect(result).toBe(activeBanners);
+        });
+    });
+
+    describe('findAllForAdmin', () => {
+        it('관리자용 전체 배너 조회를 service에 위임한다', async () => {
+            const banners = [{ id: 1 }, { id: 2, is_active: false }];
+            mainBannersService.findAllForAdmin.mockResolvedValue(
+                banners as never,
+            );
+
+            const result = await controller.findAllForAdmin();
+
+            expect(mainBannersService.findAllForAdmin).toHaveBeenCalledTimes(1);
+            expect(result).toBe(banners);
+        });
     });
 
     describe('uploadImage', () => {
