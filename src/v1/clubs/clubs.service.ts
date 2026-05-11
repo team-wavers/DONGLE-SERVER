@@ -1,4 +1,11 @@
-import { HttpException, HttpStatus, Inject, Injectable, forwardRef } from '@nestjs/common';
+import {
+    HttpException,
+    HttpStatus,
+    Inject,
+    Injectable,
+    NotFoundException,
+    forwardRef,
+} from '@nestjs/common';
 import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 import { Club } from './entities/club.entity';
@@ -42,20 +49,43 @@ export class ClubsService {
     }
 
     async findOne(id: number) {
-        return await this.clubRepository.findOne({
+        const club = await this.clubRepository.findOne({
             where: {
                 id: id,
                 deleted_at: IsNull(), // deleted_at이 null인 경우만 조회
             },
             relations: ['president', 'reports'],
         });
+
+        if (!club) {
+            throw new NotFoundException('해당 동아리가 존재하지 않습니다.');
+        }
+
+        return club;
     }
 
     async update(id: number, updateClubDto: UpdateClubDto) {
-        if (updateClubDto.president_id) { // 동아리 회장 변경 시
-            const president = await this.usersService.findOne(updateClubDto.president_id);
+        if (updateClubDto.president_id) {
+            // 동아리 회장 변경 시
+            let president;
+            try {
+                president = await this.usersService.findOne(
+                    updateClubDto.president_id,
+                );
+            } catch (error) {
+                if (error instanceof NotFoundException) {
+                    throw new HttpException(
+                        '존재하지 않는 사용자입니다.',
+                        HttpStatus.BAD_REQUEST,
+                    );
+                }
+                throw error;
+            }
             if (!president) {
-                throw new HttpException('존재하지 않는 사용자입니다.', HttpStatus.BAD_REQUEST);
+                throw new HttpException(
+                    '존재하지 않는 사용자입니다.',
+                    HttpStatus.BAD_REQUEST,
+                );
             }
         }
 

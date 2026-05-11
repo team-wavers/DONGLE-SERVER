@@ -257,6 +257,32 @@ describe('MainBannersService', () => {
         });
     });
 
+    describe('findOneForAdmin', () => {
+        it('삭제되지 않은 배너 단건을 조회한다', async () => {
+            const banner = { id: 7, image_url: validDto.image_url };
+            repository.findOne.mockResolvedValue(banner);
+
+            const result = await service.findOneForAdmin(7);
+
+            expect(repository.findOne).toHaveBeenCalledWith({
+                where: {
+                    id: 7,
+                    deleted_at: expect.any(FindOperator),
+                },
+            });
+            expect(result).toBe(banner);
+        });
+
+        it('대상이 없으면 Not Found를 던진다', async () => {
+            repository.findOne.mockResolvedValue(null);
+
+            await expect(service.findOneForAdmin(404)).rejects.toMatchObject({
+                status: HttpStatus.NOT_FOUND,
+                message: '해당 배너가 존재하지 않습니다.',
+            });
+        });
+    });
+
     describe('findActive', () => {
         beforeEach(() => {
             jest.useFakeTimers().setSystemTime(new Date('2026-05-07T12:00:00Z'));

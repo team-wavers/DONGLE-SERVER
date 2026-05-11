@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateClubReportDto } from './dto/create-club_report.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClubReport } from '../club_reports/entities/club_report.entity';
@@ -36,6 +36,21 @@ export class ClubReportsService {
             order: { createdAt: 'DESC' },
         });
         return reports;
+    }
+
+    async findOneByClubId(clubId: number, reportId: number) {
+        const report = await this.clubReportRepository.findOne({
+            where: { id: reportId, club: { id: clubId } },
+            relations: ['club'],
+        });
+
+        if (!report) {
+            throw new NotFoundException(
+                '해당 활동보고서가 존재하지 않습니다.',
+            );
+        }
+
+        return report;
     }
 
     async update(id: number, updateClubReportDto: CreateClubReportDto) {
