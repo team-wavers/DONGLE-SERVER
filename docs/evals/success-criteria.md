@@ -18,6 +18,19 @@
 
 - [app.controller.spec.ts](../../src/app.controller.spec.ts)
 
+## Common Helpers
+
+### 날짜/시간 처리
+
+- timezone이 없는 날짜 입력은 Seoul 기준으로 파싱해야 한다.
+- 날짜만 있는 값, 분/초 단위 날짜-시간, 명시적 timezone 값을 지원해야 한다.
+- 날짜 형식이 올바르지 않으면 Bad Request로 거부해야 한다.
+- 시작일시는 종료일시보다 이전이어야 한다.
+
+관련 테스트:
+
+- [date-time.spec.ts](../../src/common/lib/date-time.spec.ts)
+
 ## Clubs
 
 ### 동아리 관리

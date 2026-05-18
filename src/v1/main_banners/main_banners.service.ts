@@ -6,6 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+    parseSeoulDateTime,
+    validateDateRange,
+} from '../../common/lib/date-time';
 import { MainBanner } from './entities/main_banner.entity';
 import { UpsertMainBannerDto } from './dto/upsert-main-banner.dto';
 
@@ -100,15 +104,13 @@ export class MainBannersService {
     private toEntityPayload(dto: UpsertMainBannerDto) {
         this.validateRequired(dto);
 
-        const publishStartAt = this.parseSeoulDateTime(dto.publish_start_at);
-        const publishEndAt = this.parseSeoulDateTime(dto.publish_end_at);
-
-        if (publishStartAt >= publishEndAt) {
-            throw new HttpException(
-                '공개 시작일은 종료일보다 이전이어야 합니다.',
-                HttpStatus.BAD_REQUEST,
-            );
-        }
+        const publishStartAt = parseSeoulDateTime(dto.publish_start_at);
+        const publishEndAt = parseSeoulDateTime(dto.publish_end_at);
+        validateDateRange(
+            publishStartAt,
+            publishEndAt,
+            '공개 시작일은 종료일보다 이전이어야 합니다.',
+        );
 
         return {
             image_url: dto.image_url,
@@ -142,32 +144,4 @@ export class MainBannersService {
         }
     }
 
-    private parseSeoulDateTime(input: string): Date {
-        const trimmed = input.trim();
-
-        let normalized = trimmed;
-        const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(trimmed);
-
-        if (!hasTimezone) {
-            if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-                normalized = `${trimmed}T00:00:00+09:00`;
-            } else if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}$/.test(trimmed)) {
-                normalized = `${trimmed.replace(' ', 'T')}:00+09:00`;
-            } else if (
-                /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/.test(trimmed)
-            ) {
-                normalized = `${trimmed.replace(' ', 'T')}+09:00`;
-            }
-        }
-
-        const date = new Date(normalized);
-        if (Number.isNaN(date.getTime())) {
-            throw new HttpException(
-                '날짜 형식이 올바르지 않습니다.',
-                HttpStatus.BAD_REQUEST,
-            );
-        }
-
-        return date;
-    }
 }
