@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { ClubReport } from '../../club_reports/entities/club_report.entity';
+import { ClubSchedule } from '../../club_schedules/entities/club_schedule.entity';
 
 @Entity('clubs')
 export class Club {
@@ -59,6 +60,9 @@ export class Club {
 
     @OneToMany(() => ClubReport, (report) => report.club)
     reports: ClubReport[];
+
+    @OneToMany(() => ClubSchedule, (schedule) => schedule.club)
+    schedules: ClubSchedule[];
 
     @CreateDateColumn({ type: 'timestamp with time zone' })
     created_at: Date;

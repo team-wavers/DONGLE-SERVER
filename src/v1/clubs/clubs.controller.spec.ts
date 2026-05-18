@@ -3,6 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { S3Service } from '../../common/lib/s3-uploads';
 import { ClubReportsService } from '../club_reports/club_reports.service';
 import { ROLES } from '../auth/constants/roles';
+import { ClubSchedulesService } from '../club_schedules/club_schedules.service';
+import { CreateClubScheduleDto } from '../club_schedules/dto/create-club-schedule.dto';
 import { ClubsController } from './clubs.controller';
 import { ClubsService } from './clubs.service';
 
@@ -14,6 +16,13 @@ describe('ClubsController', () => {
     };
     let clubReportsService: {
         findOneByClubId: jest.Mock;
+    };
+    let clubSchedulesService: {
+        findPublicByClubId: jest.Mock;
+        findAllByClubId: jest.Mock;
+        create: jest.Mock;
+        update: jest.Mock;
+        removeByClubId: jest.Mock;
     };
     let s3Service: {
         upload: jest.Mock;
@@ -40,6 +49,13 @@ describe('ClubsController', () => {
         clubReportsService = {
             findOneByClubId: jest.fn(),
         };
+        clubSchedulesService = {
+            findPublicByClubId: jest.fn(),
+            findAllByClubId: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            removeByClubId: jest.fn(),
+        };
         s3Service = {
             upload: jest.fn(),
         };
@@ -54,6 +70,10 @@ describe('ClubsController', () => {
                 {
                     provide: ClubReportsService,
                     useValue: clubReportsService,
+                },
+                {
+                    provide: ClubSchedulesService,
+                    useValue: clubSchedulesService,
                 },
                 {
                     provide: S3Service,
@@ -93,6 +113,106 @@ describe('ClubsController', () => {
                 7,
             );
             expect(result).toBe(report);
+        });
+    });
+
+    describe('schedules', () => {
+        it('공개 일정 조회를 service에 위임한다', async () => {
+            const schedules = [{ id: 1, is_public: true }];
+            clubSchedulesService.findPublicByClubId.mockResolvedValue(
+                schedules,
+            );
+
+            const result = await controller.findPublicSchedulesByClubId(1);
+
+            expect(
+                clubSchedulesService.findPublicByClubId,
+            ).toHaveBeenCalledWith(1);
+            expect(result).toBe(schedules);
+        });
+
+        it('회장용 일정 목록 조회는 본인 동아리만 허용하고 service에 위임한다', async () => {
+            const query = { status: 'upcoming' as const };
+            const schedules = [{ id: 1 }];
+            clubSchedulesService.findAllByClubId.mockResolvedValue(schedules);
+
+            const result = await controller.findSchedulesByClubId(
+                1,
+                query,
+                presidentRequest,
+            );
+
+            expect(clubSchedulesService.findAllByClubId).toHaveBeenCalledWith(
+                1,
+                query,
+            );
+            expect(result).toBe(schedules);
+        });
+
+        it('회장용 일정 생성은 route clubId로 service에 위임한다', async () => {
+            const dto: CreateClubScheduleDto = {
+                title: '정기 모임',
+                type: 'regular_meeting' as const,
+                start_at: '2026-05-20 19:00:00',
+                end_at: '2026-05-20 21:00:00',
+                is_public: true,
+            };
+            clubSchedulesService.create.mockResolvedValue({ id: 1 });
+
+            const result = await controller.createSchedule(
+                1,
+                dto,
+                presidentRequest,
+            );
+
+            expect(clubSchedulesService.create).toHaveBeenCalledWith(1, dto);
+            expect(result).toEqual({ id: 1 });
+        });
+
+        it('다른 동아리 일정 생성은 Forbidden을 던진다', async () => {
+            await expect(
+                controller.createSchedule(
+                    2,
+                    {
+                        title: '정기 모임',
+                        type: 'regular_meeting',
+                        start_at: '2026-05-20 19:00:00',
+                        end_at: '2026-05-20 21:00:00',
+                        is_public: true,
+                    },
+                    presidentRequest,
+                ),
+            ).rejects.toMatchObject({
+                status: HttpStatus.FORBIDDEN,
+            });
+            expect(clubSchedulesService.create).not.toHaveBeenCalled();
+        });
+
+        it('회장용 일정 수정과 삭제를 service에 위임한다', async () => {
+            clubSchedulesService.update.mockResolvedValue({ id: 7 });
+            clubSchedulesService.removeByClubId.mockResolvedValue({
+                affected: 1,
+            });
+
+            await expect(
+                controller.updateSchedule(
+                    1,
+                    7,
+                    { title: '변경' },
+                    presidentRequest,
+                ),
+            ).resolves.toEqual({ id: 7 });
+            await expect(
+                controller.deleteSchedule(1, 7, presidentRequest),
+            ).resolves.toEqual({ affected: 1 });
+
+            expect(clubSchedulesService.update).toHaveBeenCalledWith(1, 7, {
+                title: '변경',
+            });
+            expect(clubSchedulesService.removeByClubId).toHaveBeenCalledWith(
+                1,
+                7,
+            );
         });
     });
 

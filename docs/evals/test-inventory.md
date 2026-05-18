@@ -10,20 +10,23 @@
 
 ## 기본 테스트
 
-| 영역         | 파일                                                                                         | 검증 방식   | 비고                                               |
-| ------------ | -------------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------- |
-| app          | [app.controller.spec.ts](../../src/app.controller.spec.ts)                                   | code-graded | 기본 컨트롤러 응답                                 |
-| clubs        | [clubs.controller.spec.ts](../../src/v1/clubs/clubs.controller.spec.ts)                      | code-graded | 동아리 controller 계약, 활동보고서 단건 위임, 이미지 업로드 validation |
-| clubs        | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                            | code-graded | 동아리 service 계약, 단건 Not Found, 삭제된 동아리 제외/거부 |
-| users        | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)                            | code-graded | 사용자 service 계약, 단건 Not Found                |
-| users        | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)                      | code-graded | 사용자 controller 계약, 단건 위임                  |
-| club reports | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)       | code-graded | 활동보고서 service 계약, 동아리 하위 단건 Not Found |
-| club reports | [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts) | code-graded | 활동보고서 controller 계약                         |
-| validation   | [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)                                | code-graded | 요청 DTO 필수/선택/타입 런타임 validation 계약     |
-| main banners | [main_banners.service.spec.ts](../../src/v1/main_banners/main_banners.service.spec.ts)       | code-graded | 메인 배너 service 생성/수정/삭제/관리자 목록/활성 목록/검증 계약 |
-| main banners | [main_banners.controller.spec.ts](../../src/v1/main_banners/main_banners.controller.spec.ts) | code-graded | 메인 배너 조회 위임, 이미지 업로드 controller 계약 |
-| auth         | [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)                               | code-graded | 로그인 실패/성공, refresh token 실패/rotation 계약 |
-| auth         | [jwt.strategy.spec.ts](../../src/v1/auth/strategies/jwt.strategy.spec.ts)                    | code-graded | JWT payload 사용자 정보/club_id 검증 계약          |
+| 영역           | 파일                                                                                               | 검증 방식   | 비고                                                                   |
+| -------------- | -------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------- |
+| app            | [app.controller.spec.ts](../../src/app.controller.spec.ts)                                         | code-graded | 기본 컨트롤러 응답                                                     |
+| common helpers | [date-time.spec.ts](../../src/common/lib/date-time.spec.ts)                                        | code-graded | Seoul 기준 날짜 파싱, 명시적 timezone 처리, 날짜 범위 검증             |
+| clubs          | [clubs.controller.spec.ts](../../src/v1/clubs/clubs.controller.spec.ts)                            | code-graded | 동아리 controller 계약, 활동보고서 단건 위임, 이미지 업로드 validation |
+| clubs          | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                                  | code-graded | 동아리 service 계약, 단건 Not Found, 삭제된 동아리 제외/거부           |
+| users          | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)                                  | code-graded | 사용자 service 계약, 단건 Not Found                                    |
+| users          | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)                            | code-graded | 사용자 controller 계약, 단건 위임                                      |
+| club reports   | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)             | code-graded | 활동보고서 service 계약, 동아리 하위 단건 Not Found                    |
+| club reports   | [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts)       | code-graded | 활동보고서 controller 계약                                             |
+| club schedules | [club_schedules.service.spec.ts](../../src/v1/club_schedules/club_schedules.service.spec.ts)       | code-graded | 일정 service 생성/수정/공개 조회/관리자 공개 상태 변경/삭제/필터 계약  |
+| club schedules | [club_schedules.controller.spec.ts](../../src/v1/club_schedules/club_schedules.controller.spec.ts) | code-graded | 관리자 일정 controller 계약                                            |
+| validation     | [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)                                      | code-graded | 요청 DTO 필수/선택/타입 런타임 validation 계약                         |
+| main banners   | [main_banners.service.spec.ts](../../src/v1/main_banners/main_banners.service.spec.ts)             | code-graded | 메인 배너 service 생성/수정/삭제/관리자 목록/활성 목록/검증 계약       |
+| main banners   | [main_banners.controller.spec.ts](../../src/v1/main_banners/main_banners.controller.spec.ts)       | code-graded | 메인 배너 조회 위임, 이미지 업로드 controller 계약                     |
+| auth           | [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)                                     | code-graded | 로그인 실패/성공, refresh token 실패/rotation 계약                     |
+| auth           | [jwt.strategy.spec.ts](../../src/v1/auth/strategies/jwt.strategy.spec.ts)                          | code-graded | JWT payload 사용자 정보/club_id 검증 계약                              |
 
 ## 잔존 E2E
 

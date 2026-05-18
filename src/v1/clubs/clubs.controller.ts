@@ -6,11 +6,13 @@ import {
     Body,
     Param,
     Delete,
+    Patch,
     Put,
     UseInterceptors,
     UploadedFile,
     UseGuards,
     Request,
+    Query,
 } from '@nestjs/common';
 import { ClubsService } from './clubs.service';
 import { CreateClubDto } from './dto/create-club.dto';
@@ -27,12 +29,17 @@ import {
     IMAGE_UPLOAD_INTERCEPTOR_OPTIONS,
     validateImageUploadFile,
 } from '../../common/lib/upload-file-validation';
+import { ClubSchedulesService } from '../club_schedules/club_schedules.service';
+import { CreateClubScheduleDto } from '../club_schedules/dto/create-club-schedule.dto';
+import { ClubSchedulePresidentQueryDto } from '../club_schedules/dto/club-schedule-query.dto';
+import { UpdateClubScheduleDto } from '../club_schedules/dto/update-club-schedule.dto';
 
 @Controller()
 export class ClubsController {
     constructor(
         private readonly clubsService: ClubsService,
         private readonly clubReportsService: ClubReportsService,
+        private readonly clubSchedulesService: ClubSchedulesService,
         private readonly s3Service: S3Service,
     ) {}
 
@@ -111,6 +118,72 @@ export class ClubsController {
     @Get(':id/reports')
     async findReportsByClubId(@Param('id') clubId: number) {
         return await this.clubReportsService.findAllByClubId(clubId);
+    }
+
+    @Get(':id/public-schedules')
+    async findPublicSchedulesByClubId(@Param('id') clubId: number) {
+        return await this.clubSchedulesService.findPublicByClubId(
+            Number(clubId),
+        );
+    }
+
+    @Get(':id/schedules')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
+    async findSchedulesByClubId(
+        @Param('id') clubId: number,
+        @Query() query: ClubSchedulePresidentQueryDto,
+        @Request() req,
+    ) {
+        this.assertClubWritePermission(req, Number(clubId));
+        return await this.clubSchedulesService.findAllByClubId(
+            Number(clubId),
+            query,
+        );
+    }
+
+    @Post(':id/schedules')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
+    async createSchedule(
+        @Param('id') clubId: number,
+        @Body() dto: CreateClubScheduleDto,
+        @Request() req,
+    ) {
+        this.assertClubWritePermission(req, Number(clubId));
+        return await this.clubSchedulesService.create(Number(clubId), dto);
+    }
+
+    @Patch(':id/schedules/:scheduleId')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
+    async updateSchedule(
+        @Param('id') clubId: number,
+        @Param('scheduleId') scheduleId: number,
+        @Body() dto: UpdateClubScheduleDto,
+        @Request() req,
+    ) {
+        this.assertClubWritePermission(req, Number(clubId));
+        return await this.clubSchedulesService.update(
+            Number(clubId),
+            Number(scheduleId),
+            dto,
+        );
+    }
+
+    @Delete(':id/schedules/:scheduleId')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
+    async deleteSchedule(
+        @Param('id') clubId: number,
+        @Param('scheduleId') scheduleId: number,
+        @Request() req,
+    ) {
+        this.assertClubWritePermission(req, Number(clubId));
+        return await this.clubSchedulesService.removeByClubId(
+            Number(clubId),
+            Number(scheduleId),
+        );
     }
 
     @Get(':id/reports/:reportId')

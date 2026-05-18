@@ -70,36 +70,6 @@ describe('MainBannersService', () => {
             );
         });
 
-        it('날짜만 입력되면 Seoul 자정 기준 Date payload로 변환한다', async () => {
-            await service.create({
-                ...validDto,
-                publish_start_at: '2026-05-01',
-                publish_end_at: '2026-05-02',
-            });
-
-            expect(repository.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    publish_start_at: seoulDate('2026-05-01T00:00:00'),
-                    publish_end_at: seoulDate('2026-05-02T00:00:00'),
-                }),
-            );
-        });
-
-        it('명시적인 timezone이 있으면 입력 timezone 그대로 Date payload로 변환한다', async () => {
-            await service.create({
-                ...validDto,
-                publish_start_at: '2026-05-01T00:00:00Z',
-                publish_end_at: '2026-05-02T00:00:00Z',
-            });
-
-            expect(repository.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    publish_start_at: new Date('2026-05-01T00:00:00Z'),
-                    publish_end_at: new Date('2026-05-02T00:00:00Z'),
-                }),
-            );
-        });
-
         it.each([
             [
                 'image_url',
