@@ -49,6 +49,27 @@ describe('date-time helpers', () => {
                 }),
             );
         });
+
+        it.each([
+            ['slash separator', '2026/05/01'],
+            ['slash with time', '2026/05/01 09:30:00'],
+            ['dot separator', '2026.05.01'],
+            ['no separator', '20260501'],
+            ['partial date', '2026-05'],
+            ['US format', '05/01/2026'],
+            ['date with trailing text', '2026-05-01abc'],
+            ['time without date', '09:30:00'],
+        ])(
+            '문서화된 형식이 아닌 값은 Node 파싱 결과와 무관하게 거부한다 (%s)',
+            (_case, input) => {
+                expect(() => parseSeoulDateTime(input)).toThrow(
+                    expect.objectContaining({
+                        status: HttpStatus.BAD_REQUEST,
+                        message: '날짜 형식이 올바르지 않습니다.',
+                    }),
+                );
+            },
+        );
     });
 
     describe('validateDateRange', () => {
