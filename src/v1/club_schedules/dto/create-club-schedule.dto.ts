@@ -1,7 +1,6 @@
 import {
     IsBoolean,
     IsIn,
-    IsNumber,
     IsOptional,
     IsString,
     MaxLength,
@@ -12,11 +11,8 @@ import {
 } from '../entities/club_schedule.entity';
 
 export class CreateClubScheduleDto {
-    @IsOptional()
-    @IsNumber()
-    club_id?: number;
-
     @IsString()
+    @MaxLength(100)
     title: string;
 
     @IsIn(CLUB_SCHEDULE_TYPES)
@@ -33,6 +29,7 @@ export class CreateClubScheduleDto {
 
     @IsOptional()
     @IsString()
+    @MaxLength(100)
     location?: string;
 
     @IsOptional()
