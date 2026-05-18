@@ -87,7 +87,7 @@ export class ClubSchedulesService {
     async findPublicByClubId(clubId: number) {
         return await this.clubScheduleRepository
             .createQueryBuilder('schedule')
-            .leftJoinAndSelect('schedule.club', 'club')
+            .leftJoin('schedule.club', 'club')
             .where('schedule.club_id = :clubId', { clubId })
             .andWhere('schedule.deleted_at IS NULL')
             .andWhere('schedule.is_public = :isPublic', { isPublic: true })

@@ -16,6 +16,7 @@ describe('ClubSchedulesService', () => {
         createQueryBuilder: jest.Mock;
     };
     let queryBuilder: {
+        leftJoin: jest.Mock;
         leftJoinAndSelect: jest.Mock;
         where: jest.Mock;
         andWhere: jest.Mock;
@@ -49,6 +50,7 @@ describe('ClubSchedulesService', () => {
 
     beforeEach(() => {
         queryBuilder = {
+            leftJoin: jest.fn().mockReturnThis(),
             leftJoinAndSelect: jest.fn().mockReturnThis(),
             where: jest.fn().mockReturnThis(),
             andWhere: jest.fn().mockReturnThis(),
@@ -176,13 +178,19 @@ describe('ClubSchedulesService', () => {
 
     describe('findPublicByClubId', () => {
         it('사용자용 공개 일정은 공개, 일정 미삭제, 동아리 미삭제 조건으로 조회한다', async () => {
-            queryBuilder.getMany.mockResolvedValue([schedule]);
+            const publicSchedule = { id: 7, title: '정기 모임' };
+            queryBuilder.getMany.mockResolvedValue([publicSchedule]);
 
             const result = await service.findPublicByClubId(1);
 
             expect(repository.createQueryBuilder).toHaveBeenCalledWith(
                 'schedule',
             );
+            expect(queryBuilder.leftJoin).toHaveBeenCalledWith(
+                'schedule.club',
+                'club',
+            );
+            expect(queryBuilder.leftJoinAndSelect).not.toHaveBeenCalled();
             expect(queryBuilder.andWhere).toHaveBeenCalledWith(
                 'schedule.is_public = :isPublic',
                 { isPublic: true },
@@ -190,7 +198,8 @@ describe('ClubSchedulesService', () => {
             expect(queryBuilder.andWhere).toHaveBeenCalledWith(
                 'club.deleted_at IS NULL',
             );
-            expect(result).toEqual([schedule]);
+            expect(result).toEqual([publicSchedule]);
+            expect(result[0]).not.toHaveProperty('club');
         });
     });
 
