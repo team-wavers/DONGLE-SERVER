@@ -12,6 +12,7 @@ import {
     Repository,
     SelectQueryBuilder,
 } from 'typeorm';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import {
     parseSeoulDateTime,
     validateDateRange,
@@ -84,16 +85,15 @@ export class ClubSchedulesService {
     }
 
     async findPublicByClubId(clubId: number) {
-        return await this.clubScheduleRepository.find({
-            where: {
-                club: { id: clubId },
-                deleted_at: IsNull(),
-                is_public: true,
-            },
-            order: {
-                start_at: 'ASC',
-            },
-        });
+        return await this.clubScheduleRepository
+            .createQueryBuilder('schedule')
+            .leftJoin('schedule.club', 'club')
+            .where('schedule.club_id = :clubId', { clubId })
+            .andWhere('schedule.deleted_at IS NULL')
+            .andWhere('schedule.is_public = :isPublic', { isPublic: true })
+            .andWhere('club.deleted_at IS NULL')
+            .orderBy('schedule.start_at', 'ASC')
+            .getMany();
     }
 
     async update(
@@ -111,17 +111,14 @@ export class ClubSchedulesService {
             );
         }
 
-        await this.clubScheduleRepository.update(
-            { id: scheduleId, deleted_at: IsNull() },
-            payload,
-        );
+        await this.updateOwnedSchedule(clubId, scheduleId, payload);
 
         return await this.findOwnedSchedule(clubId, scheduleId);
     }
 
     async removeByClubId(clubId: number, scheduleId: number) {
         await this.findOwnedSchedule(clubId, scheduleId);
-        return await this.softDelete(scheduleId);
+        return await this.softDeleteOwned(clubId, scheduleId);
     }
 
     async findAllForAdmin(query: ClubScheduleAdminQueryDto = {}) {
@@ -201,6 +198,32 @@ export class ClubSchedulesService {
         }
 
         return schedule;
+    }
+
+    private async updateOwnedSchedule(
+        clubId: number,
+        scheduleId: number,
+        payload: QueryDeepPartialEntity<ClubSchedule>,
+    ) {
+        return await this.clubScheduleRepository
+            .createQueryBuilder()
+            .update(ClubSchedule)
+            .set(payload)
+            .where('id = :scheduleId', { scheduleId })
+            .andWhere('club_id = :clubId', { clubId })
+            .andWhere('deleted_at IS NULL')
+            .execute();
+    }
+
+    private async softDeleteOwned(clubId: number, scheduleId: number) {
+        return await this.clubScheduleRepository
+            .createQueryBuilder()
+            .update(ClubSchedule)
+            .set({ deleted_at: new Date() })
+            .where('id = :scheduleId', { scheduleId })
+            .andWhere('club_id = :clubId', { clubId })
+            .andWhere('deleted_at IS NULL')
+            .execute();
     }
 
     private async softDelete(scheduleId: number) {
@@ -294,7 +317,7 @@ export class ClubSchedulesService {
         dto: UpdateClubScheduleDto,
         schedule: ClubSchedule,
     ) {
-        const payload: Record<string, unknown> = {};
+        const payload: QueryDeepPartialEntity<ClubSchedule> = {};
 
         if (dto.title !== undefined) {
             if (!dto.title.trim()) {

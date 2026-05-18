@@ -267,7 +267,6 @@ describe('DTO runtime validation rules', () => {
                 new CreateClubScheduleDto(),
             );
             const invalidErrors = validatePlain(CreateClubScheduleDto, {
-                club_id: '1',
                 title: 1,
                 type: 'etc',
                 start_at: true,
@@ -288,7 +287,6 @@ describe('DTO runtime validation rules', () => {
             );
             expect(invalidErrors.map((error) => error.property)).toEqual(
                 expect.arrayContaining([
-                    'club_id',
                     'title',
                     'type',
                     'start_at',
@@ -309,6 +307,7 @@ describe('DTO runtime validation rules', () => {
                     location: '학생회관',
                     description: '설명',
                     external_url: 'https://forms.example.com/schedule',
+                    club_id: 1,
                     image_url: 'https://example.com/image.png',
                 }),
             ).rejects.toBeInstanceOf(BadRequestException);
@@ -331,13 +330,21 @@ describe('DTO runtime validation rules', () => {
             expect(validateSync(new UpdateClubScheduleDto())).toHaveLength(0);
 
             const errors = validatePlain(UpdateClubScheduleDto, {
+                title: 'a'.repeat(101),
                 type: 'etc',
                 is_public: 'true',
+                location: 'a'.repeat(101),
                 external_url: 'a'.repeat(2049),
             });
 
             expect(errors.map((error) => error.property)).toEqual(
-                expect.arrayContaining(['type', 'is_public', 'external_url']),
+                expect.arrayContaining([
+                    'title',
+                    'type',
+                    'is_public',
+                    'location',
+                    'external_url',
+                ]),
             );
         });
 

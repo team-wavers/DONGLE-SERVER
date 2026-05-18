@@ -151,7 +151,6 @@ export class ClubsController {
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
-        dto.club_id = Number(clubId);
         return await this.clubSchedulesService.create(Number(clubId), dto);
     }
 
@@ -165,7 +164,6 @@ export class ClubsController {
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
-        dto.club_id = Number(clubId);
         return await this.clubSchedulesService.update(
             Number(clubId),
             Number(scheduleId),

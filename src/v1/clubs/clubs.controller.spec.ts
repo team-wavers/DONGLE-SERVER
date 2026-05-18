@@ -149,7 +149,7 @@ describe('ClubsController', () => {
             expect(result).toBe(schedules);
         });
 
-        it('회장용 일정 생성은 route club_id를 주입해 service에 위임한다', async () => {
+        it('회장용 일정 생성은 route clubId로 service에 위임한다', async () => {
             const dto: CreateClubScheduleDto = {
                 title: '정기 모임',
                 type: 'regular_meeting' as const,
@@ -165,7 +165,6 @@ describe('ClubsController', () => {
                 presidentRequest,
             );
 
-            expect(dto.club_id).toBe(1);
             expect(clubSchedulesService.create).toHaveBeenCalledWith(1, dto);
             expect(result).toEqual({ id: 1 });
         });
@@ -207,11 +206,9 @@ describe('ClubsController', () => {
                 controller.deleteSchedule(1, 7, presidentRequest),
             ).resolves.toEqual({ affected: 1 });
 
-            expect(clubSchedulesService.update).toHaveBeenCalledWith(
-                1,
-                7,
-                expect.objectContaining({ title: '변경', club_id: 1 }),
-            );
+            expect(clubSchedulesService.update).toHaveBeenCalledWith(1, 7, {
+                title: '변경',
+            });
             expect(clubSchedulesService.removeByClubId).toHaveBeenCalledWith(
                 1,
                 7,

@@ -16,11 +16,15 @@ describe('ClubSchedulesService', () => {
         createQueryBuilder: jest.Mock;
     };
     let queryBuilder: {
+        leftJoin: jest.Mock;
         leftJoinAndSelect: jest.Mock;
         where: jest.Mock;
         andWhere: jest.Mock;
         orderBy: jest.Mock;
         getMany: jest.Mock;
+        update: jest.Mock;
+        set: jest.Mock;
+        execute: jest.Mock;
     };
 
     const validDto = {
@@ -46,11 +50,15 @@ describe('ClubSchedulesService', () => {
 
     beforeEach(() => {
         queryBuilder = {
+            leftJoin: jest.fn().mockReturnThis(),
             leftJoinAndSelect: jest.fn().mockReturnThis(),
             where: jest.fn().mockReturnThis(),
             andWhere: jest.fn().mockReturnThis(),
             orderBy: jest.fn().mockReturnThis(),
             getMany: jest.fn(),
+            update: jest.fn().mockReturnThis(),
+            set: jest.fn().mockReturnThis(),
+            execute: jest.fn(),
         };
         repository = {
             create: jest.fn((payload) => ({ id: 1, ...payload })),
@@ -169,19 +177,29 @@ describe('ClubSchedulesService', () => {
     });
 
     describe('findPublicByClubId', () => {
-        it('사용자용 공개 일정은 공개, 미삭제 조건으로 조회한다', async () => {
-            repository.find.mockResolvedValue([schedule]);
+        it('사용자용 공개 일정은 공개, 일정 미삭제, 동아리 미삭제 조건으로 조회한다', async () => {
+            const publicSchedule = { id: 7, title: '정기 모임' };
+            queryBuilder.getMany.mockResolvedValue([publicSchedule]);
 
             const result = await service.findPublicByClubId(1);
 
-            expect(repository.find).toHaveBeenCalledWith({
-                where: expect.objectContaining({
-                    club: { id: 1 },
-                    is_public: true,
-                }),
-                order: { start_at: 'ASC' },
-            });
-            expect(result).toEqual([schedule]);
+            expect(repository.createQueryBuilder).toHaveBeenCalledWith(
+                'schedule',
+            );
+            expect(queryBuilder.leftJoin).toHaveBeenCalledWith(
+                'schedule.club',
+                'club',
+            );
+            expect(queryBuilder.leftJoinAndSelect).not.toHaveBeenCalled();
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'schedule.is_public = :isPublic',
+                { isPublic: true },
+            );
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'club.deleted_at IS NULL',
+            );
+            expect(result).toEqual([publicSchedule]);
+            expect(result[0]).not.toHaveProperty('club');
         });
     });
 
@@ -192,7 +210,7 @@ describe('ClubSchedulesService', () => {
                 ...schedule,
                 title: '변경된 일정',
             });
-            repository.update.mockResolvedValue({
+            queryBuilder.execute.mockResolvedValue({
                 affected: 1,
             } as UpdateResult);
 
@@ -201,12 +219,14 @@ describe('ClubSchedulesService', () => {
                 external_url: ' ',
             });
 
-            expect(repository.update).toHaveBeenCalledWith(
-                expect.objectContaining({ id: 7 }),
-                {
-                    title: '변경된 일정',
-                    external_url: null,
-                },
+            expect(queryBuilder.update).toHaveBeenCalledWith(ClubSchedule);
+            expect(queryBuilder.set).toHaveBeenCalledWith({
+                title: '변경된 일정',
+                external_url: null,
+            });
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'club_id = :clubId',
+                { clubId: 1 },
             );
             expect(result.title).toBe('변경된 일정');
         });
@@ -217,7 +237,28 @@ describe('ClubSchedulesService', () => {
             await expect(
                 service.update(1, 404, { title: '변경' }),
             ).rejects.toBeInstanceOf(NotFoundException);
-            expect(repository.update).not.toHaveBeenCalled();
+            expect(queryBuilder.execute).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('removeByClubId', () => {
+        it('본인 동아리 일정만 club_id 조건으로 soft delete 처리한다', async () => {
+            repository.findOne.mockResolvedValue(schedule);
+            queryBuilder.execute.mockResolvedValue({
+                affected: 1,
+            } as UpdateResult);
+
+            const result = await service.removeByClubId(1, 7);
+
+            expect(queryBuilder.update).toHaveBeenCalledWith(ClubSchedule);
+            expect(queryBuilder.set).toHaveBeenCalledWith({
+                deleted_at: expect.any(Date),
+            });
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'club_id = :clubId',
+                { clubId: 1 },
+            );
+            expect(result).toEqual({ affected: 1 });
         });
     });
 
