@@ -74,6 +74,28 @@
 - [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)
 - [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts)
 
+## Club Schedules
+
+### 일정 관리
+
+- 일정 생성은 `title`, `type`, `start_at`, `end_at`, `is_public` 필수값을 검증하고 저장 payload로 변환해야 한다.
+- 일정 선택값은 `location`, `description`, `external_url`만 허용하며 `external_url`이 없거나 공백이면 `null`로 정규화해야 한다.
+- 일정 생성과 수정은 `external_url` 값이 있으면 문자열 타입만 허용하고 2048자를 넘지 않아야 한다.
+- 일정 유형은 `recruitment`, `event`, `regular_meeting`, `notice`만 허용해야 한다.
+- 날짜 입력은 날짜만 있는 값, 분/초 단위 날짜-시간, 명시적 timezone 값을 지원하고 timezone이 없으면 Seoul 기준으로 파싱해야 한다.
+- 날짜 형식이 올바르지 않거나 시작일시가 종료일시와 같거나 늦으면 Bad Request로 거부해야 한다.
+- 회장은 본인이 관리하는 동아리 일정만 조회, 생성, 수정, 삭제할 수 있어야 한다.
+- 회장 목록 조회는 전체, 공개, 비공개, 다가오는 일정, 지난 일정 필터를 지원해야 한다.
+- 사용자 공개 조회는 삭제되지 않고 공개 상태인 일정만 반환해야 한다.
+- 관리자는 전체 일정 목록과 캘린더 범위 조회를 할 수 있고, 일정 내용을 직접 수정하지 않고 공개 상태 변경과 soft delete만 수행해야 한다.
+- DTO에는 첨부 이미지나 신청 링크에 해당하는 필드를 두지 않아야 한다.
+
+관련 테스트:
+
+- [club_schedules.service.spec.ts](../../src/v1/club_schedules/club_schedules.service.spec.ts)
+- [club_schedules.controller.spec.ts](../../src/v1/club_schedules/club_schedules.controller.spec.ts)
+- [clubs.controller.spec.ts](../../src/v1/clubs/clubs.controller.spec.ts)
+
 ## Main Banners
 
 ### 메인 배너 관리
@@ -142,6 +164,9 @@
 - `UpsertMainBannerDto`는 `image_url`, `publish_start_at`, `publish_end_at`을 필수 문자열로 받고 `is_active`를 필수 boolean으로 받아야 한다.
 - auth 요청 DTO는 `LoginDto.login_id`, `LoginDto.password`, `RefreshTokenDto.refreshToken`, `VerifyTokenDto.token`을 필수 문자열로 받아야 한다.
 - `CreateClubReportDto`는 route parameter에서 주입되는 `club_id`를 선택 number로 두고, `title`, `content`, `image_urls`를 각각 필수 문자열/문자열 배열로 검증해야 한다.
+- `CreateClubScheduleDto`는 route parameter에서 주입되는 `club_id`를 선택 number로 두고, `title`, `type`, `start_at`, `end_at`, `is_public`을 필수값으로 검증하며 선택 필드는 `location`, `description`, `external_url`만 허용해야 한다.
+- `UpdateClubScheduleDto`는 `CreateClubScheduleDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
+- 일정 관리자 상태 DTO는 `is_public`을 필수 boolean으로 받아야 하며, 일정 query DTO는 선언된 필터 타입을 유지해야 한다.
 - DTO에는 persistence 전용 TypeORM column metadata를 두지 않고 entity에만 유지해야 한다.
 
 관련 테스트:

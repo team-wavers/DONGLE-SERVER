@@ -5,6 +5,14 @@ import { createValidationPipe } from '../common/create-validation-pipe';
 import { LoginDto } from './auth/dto/login.dto';
 import { RefreshTokenDto } from './auth/dto/refresh-token.dto';
 import { VerifyTokenDto } from './auth/dto/verify-token.dto';
+import {
+    ClubScheduleAdminQueryDto,
+    ClubScheduleCalendarQueryDto,
+    ClubSchedulePresidentQueryDto,
+} from './club_schedules/dto/club-schedule-query.dto';
+import { CreateClubScheduleDto } from './club_schedules/dto/create-club-schedule.dto';
+import { UpdateClubScheduleAdminStatusDto } from './club_schedules/dto/update-club-schedule-admin-status.dto';
+import { UpdateClubScheduleDto } from './club_schedules/dto/update-club-schedule.dto';
 import { CreateClubReportDto } from './club_reports/dto/create-club_report.dto';
 import { CreateClubDto } from './clubs/dto/create-club.dto';
 import { UpdateClubDto } from './clubs/dto/update-club.dto';
@@ -250,6 +258,107 @@ describe('DTO runtime validation rules', () => {
                     'image_urls',
                 ]),
             );
+        });
+    });
+
+    describe('club schedule DTOs', () => {
+        it('requires schedule title, type, date payload fields, and is_public', () => {
+            const missingErrors = validationPropertyNames(
+                new CreateClubScheduleDto(),
+            );
+            const invalidErrors = validatePlain(CreateClubScheduleDto, {
+                club_id: '1',
+                title: 1,
+                type: 'etc',
+                start_at: true,
+                end_at: {},
+                is_public: 'true',
+                image_url: 'https://example.com/image.png',
+                application_url: 'https://example.com/apply',
+            });
+
+            expect(missingErrors).toEqual(
+                expect.arrayContaining([
+                    'title',
+                    'type',
+                    'start_at',
+                    'end_at',
+                    'is_public',
+                ]),
+            );
+            expect(invalidErrors.map((error) => error.property)).toEqual(
+                expect.arrayContaining([
+                    'club_id',
+                    'title',
+                    'type',
+                    'start_at',
+                    'end_at',
+                    'is_public',
+                ]),
+            );
+        });
+
+        it('allows only location, description, and external_url as optional schedule content fields', async () => {
+            await expect(
+                transformBody(CreateClubScheduleDto, {
+                    title: '정기 모임',
+                    type: 'regular_meeting',
+                    start_at: '2026-05-20 19:00:00',
+                    end_at: '2026-05-20 21:00:00',
+                    is_public: true,
+                    location: '학생회관',
+                    description: '설명',
+                    external_url: 'https://forms.example.com/schedule',
+                    image_url: 'https://example.com/image.png',
+                }),
+            ).rejects.toBeInstanceOf(BadRequestException);
+
+            await expect(
+                transformBody(CreateClubScheduleDto, {
+                    title: '정기 모임',
+                    type: 'regular_meeting',
+                    start_at: '2026-05-20 19:00:00',
+                    end_at: '2026-05-20 21:00:00',
+                    is_public: true,
+                    external_url: 'https://forms.example.com/schedule',
+                }),
+            ).resolves.toMatchObject({
+                external_url: 'https://forms.example.com/schedule',
+            });
+        });
+
+        it('makes update schedule fields optional while preserving their types', () => {
+            expect(validateSync(new UpdateClubScheduleDto())).toHaveLength(0);
+
+            const errors = validatePlain(UpdateClubScheduleDto, {
+                type: 'etc',
+                is_public: 'true',
+                external_url: 'a'.repeat(2049),
+            });
+
+            expect(errors.map((error) => error.property)).toEqual(
+                expect.arrayContaining(['type', 'is_public', 'external_url']),
+            );
+        });
+
+        it('validates admin status and query DTOs', () => {
+            expect(
+                validationPropertyNames(new UpdateClubScheduleAdminStatusDto()),
+            ).toContain('is_public');
+            expect(
+                validatePlain(ClubSchedulePresidentQueryDto, {
+                    status: 'upcoming',
+                }),
+            ).toHaveLength(0);
+            expect(
+                validatePlain(ClubScheduleAdminQueryDto, {
+                    type: 'event',
+                    isPublic: 'true',
+                }),
+            ).toHaveLength(0);
+            expect(
+                validationPropertyNames(new ClubScheduleCalendarQueryDto()),
+            ).toEqual(expect.arrayContaining(['from', 'to']));
         });
     });
 });

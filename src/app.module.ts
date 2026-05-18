@@ -11,6 +11,7 @@ import { AuthModule } from './v1/auth/auth.module';
 import { HealthModule } from './common/health/health.module';
 import { getRequiredEnv } from './common/lib/utils';
 import { MainBannersModule } from './v1/main_banners/main_banners.module';
+import { ClubSchedulesModule } from './v1/club_schedules/club_schedules.module';
 
 @Module({
     imports: [
@@ -40,6 +41,7 @@ import { MainBannersModule } from './v1/main_banners/main_banners.module';
                     { path: 'users', module: UsersModule },
                     { path: 'clubs', module: ClubsModule },
                     { path: 'club-reports', module: ClubReportsModule },
+                    { path: 'club-schedules', module: ClubSchedulesModule },
                     { path: 'main-banners', module: MainBannersModule },
                     { path: 'auth', module: AuthModule },
                     { path: 'healthCheck', module: HealthModule },
@@ -51,6 +53,7 @@ import { MainBannersModule } from './v1/main_banners/main_banners.module';
         UsersModule,
         ClubsModule,
         ClubReportsModule,
+        ClubSchedulesModule,
         MainBannersModule,
         AuthModule,
     ],
