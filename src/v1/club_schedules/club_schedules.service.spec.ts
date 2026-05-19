@@ -40,13 +40,20 @@ describe('ClubSchedulesService', () => {
 
     const schedule = {
         id: 7,
+        club_id: 1,
         title: '정기 모임',
         type: 'regular_meeting',
         start_at: seoulDate('2026-05-20T19:00:00'),
         end_at: seoulDate('2026-05-20T21:00:00'),
         is_public: true,
-        club: { id: 1, name: '동아리' },
-    } as ClubSchedule;
+        location: null,
+        description: null,
+        external_url: null,
+        created_at: seoulDate('2026-05-01T00:00:00'),
+        updated_at: seoulDate('2026-05-01T00:00:00'),
+        deleted_at: null,
+        club: { id: 1, name: '동아리', category: '학술' },
+    } as unknown as ClubSchedule;
 
     beforeEach(() => {
         queryBuilder = {
@@ -87,6 +94,7 @@ describe('ClubSchedulesService', () => {
                 location: '학생회관',
                 description: '5월 정기 모임',
                 external_url: 'https://forms.example.com/schedule',
+                club_id: 1,
                 club: { id: 1 },
             };
 
@@ -95,7 +103,21 @@ describe('ClubSchedulesService', () => {
                 id: 1,
                 ...expectedPayload,
             });
-            expect(result).toEqual({ id: 1, ...expectedPayload });
+            expect(result).toEqual(
+                expect.objectContaining({
+                    id: 1,
+                    club_id: 1,
+                    title: '정기 모임',
+                    type: 'regular_meeting',
+                    start_at: seoulDate('2026-05-20T19:00:00'),
+                    end_at: seoulDate('2026-05-20T21:00:00'),
+                    is_public: true,
+                    location: '학생회관',
+                    description: '5월 정기 모임',
+                    external_url: 'https://forms.example.com/schedule',
+                }),
+            );
+            expect(result).not.toHaveProperty('club');
         });
 
         it('선택 문자열 값이 없거나 공백이면 null payload로 저장한다', async () => {
@@ -172,13 +194,23 @@ describe('ClubSchedulesService', () => {
                 }),
                 order: { start_at: 'ASC' },
             });
-            expect(result).toEqual([schedule]);
+            expect(result).toEqual([
+                expect.objectContaining({
+                    id: 7,
+                    club_id: 1,
+                    title: '정기 모임',
+                }),
+            ]);
+            expect(result[0]).not.toHaveProperty('club');
         });
     });
 
     describe('findPublicByClubId', () => {
         it('사용자용 공개 일정은 공개, 일정 미삭제, 동아리 미삭제 조건으로 조회한다', async () => {
-            const publicSchedule = { id: 7, title: '정기 모임' };
+            const publicSchedule = {
+                ...schedule,
+                club: { id: 1, name: '동아리', category: '학술' },
+            };
             queryBuilder.getMany.mockResolvedValue([publicSchedule]);
 
             const result = await service.findPublicByClubId(1);
@@ -198,7 +230,13 @@ describe('ClubSchedulesService', () => {
             expect(queryBuilder.andWhere).toHaveBeenCalledWith(
                 'club.deleted_at IS NULL',
             );
-            expect(result).toEqual([publicSchedule]);
+            expect(result).toEqual([
+                expect.objectContaining({
+                    id: 7,
+                    club_id: 1,
+                    title: '정기 모임',
+                }),
+            ]);
             expect(result[0]).not.toHaveProperty('club');
         });
     });
@@ -284,7 +322,48 @@ describe('ClubSchedulesService', () => {
                 'schedule.is_public = :isPublic',
                 { isPublic: true },
             );
-            expect(result).toEqual([schedule]);
+            expect(result).toEqual([
+                expect.objectContaining({
+                    id: 7,
+                    club_id: 1,
+                    club: {
+                        id: 1,
+                        name: '동아리',
+                        category: '학술',
+                    },
+                }),
+            ]);
+        });
+
+        it('관리자 캘린더와 단건 응답에 동아리 요약 정보를 포함한다', async () => {
+            queryBuilder.getMany.mockResolvedValue([schedule]);
+            repository.findOne.mockResolvedValue(schedule);
+
+            await expect(
+                service.findCalendarForAdmin({
+                    from: '2026-05-01',
+                    to: '2026-06-01',
+                }),
+            ).resolves.toEqual([
+                expect.objectContaining({
+                    club_id: 1,
+                    club: {
+                        id: 1,
+                        name: '동아리',
+                        category: '학술',
+                    },
+                }),
+            ]);
+            await expect(service.findOneForAdmin(7)).resolves.toEqual(
+                expect.objectContaining({
+                    club_id: 1,
+                    club: {
+                        id: 1,
+                        name: '동아리',
+                        category: '학술',
+                    },
+                }),
+            );
         });
 
         it('관리자가 공개 상태를 수정한다', async () => {

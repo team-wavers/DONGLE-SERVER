@@ -48,6 +48,9 @@ export class ClubSchedule {
     @Column({ type: 'varchar', length: 2048, nullable: true })
     external_url?: string | null;
 
+    @Column({ type: 'integer' })
+    club_id: number;
+
     @ManyToOne(() => Club, { nullable: false, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'club_id' })
     club: Club;

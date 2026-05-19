@@ -29,6 +29,10 @@ import {
     CLUB_SCHEDULE_TYPES,
     ClubSchedule,
 } from './entities/club_schedule.entity';
+import {
+    toAdminClubScheduleResponse,
+    toClubScheduleResponse,
+} from './mappers/club-schedule-response.mapper';
 
 @Injectable()
 export class ClubSchedulesService {
@@ -40,7 +44,9 @@ export class ClubSchedulesService {
     async create(clubId: number, dto: CreateClubScheduleDto) {
         const payload = this.toCreatePayload(clubId, dto);
         const schedule = this.clubScheduleRepository.create(payload);
-        return await this.clubScheduleRepository.save(schedule);
+        return toClubScheduleResponse(
+            await this.clubScheduleRepository.save(schedule),
+        );
     }
 
     async findAllByClubId(
@@ -53,7 +59,7 @@ export class ClubSchedulesService {
         };
         const statusWhere = this.createPresidentStatusWhere(query.status);
 
-        return await this.clubScheduleRepository.find({
+        const schedules = await this.clubScheduleRepository.find({
             where: {
                 ...baseWhere,
                 ...statusWhere,
@@ -62,6 +68,10 @@ export class ClubSchedulesService {
                 start_at: 'ASC',
             },
         });
+
+        return schedules.map((schedule) =>
+            toClubScheduleResponse(schedule),
+        );
     }
 
     private createPresidentStatusWhere(
@@ -85,7 +95,7 @@ export class ClubSchedulesService {
     }
 
     async findPublicByClubId(clubId: number) {
-        return await this.clubScheduleRepository
+        const schedules = await this.clubScheduleRepository
             .createQueryBuilder('schedule')
             .leftJoin('schedule.club', 'club')
             .where('schedule.club_id = :clubId', { clubId })
@@ -94,6 +104,10 @@ export class ClubSchedulesService {
             .andWhere('club.deleted_at IS NULL')
             .orderBy('schedule.start_at', 'ASC')
             .getMany();
+
+        return schedules.map((schedule) =>
+            toClubScheduleResponse(schedule),
+        );
     }
 
     async update(
@@ -113,7 +127,9 @@ export class ClubSchedulesService {
 
         await this.updateOwnedSchedule(clubId, scheduleId, payload);
 
-        return await this.findOwnedSchedule(clubId, scheduleId);
+        return toClubScheduleResponse(
+            await this.findOwnedSchedule(clubId, scheduleId),
+        );
     }
 
     async removeByClubId(clubId: number, scheduleId: number) {
@@ -123,7 +139,13 @@ export class ClubSchedulesService {
 
     async findAllForAdmin(query: ClubScheduleAdminQueryDto = {}) {
         const queryBuilder = this.createAdminQuery(query);
-        return await queryBuilder.orderBy('schedule.start_at', 'ASC').getMany();
+        const schedules = await queryBuilder
+            .orderBy('schedule.start_at', 'ASC')
+            .getMany();
+
+        return schedules.map((schedule) =>
+            toAdminClubScheduleResponse(schedule),
+        );
     }
 
     async findCalendarForAdmin(query: ClubScheduleCalendarQueryDto) {
@@ -135,7 +157,7 @@ export class ClubSchedulesService {
             '조회 시작일은 종료일보다 이전이어야 합니다.',
         );
 
-        return await this.clubScheduleRepository
+        const schedules = await this.clubScheduleRepository
             .createQueryBuilder('schedule')
             .leftJoinAndSelect('schedule.club', 'club')
             .where('schedule.deleted_at IS NULL')
@@ -143,6 +165,10 @@ export class ClubSchedulesService {
             .andWhere('schedule.end_at >= :from', { from })
             .orderBy('schedule.start_at', 'ASC')
             .getMany();
+
+        return schedules.map((schedule) =>
+            toAdminClubScheduleResponse(schedule),
+        );
     }
 
     async findOneForAdmin(scheduleId: number) {
@@ -155,7 +181,7 @@ export class ClubSchedulesService {
             throw new NotFoundException('해당 일정이 존재하지 않습니다.');
         }
 
-        return schedule;
+        return toAdminClubScheduleResponse(schedule);
     }
 
     async updateAdminStatus(
@@ -309,6 +335,7 @@ export class ClubSchedulesService {
             location: dto.location?.trim() || null,
             description: dto.description?.trim() || null,
             external_url: dto.external_url?.trim() || null,
+            club_id: clubId,
             club: { id: clubId },
         };
     }
