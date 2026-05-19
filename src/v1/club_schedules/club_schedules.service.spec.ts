@@ -21,7 +21,9 @@ describe('ClubSchedulesService', () => {
         where: jest.Mock;
         andWhere: jest.Mock;
         orderBy: jest.Mock;
+        withDeleted: jest.Mock;
         getMany: jest.Mock;
+        getOne: jest.Mock;
         update: jest.Mock;
         set: jest.Mock;
         execute: jest.Mock;
@@ -62,7 +64,9 @@ describe('ClubSchedulesService', () => {
             where: jest.fn().mockReturnThis(),
             andWhere: jest.fn().mockReturnThis(),
             orderBy: jest.fn().mockReturnThis(),
+            withDeleted: jest.fn().mockReturnThis(),
             getMany: jest.fn(),
+            getOne: jest.fn(),
             update: jest.fn().mockReturnThis(),
             set: jest.fn().mockReturnThis(),
             execute: jest.fn(),
@@ -314,6 +318,10 @@ describe('ClubSchedulesService', () => {
             expect(repository.createQueryBuilder).toHaveBeenCalledWith(
                 'schedule',
             );
+            expect(queryBuilder.withDeleted).toHaveBeenCalled();
+            expect(queryBuilder.where).toHaveBeenCalledWith(
+                'schedule.deleted_at IS NULL',
+            );
             expect(queryBuilder.andWhere).toHaveBeenCalledWith(
                 'club.name ILIKE :clubName',
                 { clubName: '%동아리%' },
@@ -337,7 +345,7 @@ describe('ClubSchedulesService', () => {
 
         it('관리자 캘린더와 단건 응답에 동아리 요약 정보를 포함한다', async () => {
             queryBuilder.getMany.mockResolvedValue([schedule]);
-            repository.findOne.mockResolvedValue(schedule);
+            queryBuilder.getOne.mockResolvedValue(schedule);
 
             await expect(
                 service.findCalendarForAdmin({
@@ -354,6 +362,8 @@ describe('ClubSchedulesService', () => {
                     },
                 }),
             ]);
+            expect(queryBuilder.withDeleted).toHaveBeenCalled();
+
             await expect(service.findOneForAdmin(7)).resolves.toEqual(
                 expect.objectContaining({
                     club_id: 1,
@@ -364,10 +374,61 @@ describe('ClubSchedulesService', () => {
                     },
                 }),
             );
+            expect(repository.findOne).not.toHaveBeenCalled();
+            expect(queryBuilder.where).toHaveBeenCalledWith(
+                'schedule.id = :scheduleId',
+                { scheduleId: 7 },
+            );
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'schedule.deleted_at IS NULL',
+            );
+        });
+
+        it('관리자 조회에서 동아리가 soft delete되어도 일정과 동아리 요약 정보를 반환한다', async () => {
+            const softDeletedClubSchedule = {
+                ...schedule,
+                club: {
+                    id: 1,
+                    name: '삭제된 동아리',
+                    category: '학술',
+                    deleted_at: seoulDate('2026-05-10T00:00:00'),
+                },
+            };
+            queryBuilder.getMany.mockResolvedValue([softDeletedClubSchedule]);
+
+            const result = await service.findAllForAdmin();
+
+            expect(queryBuilder.withDeleted).toHaveBeenCalled();
+            expect(result).toEqual([
+                expect.objectContaining({
+                    club_id: 1,
+                    club: {
+                        id: 1,
+                        name: '삭제된 동아리',
+                        category: '학술',
+                    },
+                }),
+            ]);
+        });
+
+        it('관리자 조회에서 실제 동아리 row가 없으면 Not Found를 던진다', async () => {
+            const orphanSchedule = {
+                ...schedule,
+                club: null,
+            } as unknown as ClubSchedule;
+            queryBuilder.getMany.mockResolvedValue([orphanSchedule]);
+            queryBuilder.getOne.mockResolvedValue(orphanSchedule);
+
+            await expect(service.findAllForAdmin()).rejects.toBeInstanceOf(
+                NotFoundException,
+            );
+            await expect(service.findOneForAdmin(7)).rejects.toBeInstanceOf(
+                NotFoundException,
+            );
         });
 
         it('관리자가 공개 상태를 수정한다', async () => {
-            repository.findOne.mockResolvedValue(schedule);
+            queryBuilder.getOne.mockResolvedValue(schedule);
             repository.update.mockResolvedValue({
                 affected: 1,
             } as UpdateResult);
@@ -383,7 +444,7 @@ describe('ClubSchedulesService', () => {
         });
 
         it('관리자 삭제는 soft delete 처리한다', async () => {
-            repository.findOne.mockResolvedValue(schedule);
+            queryBuilder.getOne.mockResolvedValue(schedule);
             repository.update.mockResolvedValue({
                 affected: 1,
             } as UpdateResult);

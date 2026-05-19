@@ -143,6 +143,8 @@ export class ClubSchedulesService {
             .orderBy('schedule.start_at', 'ASC')
             .getMany();
 
+        this.assertAdminSchedulesHaveClub(schedules);
+
         return schedules.map((schedule) =>
             toAdminClubScheduleResponse(schedule),
         );
@@ -159,6 +161,7 @@ export class ClubSchedulesService {
 
         const schedules = await this.clubScheduleRepository
             .createQueryBuilder('schedule')
+            .withDeleted()
             .leftJoinAndSelect('schedule.club', 'club')
             .where('schedule.deleted_at IS NULL')
             .andWhere('schedule.start_at <= :to', { to })
@@ -166,20 +169,27 @@ export class ClubSchedulesService {
             .orderBy('schedule.start_at', 'ASC')
             .getMany();
 
+        this.assertAdminSchedulesHaveClub(schedules);
+
         return schedules.map((schedule) =>
             toAdminClubScheduleResponse(schedule),
         );
     }
 
     async findOneForAdmin(scheduleId: number) {
-        const schedule = await this.clubScheduleRepository.findOne({
-            where: { id: scheduleId, deleted_at: IsNull() },
-            relations: ['club'],
-        });
+        const schedule = await this.clubScheduleRepository
+            .createQueryBuilder('schedule')
+            .withDeleted()
+            .leftJoinAndSelect('schedule.club', 'club')
+            .where('schedule.id = :scheduleId', { scheduleId })
+            .andWhere('schedule.deleted_at IS NULL')
+            .getOne();
 
         if (!schedule) {
             throw new NotFoundException('해당 일정이 존재하지 않습니다.');
         }
+
+        this.assertAdminSchedulesHaveClub([schedule]);
 
         return toAdminClubScheduleResponse(schedule);
     }
@@ -262,6 +272,7 @@ export class ClubSchedulesService {
     private createAdminQuery(query: ClubScheduleAdminQueryDto) {
         const queryBuilder = this.clubScheduleRepository
             .createQueryBuilder('schedule')
+            .withDeleted()
             .leftJoinAndSelect('schedule.club', 'club')
             .where('schedule.deleted_at IS NULL');
 
@@ -292,6 +303,14 @@ export class ClubSchedulesService {
         this.applyDateRange(queryBuilder, query.from, query.to);
 
         return queryBuilder;
+    }
+
+    private assertAdminSchedulesHaveClub(schedules: ClubSchedule[]) {
+        if (schedules.some((schedule) => !schedule.club)) {
+            throw new NotFoundException(
+                '일정의 동아리 정보가 존재하지 않습니다.',
+            );
+        }
     }
 
     private applyDateRange(
