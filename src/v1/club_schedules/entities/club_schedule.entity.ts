@@ -14,7 +14,6 @@ export const CLUB_SCHEDULE_TYPES = [
     'recruitment',
     'event',
     'regular_meeting',
-    'notice',
 ] as const;
 
 export type ClubScheduleType = (typeof CLUB_SCHEDULE_TYPES)[number];
