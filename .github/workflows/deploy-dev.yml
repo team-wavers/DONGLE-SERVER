@@ -42,6 +42,9 @@ jobs:
       - name: Build
         run: yarn build
 
+      - name: Check migrations
+        run: yarn migration:check
+
       - name: Package release
         run: |
           tar -czf backend-dev.tar.gz \
@@ -76,6 +79,7 @@ jobs:
           rm -f /tmp/backend-dev.tar.gz
 
           yarn install --frozen-lockfile --production=true </dev/null
+          NODE_ENV=development yarn migration:show </dev/null
           NODE_ENV=development yarn migration:run </dev/null
           pm2 startOrReload "${{ env.PM2_CONFIG }}" --update-env </dev/null
 
