@@ -268,7 +268,7 @@ describe('DTO runtime validation rules', () => {
             );
             const invalidErrors = validatePlain(CreateClubScheduleDto, {
                 title: 1,
-                type: 'etc',
+                type: 'notice',
                 start_at: true,
                 end_at: {},
                 is_public: 'true',
@@ -331,7 +331,7 @@ describe('DTO runtime validation rules', () => {
 
             const errors = validatePlain(UpdateClubScheduleDto, {
                 title: 'a'.repeat(101),
-                type: 'etc',
+                type: 'notice',
                 is_public: 'true',
                 location: 'a'.repeat(101),
                 external_url: 'a'.repeat(2049),
@@ -363,6 +363,11 @@ describe('DTO runtime validation rules', () => {
                     isPublic: 'true',
                 }),
             ).toHaveLength(0);
+            expect(
+                validatePlain(ClubScheduleAdminQueryDto, {
+                    type: 'notice',
+                }).map((error) => error.property),
+            ).toContain('type');
             expect(
                 validationPropertyNames(new ClubScheduleCalendarQueryDto()),
             ).toEqual(expect.arrayContaining(['from', 'to']));
