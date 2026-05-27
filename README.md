@@ -87,4 +87,5 @@ NODE_ENV=local yarn migration:revert
 
 - [초기 관리자 계정 생성](docs/bootstrap-admin.md)
 - [배포 가이드](docs/deployment.md)
+- [데이터베이스 백업 운영 가이드](docs/database-backup.md)
 - [평가/검증 문서](docs/evals/README.md)

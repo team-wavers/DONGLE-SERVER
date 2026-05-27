@@ -162,6 +162,10 @@ NODE_ENV=development yarn migration:run
 운영 DB 상태를 그대로 비교해야 하는 예외 상황에서는 스크립트 상단의 `RUN_MIGRATIONS="false"`로 바꾼 뒤 실행합니다.
 sync 후 migration이 권한 문제로 실패하면 `.env.development`의 `DB_USERNAME`과 `DEV_OWNER_USER`가 같은지, `postgres` 계정이 `createdb --owner`와 `pg_restore --role`을 실행할 권한이 있는지 먼저 확인합니다.
 
+## 운영 DB 백업
+
+로컬 PostgreSQL을 유지하는 동안에는 [데이터베이스 백업 운영 가이드](database-backup.md)에 따라 매일 S3 백업을 생성합니다. 기본 운영 기준은 `daily` 7일, `weekly` 4주 보관과 월 1회 dev restore 리허설입니다.
+
 ## 주의사항
 
 - `.env.production`, `.env.development`는 저장소에 커밋하지 않습니다.
