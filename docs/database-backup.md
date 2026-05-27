@@ -40,15 +40,17 @@ export AWS_PROFILE="your-profile"
 운영 서버에서 `crontab -e`로 아래 작업을 등록한다.
 
 ```cron
-30 3 * * * cd /home/ec2-user/dongle.server.prod && S3_BUCKET=your-backup-bucket S3_PREFIX=dongle-server/postgres bash scripts/backup-prod-db.sh >> /home/ec2-user/db-backups/backup.log 2>&1
+30 3 * * * mkdir -p /home/ec2-user/db-backups && cd /home/ec2-user/dongle.server.prod && S3_BUCKET=your-backup-bucket S3_PREFIX=dongle-server/postgres bash scripts/backup-prod-db.sh >> /home/ec2-user/db-backups/backup.log 2>&1
 ```
 
 이 설정은 서버 로컬 시간 기준 매일 03:30에 실행된다. 서버 timezone이 UTC라면 원하는 KST 실행 시간에 맞춰 cron 시간을 조정한다.
+cron은 스크립트를 실행하기 전에 로그 리다이렉션을 열므로, 로그 디렉터리인 `/home/ec2-user/db-backups`를 먼저 생성해야 한다.
 `AWS_PROFILE`이 필요하면 cron 명령의 `bash` 앞에 `AWS_PROFILE=your-profile`을 같이 둔다.
 
 초기 도입 후에는 아래 명령으로 수동 검증한다.
 
 ```bash
+mkdir -p /home/ec2-user/db-backups
 cd /home/ec2-user/dongle.server.prod
 bash scripts/backup-prod-db.sh
 FORCE_WEEKLY=true bash scripts/backup-prod-db.sh
