@@ -122,15 +122,19 @@ aws s3api put-bucket-lifecycle-configuration \
       }
     },
     {
-      "Sid": "UploadBackupObjects",
+      "Sid": "UploadAndRestoreBackupObjects",
       "Effect": "Allow",
-      "Action": "s3:PutObject",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject"
+      ],
       "Resource": "arn:aws:s3:::dongle-prod-db-backups/dongle-server/postgres/*"
     }
   ]
 }
 ```
 
+월 1회 restore 리허설을 같은 credential로 수행하려면 `s3:GetObject`가 필요하다. 백업 업로드 credential과 restore 다운로드 credential을 분리한다면, 업로드 credential에는 `s3:PutObject`만 두고 restore credential에 `s3:GetObject`를 둔다.
 서버 credential에는 기본적으로 `s3:DeleteObject`를 주지 않는다. 삭제는 S3 lifecycle이 처리한다.
 
 ## 5. 서버 패키지 확인
@@ -151,17 +155,17 @@ cron에 비밀값을 길게 노출하지 않도록 root 또는 배포 유저만 
 
 ```bash
 cat > /home/ec2-user/dongle-backup.env <<'EOF'
-PG_HOST=localhost
-PG_PORT=5432
-PG_USER=postgres
-PROD_DB=dongle_prod
-LOCAL_BACKUP_DIR=/home/ec2-user/db-backups/prod
-S3_BUCKET=dongle-prod-db-backups
-S3_PREFIX=dongle-server/postgres
-BACKUP_NOTIFY_WEBHOOK_URL=https://example.com/webhook
-BACKUP_NOTIFY_PAYLOAD_KEY=text
-BACKUP_NOTIFY_ON_SUCCESS=false
-BACKUP_ALERT_NAME=DONGLE PostgreSQL backup
+PG_HOST="localhost"
+PG_PORT="5432"
+PG_USER="postgres"
+PROD_DB="dongle_prod"
+LOCAL_BACKUP_DIR="/home/ec2-user/db-backups/prod"
+S3_BUCKET="dongle-prod-db-backups"
+S3_PREFIX="dongle-server/postgres"
+BACKUP_NOTIFY_WEBHOOK_URL="https://example.com/webhook"
+BACKUP_NOTIFY_PAYLOAD_KEY="text"
+BACKUP_NOTIFY_ON_SUCCESS="false"
+BACKUP_ALERT_NAME="DONGLE PostgreSQL backup"
 EOF
 
 chmod 600 /home/ec2-user/dongle-backup.env

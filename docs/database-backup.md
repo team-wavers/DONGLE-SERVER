@@ -86,8 +86,10 @@ S3 bucket은 private으로 유지하고, 아래 prefix 기준으로 lifecycle ru
 서버 credential에는 최소한 아래 권한만 부여한다.
 
 - 해당 bucket/prefix에 대한 `s3:PutObject`
+- restore 리허설을 같은 credential로 수행한다면 해당 bucket/prefix에 대한 `s3:GetObject`
 - 해당 bucket/prefix 확인용 `s3:ListBucket`
 
+백업 업로드 credential과 restore 다운로드 credential을 분리한다면 업로드 credential에는 `s3:GetObject`를 주지 않아도 된다.
 삭제는 S3 lifecycle이 처리하므로 서버 credential에 `s3:DeleteObject`는 기본적으로 필요하지 않다.
 bucket versioning은 켜 둔다. S3 Object Lock은 bucket 생성 시에만 켤 수 있으므로, 삭제/변조 방지가 필요한 운영 환경이면 처음 bucket을 만들 때 governance mode를 검토한다.
 
