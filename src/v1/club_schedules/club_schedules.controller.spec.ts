@@ -1,4 +1,7 @@
-import { ClubSchedulesController } from './club_schedules.controller';
+import {
+    ClubSchedulesController,
+    PublicClubSchedulesController,
+} from './club_schedules.controller';
 import { ClubSchedulesService } from './club_schedules.service';
 
 describe('ClubSchedulesController', () => {
@@ -75,5 +78,30 @@ describe('ClubSchedulesController', () => {
 
         expect(service.removeForAdmin).toHaveBeenCalledWith(7);
         expect(result).toEqual({ affected: 1 });
+    });
+});
+
+describe('PublicClubSchedulesController', () => {
+    let controller: PublicClubSchedulesController;
+    let service: jest.Mocked<Pick<ClubSchedulesService, 'findPublicCalendar'>>;
+
+    beforeEach(() => {
+        service = {
+            findPublicCalendar: jest.fn(),
+        };
+
+        controller = new PublicClubSchedulesController(
+            service as unknown as ClubSchedulesService,
+        );
+    });
+
+    it('전체 공개 일정 기간 조회를 service에 위임한다', async () => {
+        const query = { from: '2026-05-01', to: '2026-06-01' };
+        service.findPublicCalendar.mockResolvedValue([{ id: 1 }] as never);
+
+        const result = await controller.findPublicCalendar(query);
+
+        expect(service.findPublicCalendar).toHaveBeenCalledWith(query);
+        expect(result).toEqual([{ id: 1 }]);
     });
 });

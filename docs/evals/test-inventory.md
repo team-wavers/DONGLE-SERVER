@@ -20,8 +20,8 @@
 | users          | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)                            | code-graded | 사용자 controller 계약, 단건 위임                                      |
 | club reports   | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)             | code-graded | 활동보고서 service 계약, 동아리 하위 단건/수정/삭제 Not Found          |
 | club reports   | [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts)       | code-graded | 활동보고서 controller 계약                                             |
-| club schedules | [club_schedules.service.spec.ts](../../src/v1/club_schedules/club_schedules.service.spec.ts)       | code-graded | 일정 service 생성/수정/공개 조회/관리자 공개 상태 변경/삭제/필터/응답 매핑 계약 |
-| club schedules | [club_schedules.controller.spec.ts](../../src/v1/club_schedules/club_schedules.controller.spec.ts) | code-graded | 관리자 일정 controller 계약                                            |
+| club schedules | [club_schedules.service.spec.ts](../../src/v1/club_schedules/club_schedules.service.spec.ts)       | code-graded | 일정 service 생성/수정/공개 조회/전체 공개 기간 조회/관리자 공개 상태 변경/삭제/필터/응답 매핑 계약 |
+| club schedules | [club_schedules.controller.spec.ts](../../src/v1/club_schedules/club_schedules.controller.spec.ts) | code-graded | public/관리자 일정 controller 계약                                     |
 | validation     | [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)                                      | code-graded | 요청 DTO 필수/선택/타입 런타임 validation 계약                         |
 | main banners   | [main_banners.service.spec.ts](../../src/v1/main_banners/main_banners.service.spec.ts)             | code-graded | 메인 배너 service 생성/수정/삭제/관리자 목록/활성 목록/검증 계약       |
 | main banners   | [main_banners.controller.spec.ts](../../src/v1/main_banners/main_banners.controller.spec.ts)       | code-graded | 메인 배너 조회 위임, 이미지 업로드 controller 계약                     |

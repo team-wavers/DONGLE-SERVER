@@ -19,6 +19,16 @@ import {
 import { UpdateClubScheduleAdminStatusDto } from './dto/update-club-schedule-admin-status.dto';
 import { ClubSchedulesService } from './club_schedules.service';
 
+@Controller('club-schedules')
+export class PublicClubSchedulesController {
+    constructor(private readonly clubSchedulesService: ClubSchedulesService) {}
+
+    @Get()
+    async findPublicCalendar(@Query() query: ClubScheduleCalendarQueryDto) {
+        return await this.clubSchedulesService.findPublicCalendar(query);
+    }
+}
+
 @Controller()
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Roles(ROLES.ADMIN)

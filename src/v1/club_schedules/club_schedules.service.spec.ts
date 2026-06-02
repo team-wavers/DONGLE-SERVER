@@ -17,6 +17,7 @@ describe('ClubSchedulesService', () => {
     };
     let queryBuilder: {
         leftJoin: jest.Mock;
+        innerJoinAndSelect: jest.Mock;
         leftJoinAndSelect: jest.Mock;
         where: jest.Mock;
         andWhere: jest.Mock;
@@ -60,6 +61,7 @@ describe('ClubSchedulesService', () => {
     beforeEach(() => {
         queryBuilder = {
             leftJoin: jest.fn().mockReturnThis(),
+            innerJoinAndSelect: jest.fn().mockReturnThis(),
             leftJoinAndSelect: jest.fn().mockReturnThis(),
             where: jest.fn().mockReturnThis(),
             andWhere: jest.fn().mockReturnThis(),
@@ -247,6 +249,71 @@ describe('ClubSchedulesService', () => {
                 }),
             ]);
             expect(result[0]).not.toHaveProperty('club');
+        });
+    });
+
+    describe('findPublicCalendar', () => {
+        it('전체 공개 일정은 기간과 겹치고 삭제되지 않은 동아리의 공개 일정만 조회한다', async () => {
+            queryBuilder.getMany.mockResolvedValue([schedule]);
+
+            const result = await service.findPublicCalendar({
+                from: '2026-05-01',
+                to: '2026-06-01',
+            });
+
+            expect(repository.createQueryBuilder).toHaveBeenCalledWith(
+                'schedule',
+            );
+            expect(queryBuilder.innerJoinAndSelect).toHaveBeenCalledWith(
+                'schedule.club',
+                'club',
+            );
+            expect(queryBuilder.where).toHaveBeenCalledWith(
+                'schedule.deleted_at IS NULL',
+            );
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'schedule.is_public = :isPublic',
+                { isPublic: true },
+            );
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'club.deleted_at IS NULL',
+            );
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'schedule.start_at <= :to',
+                { to: seoulDate('2026-06-01T00:00:00') },
+            );
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'schedule.end_at >= :from',
+                { from: seoulDate('2026-05-01T00:00:00') },
+            );
+            expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+                'schedule.start_at',
+                'ASC',
+            );
+            expect(result).toEqual([
+                expect.objectContaining({
+                    id: 7,
+                    club_id: 1,
+                    club: {
+                        id: 1,
+                        name: '동아리',
+                        category: '학술',
+                    },
+                }),
+            ]);
+        });
+
+        it('전체 공개 일정 조회 시작일이 종료일보다 늦으면 Bad Request를 던진다', async () => {
+            await expect(
+                service.findPublicCalendar({
+                    from: '2026-06-01',
+                    to: '2026-05-01',
+                }),
+            ).rejects.toMatchObject({
+                status: HttpStatus.BAD_REQUEST,
+                message: '조회 시작일은 종료일보다 이전이어야 합니다.',
+            });
+            expect(queryBuilder.getMany).not.toHaveBeenCalled();
         });
     });
 

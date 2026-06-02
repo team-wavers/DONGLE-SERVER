@@ -110,6 +110,31 @@ export class ClubSchedulesService {
         );
     }
 
+    async findPublicCalendar(query: ClubScheduleCalendarQueryDto) {
+        const from = parseSeoulDateTime(query.from);
+        const to = parseSeoulDateTime(query.to);
+        validateDateRange(
+            from,
+            to,
+            '조회 시작일은 종료일보다 이전이어야 합니다.',
+        );
+
+        const schedules = await this.clubScheduleRepository
+            .createQueryBuilder('schedule')
+            .innerJoinAndSelect('schedule.club', 'club')
+            .where('schedule.deleted_at IS NULL')
+            .andWhere('schedule.is_public = :isPublic', { isPublic: true })
+            .andWhere('club.deleted_at IS NULL')
+            .andWhere('schedule.start_at <= :to', { to })
+            .andWhere('schedule.end_at >= :from', { from })
+            .orderBy('schedule.start_at', 'ASC')
+            .getMany();
+
+        return schedules.map((schedule) =>
+            toAdminClubScheduleResponse(schedule),
+        );
+    }
+
     async update(
         clubId: number,
         scheduleId: number,
