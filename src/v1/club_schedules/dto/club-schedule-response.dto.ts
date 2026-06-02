@@ -2,7 +2,7 @@ import { ClubScheduleType } from '../entities/club_schedule.entity';
 
 export interface ClubScheduleResponse {
     id: number;
-    club_id: number;
+    club_id: number | null;
     title: string;
     type: ClubScheduleType;
     start_at: Date;
@@ -21,5 +21,5 @@ export interface AdminClubScheduleResponse extends ClubScheduleResponse {
         id: number;
         name: string;
         category: string;
-    };
+    } | null;
 }

@@ -9,6 +9,7 @@ describe('ClubSchedulesController', () => {
     let service: jest.Mocked<
         Pick<
             ClubSchedulesService,
+            | 'createCommonForAdmin'
             | 'findAllForAdmin'
             | 'findCalendarForAdmin'
             | 'findOneForAdmin'
@@ -19,6 +20,7 @@ describe('ClubSchedulesController', () => {
 
     beforeEach(() => {
         service = {
+            createCommonForAdmin: jest.fn(),
             findAllForAdmin: jest.fn(),
             findCalendarForAdmin: jest.fn(),
             findOneForAdmin: jest.fn(),
@@ -40,6 +42,22 @@ describe('ClubSchedulesController', () => {
             type: 'event',
         });
         expect(result).toEqual([{ id: 1 }]);
+    });
+
+    it('관리자 공통 일정 생성을 service에 위임한다', async () => {
+        const dto = {
+            title: '공통 행사',
+            type: 'event' as const,
+            start_at: '2026-06-10 10:00:00',
+            end_at: '2026-06-10 12:00:00',
+            is_public: true,
+        };
+        service.createCommonForAdmin.mockResolvedValue({ id: 9 } as never);
+
+        const result = await controller.createCommonForAdmin(dto);
+
+        expect(service.createCommonForAdmin).toHaveBeenCalledWith(dto);
+        expect(result).toEqual({ id: 9 });
     });
 
     it('관리자 캘린더 조회를 service에 위임한다', async () => {

@@ -5,6 +5,7 @@ import {
     Get,
     Param,
     Patch,
+    Post,
     Query,
     UseGuards,
 } from '@nestjs/common';
@@ -16,6 +17,7 @@ import {
     ClubScheduleAdminQueryDto,
     ClubScheduleCalendarQueryDto,
 } from './dto/club-schedule-query.dto';
+import { CreateClubScheduleDto } from './dto/create-club-schedule.dto';
 import { UpdateClubScheduleAdminStatusDto } from './dto/update-club-schedule-admin-status.dto';
 import { ClubSchedulesService } from './club_schedules.service';
 
@@ -38,6 +40,11 @@ export class ClubSchedulesController {
     @Get()
     async findAllForAdmin(@Query() query: ClubScheduleAdminQueryDto) {
         return await this.clubSchedulesService.findAllForAdmin(query);
+    }
+
+    @Post()
+    async createCommonForAdmin(@Body() dto: CreateClubScheduleDto) {
+        return await this.clubSchedulesService.createCommonForAdmin(dto);
     }
 
     @Get('calendar')
