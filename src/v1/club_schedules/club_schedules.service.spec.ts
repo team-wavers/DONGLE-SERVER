@@ -17,6 +17,7 @@ describe('ClubSchedulesService', () => {
     };
     let queryBuilder: {
         leftJoin: jest.Mock;
+        innerJoinAndSelect: jest.Mock;
         leftJoinAndSelect: jest.Mock;
         where: jest.Mock;
         andWhere: jest.Mock;
@@ -57,9 +58,18 @@ describe('ClubSchedulesService', () => {
         club: { id: 1, name: '동아리', category: '학술' },
     } as unknown as ClubSchedule;
 
+    const commonSchedule = {
+        ...schedule,
+        id: 9,
+        club_id: null,
+        title: '공통 행사',
+        club: null,
+    } as unknown as ClubSchedule;
+
     beforeEach(() => {
         queryBuilder = {
             leftJoin: jest.fn().mockReturnThis(),
+            innerJoinAndSelect: jest.fn().mockReturnThis(),
             leftJoinAndSelect: jest.fn().mockReturnThis(),
             where: jest.fn().mockReturnThis(),
             andWhere: jest.fn().mockReturnThis(),
@@ -186,6 +196,38 @@ describe('ClubSchedulesService', () => {
                 message: '시작일시는 종료일시보다 이전이어야 합니다.',
             });
         });
+
+        it('관리자 공통 일정은 club_id와 club 없이 생성한다', async () => {
+            const result = await service.createCommonForAdmin({
+                title: ' 공통 행사 ',
+                type: 'event',
+                start_at: '2026-06-10 10:00:00',
+                end_at: '2026-06-10 12:00:00',
+                is_public: true,
+                location: ' 중앙광장 ',
+            });
+
+            expect(repository.create).toHaveBeenCalledWith({
+                title: '공통 행사',
+                type: 'event',
+                start_at: seoulDate('2026-06-10T10:00:00'),
+                end_at: seoulDate('2026-06-10T12:00:00'),
+                is_public: true,
+                location: '중앙광장',
+                description: null,
+                external_url: null,
+                club_id: null,
+                club: null,
+            });
+            expect(result).toEqual(
+                expect.objectContaining({
+                    id: 1,
+                    club_id: null,
+                    club: null,
+                    title: '공통 행사',
+                }),
+            );
+        });
     });
 
     describe('findAllByClubId', () => {
@@ -247,6 +289,77 @@ describe('ClubSchedulesService', () => {
                 }),
             ]);
             expect(result[0]).not.toHaveProperty('club');
+        });
+    });
+
+    describe('findPublicCalendar', () => {
+        it('전체 공개 일정은 기간과 겹치는 동아리 공개 일정과 공통 일정을 조회한다', async () => {
+            queryBuilder.getMany.mockResolvedValue([schedule, commonSchedule]);
+
+            const result = await service.findPublicCalendar({
+                from: '2026-05-01',
+                to: '2026-06-01',
+            });
+
+            expect(repository.createQueryBuilder).toHaveBeenCalledWith(
+                'schedule',
+            );
+            expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+                'schedule.club',
+                'club',
+            );
+            expect(queryBuilder.where).toHaveBeenCalledWith(
+                'schedule.deleted_at IS NULL',
+            );
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'schedule.is_public = :isPublic',
+                { isPublic: true },
+            );
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                '(schedule.club_id IS NULL OR club.deleted_at IS NULL)',
+            );
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'schedule.start_at <= :to',
+                { to: seoulDate('2026-06-01T00:00:00') },
+            );
+            expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+                'schedule.end_at >= :from',
+                { from: seoulDate('2026-05-01T00:00:00') },
+            );
+            expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+                'schedule.start_at',
+                'ASC',
+            );
+            expect(result).toEqual([
+                expect.objectContaining({
+                    id: 7,
+                    club_id: 1,
+                    club: {
+                        id: 1,
+                        name: '동아리',
+                        category: '학술',
+                    },
+                }),
+                expect.objectContaining({
+                    id: 9,
+                    club_id: null,
+                    club: null,
+                    title: '공통 행사',
+                }),
+            ]);
+        });
+
+        it('전체 공개 일정 조회 시작일이 종료일보다 늦으면 Bad Request를 던진다', async () => {
+            await expect(
+                service.findPublicCalendar({
+                    from: '2026-06-01',
+                    to: '2026-05-01',
+                }),
+            ).rejects.toMatchObject({
+                status: HttpStatus.BAD_REQUEST,
+                message: '조회 시작일은 종료일보다 이전이어야 합니다.',
+            });
+            expect(queryBuilder.getMany).not.toHaveBeenCalled();
         });
     });
 
@@ -414,6 +527,28 @@ describe('ClubSchedulesService', () => {
                     },
                 }),
             ]);
+        });
+
+        it('관리자 조회는 공통 일정을 club null로 반환한다', async () => {
+            queryBuilder.getMany.mockResolvedValue([commonSchedule]);
+            queryBuilder.getOne.mockResolvedValue(commonSchedule);
+
+            await expect(service.findAllForAdmin()).resolves.toEqual([
+                expect.objectContaining({
+                    id: 9,
+                    club_id: null,
+                    club: null,
+                    title: '공통 행사',
+                }),
+            ]);
+            await expect(service.findOneForAdmin(9)).resolves.toEqual(
+                expect.objectContaining({
+                    id: 9,
+                    club_id: null,
+                    club: null,
+                    title: '공통 행사',
+                }),
+            );
         });
 
         it('관리자 조회에서 실제 동아리 row가 없으면 Not Found를 던진다', async () => {

@@ -49,6 +49,14 @@ export class ClubSchedulesService {
         );
     }
 
+    async createCommonForAdmin(dto: CreateClubScheduleDto) {
+        const payload = this.toCreatePayload(null, dto);
+        const schedule = this.clubScheduleRepository.create(payload);
+        return toAdminClubScheduleResponse(
+            await this.clubScheduleRepository.save(schedule),
+        );
+    }
+
     async findAllByClubId(
         clubId: number,
         query: ClubSchedulePresidentQueryDto = {},
@@ -107,6 +115,31 @@ export class ClubSchedulesService {
 
         return schedules.map((schedule) =>
             toClubScheduleResponse(schedule),
+        );
+    }
+
+    async findPublicCalendar(query: ClubScheduleCalendarQueryDto) {
+        const from = parseSeoulDateTime(query.from);
+        const to = parseSeoulDateTime(query.to);
+        validateDateRange(
+            from,
+            to,
+            '조회 시작일은 종료일보다 이전이어야 합니다.',
+        );
+
+        const schedules = await this.clubScheduleRepository
+            .createQueryBuilder('schedule')
+            .leftJoinAndSelect('schedule.club', 'club')
+            .where('schedule.deleted_at IS NULL')
+            .andWhere('schedule.is_public = :isPublic', { isPublic: true })
+            .andWhere('(schedule.club_id IS NULL OR club.deleted_at IS NULL)')
+            .andWhere('schedule.start_at <= :to', { to })
+            .andWhere('schedule.end_at >= :from', { from })
+            .orderBy('schedule.start_at', 'ASC')
+            .getMany();
+
+        return schedules.map((schedule) =>
+            toAdminClubScheduleResponse(schedule),
         );
     }
 
@@ -306,7 +339,11 @@ export class ClubSchedulesService {
     }
 
     private assertAdminSchedulesHaveClub(schedules: ClubSchedule[]) {
-        if (schedules.some((schedule) => !schedule.club)) {
+        if (
+            schedules.some(
+                (schedule) => schedule.club_id !== null && !schedule.club,
+            )
+        ) {
             throw new NotFoundException(
                 '일정의 동아리 정보가 존재하지 않습니다.',
             );
@@ -338,7 +375,10 @@ export class ClubSchedulesService {
         }
     }
 
-    private toCreatePayload(clubId: number, dto: CreateClubScheduleDto) {
+    private toCreatePayload(
+        clubId: number | null,
+        dto: CreateClubScheduleDto,
+    ) {
         this.validateCreateRequired(dto);
 
         const startAt = parseSeoulDateTime(dto.start_at);
@@ -355,7 +395,7 @@ export class ClubSchedulesService {
             description: dto.description?.trim() || null,
             external_url: dto.external_url?.trim() || null,
             club_id: clubId,
-            club: { id: clubId },
+            club: clubId === null ? null : { id: clubId },
         };
     }
 

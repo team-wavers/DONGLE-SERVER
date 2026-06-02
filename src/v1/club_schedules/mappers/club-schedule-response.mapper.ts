@@ -9,7 +9,7 @@ export function toClubScheduleResponse(
 ): ClubScheduleResponse {
     return {
         id: schedule.id,
-        club_id: schedule.club_id ?? schedule.club?.id,
+        club_id: schedule.club_id ?? schedule.club?.id ?? null,
         title: schedule.title,
         type: schedule.type,
         start_at: schedule.start_at,
@@ -29,10 +29,12 @@ export function toAdminClubScheduleResponse(
 ): AdminClubScheduleResponse {
     return {
         ...toClubScheduleResponse(schedule),
-        club: {
-            id: schedule.club.id,
-            name: schedule.club.name,
-            category: schedule.club.category,
-        },
+        club: schedule.club
+            ? {
+                  id: schedule.club.id,
+                  name: schedule.club.name,
+                  category: schedule.club.category,
+              }
+            : null,
     };
 }

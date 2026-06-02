@@ -1,4 +1,7 @@
-import { ClubSchedulesController } from './club_schedules.controller';
+import {
+    ClubSchedulesController,
+    PublicClubSchedulesController,
+} from './club_schedules.controller';
 import { ClubSchedulesService } from './club_schedules.service';
 
 describe('ClubSchedulesController', () => {
@@ -6,6 +9,7 @@ describe('ClubSchedulesController', () => {
     let service: jest.Mocked<
         Pick<
             ClubSchedulesService,
+            | 'createCommonForAdmin'
             | 'findAllForAdmin'
             | 'findCalendarForAdmin'
             | 'findOneForAdmin'
@@ -16,6 +20,7 @@ describe('ClubSchedulesController', () => {
 
     beforeEach(() => {
         service = {
+            createCommonForAdmin: jest.fn(),
             findAllForAdmin: jest.fn(),
             findCalendarForAdmin: jest.fn(),
             findOneForAdmin: jest.fn(),
@@ -37,6 +42,22 @@ describe('ClubSchedulesController', () => {
             type: 'event',
         });
         expect(result).toEqual([{ id: 1 }]);
+    });
+
+    it('관리자 공통 일정 생성을 service에 위임한다', async () => {
+        const dto = {
+            title: '공통 행사',
+            type: 'event' as const,
+            start_at: '2026-06-10 10:00:00',
+            end_at: '2026-06-10 12:00:00',
+            is_public: true,
+        };
+        service.createCommonForAdmin.mockResolvedValue({ id: 9 } as never);
+
+        const result = await controller.createCommonForAdmin(dto);
+
+        expect(service.createCommonForAdmin).toHaveBeenCalledWith(dto);
+        expect(result).toEqual({ id: 9 });
     });
 
     it('관리자 캘린더 조회를 service에 위임한다', async () => {
@@ -75,5 +96,30 @@ describe('ClubSchedulesController', () => {
 
         expect(service.removeForAdmin).toHaveBeenCalledWith(7);
         expect(result).toEqual({ affected: 1 });
+    });
+});
+
+describe('PublicClubSchedulesController', () => {
+    let controller: PublicClubSchedulesController;
+    let service: jest.Mocked<Pick<ClubSchedulesService, 'findPublicCalendar'>>;
+
+    beforeEach(() => {
+        service = {
+            findPublicCalendar: jest.fn(),
+        };
+
+        controller = new PublicClubSchedulesController(
+            service as unknown as ClubSchedulesService,
+        );
+    });
+
+    it('전체 공개 일정 기간 조회를 service에 위임한다', async () => {
+        const query = { from: '2026-05-01', to: '2026-06-01' };
+        service.findPublicCalendar.mockResolvedValue([{ id: 1 }] as never);
+
+        const result = await controller.findPublicCalendar(query);
+
+        expect(service.findPublicCalendar).toHaveBeenCalledWith(query);
+        expect(result).toEqual([{ id: 1 }]);
     });
 });
