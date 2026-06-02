@@ -152,6 +152,13 @@ pm2 startup
 
 `scripts/sync-prod-to-dev.sh`는 `postgres` 같은 관리자 계정으로 운영 DB dump를 만들고, 개발 DB를 삭제 후 재생성한 뒤 복원합니다. 개발 앱과 migration이 사용하는 DB 유저는 `DEV_OWNER_USER`로 두고, 개발 DB와 복원된 객체 owner를 이 유저 기준으로 맞춥니다.
 
+`PG_HOST="localhost"`처럼 TCP 접속을 사용하는 환경에서 PostgreSQL이 `md5` 또는 `scram-sha-256` password auth를 요구하면 cron이나 비대화형 shell은 비밀번호 프롬프트에 응답할 수 없습니다. 실행 환경에는 아래 중 하나를 먼저 설정합니다.
+
+- `export PGPASSWORD="운영 DB 비밀번호"`
+- `export PGPASSFILE="/home/ec2-user/.pgpass"` 후 해당 파일을 `chmod 600`으로 제한
+
+비밀번호 없는 peer/local socket 인증을 쓰는 서버가 아니라면 이 설정 없이 `pg_dump`, `dropdb`, `createdb`, `pg_restore` 단계가 실패합니다.
+
 복원된 개발 DB는 운영 DB의 `migrations` 이력과 스키마를 그대로 가져오므로, 현재 개발 앱 코드가 더 최신 스키마를 요구하면 개발 endpoint가 실패할 수 있습니다. 이 스크립트는 기본값으로 복원, owner 정리, 선택적 정리 SQL 실행 후 개발 앱 디렉터리에서 아래 명령을 실행합니다.
 
 ```bash
