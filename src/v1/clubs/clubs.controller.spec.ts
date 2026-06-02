@@ -16,6 +16,8 @@ describe('ClubsController', () => {
     };
     let clubReportsService: {
         findOneByClubId: jest.Mock;
+        updateByClubId: jest.Mock;
+        removeByClubId: jest.Mock;
     };
     let clubSchedulesService: {
         findPublicByClubId: jest.Mock;
@@ -48,6 +50,8 @@ describe('ClubsController', () => {
         };
         clubReportsService = {
             findOneByClubId: jest.fn(),
+            updateByClubId: jest.fn(),
+            removeByClubId: jest.fn(),
         };
         clubSchedulesService = {
             findPublicByClubId: jest.fn(),
@@ -113,6 +117,71 @@ describe('ClubsController', () => {
                 7,
             );
             expect(result).toBe(report);
+        });
+    });
+
+    describe('club reports ownership', () => {
+        it('활동보고서 수정은 route clubId와 reportId로 service에 위임한다', async () => {
+            const dto = {
+                club_id: 1,
+                title: '수정된 제목',
+                content: '수정된 본문',
+                image_urls: ['https://example.com/image.png'],
+            };
+            clubReportsService.updateByClubId.mockResolvedValue({
+                affected: 1,
+            });
+
+            const result = await controller.updateReport(
+                1,
+                7,
+                dto,
+                presidentRequest,
+            );
+
+            expect(clubReportsService.updateByClubId).toHaveBeenCalledWith(
+                1,
+                7,
+                dto,
+            );
+            expect(result).toEqual({ affected: 1 });
+        });
+
+        it('활동보고서 삭제는 route clubId와 reportId로 service에 위임한다', async () => {
+            clubReportsService.removeByClubId.mockResolvedValue({
+                affected: 1,
+            });
+
+            const result = await controller.deleteReport(
+                1,
+                7,
+                presidentRequest,
+            );
+
+            expect(clubReportsService.removeByClubId).toHaveBeenCalledWith(
+                1,
+                7,
+            );
+            expect(result).toEqual({ affected: 1 });
+        });
+
+        it('다른 동아리 활동보고서 수정은 Forbidden을 던진다', async () => {
+            await expect(
+                controller.updateReport(
+                    2,
+                    7,
+                    {
+                        club_id: 2,
+                        title: '수정된 제목',
+                        content: '수정된 본문',
+                        image_urls: [],
+                    },
+                    presidentRequest,
+                ),
+            ).rejects.toMatchObject({
+                status: HttpStatus.FORBIDDEN,
+            });
+            expect(clubReportsService.updateByClubId).not.toHaveBeenCalled();
         });
     });
 
