@@ -19,6 +19,7 @@ import {
 } from './dto/club-schedule-query.dto';
 import { CreateClubScheduleDto } from './dto/create-club-schedule.dto';
 import { UpdateClubScheduleAdminStatusDto } from './dto/update-club-schedule-admin-status.dto';
+import { UpdateClubScheduleDto } from './dto/update-club-schedule.dto';
 import { ClubSchedulesService } from './club_schedules.service';
 
 @Controller('club-schedules')
@@ -56,6 +57,17 @@ export class ClubSchedulesController {
     async findOneForAdmin(@Param('scheduleId') scheduleId: number) {
         return await this.clubSchedulesService.findOneForAdmin(
             Number(scheduleId),
+        );
+    }
+
+    @Patch(':scheduleId')
+    async updateForAdmin(
+        @Param('scheduleId') scheduleId: number,
+        @Body() dto: UpdateClubScheduleDto,
+    ) {
+        return await this.clubSchedulesService.updateForAdmin(
+            Number(scheduleId),
+            dto,
         );
     }
 

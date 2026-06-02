@@ -13,6 +13,7 @@ describe('ClubSchedulesController', () => {
             | 'findAllForAdmin'
             | 'findCalendarForAdmin'
             | 'findOneForAdmin'
+            | 'updateForAdmin'
             | 'updateAdminStatus'
             | 'removeForAdmin'
         >
@@ -24,6 +25,7 @@ describe('ClubSchedulesController', () => {
             findAllForAdmin: jest.fn(),
             findCalendarForAdmin: jest.fn(),
             findOneForAdmin: jest.fn(),
+            updateForAdmin: jest.fn(),
             updateAdminStatus: jest.fn(),
             removeForAdmin: jest.fn(),
         };
@@ -86,6 +88,20 @@ describe('ClubSchedulesController', () => {
         const result = await controller.updateAdminStatus(7, dto);
 
         expect(service.updateAdminStatus).toHaveBeenCalledWith(7, dto);
+        expect(result).toEqual({ id: 7 });
+    });
+
+    it('관리자 일정 내용 수정을 service에 위임한다', async () => {
+        const dto = {
+            title: '변경된 일정',
+            start_at: '2026-06-10 10:00:00',
+            end_at: '2026-06-10 12:00:00',
+        };
+        service.updateForAdmin.mockResolvedValue({ id: 7 } as never);
+
+        const result = await controller.updateForAdmin(7, dto);
+
+        expect(service.updateForAdmin).toHaveBeenCalledWith(7, dto);
         expect(result).toEqual({ id: 7 });
     });
 
