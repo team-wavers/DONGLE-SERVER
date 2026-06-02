@@ -3,6 +3,7 @@ import { CreateClubReportDto } from './dto/create-club_report.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClubReport } from '../club_reports/entities/club_report.entity';
 import { Repository } from 'typeorm';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 @Injectable()
 export class ClubReportsService {
@@ -54,7 +55,59 @@ export class ClubReportsService {
     }
 
     async update(id: number, updateClubReportDto: CreateClubReportDto) {
-        // club_id는 관계 필드이므로 제외하고 업데이트
+        return await this.clubReportRepository.update(
+            id,
+            this.toUpdateData(updateClubReportDto),
+        );
+    }
+
+    async updateByClubId(
+        clubId: number,
+        reportId: number,
+        updateClubReportDto: CreateClubReportDto,
+    ) {
+        const result = await this.clubReportRepository
+            .createQueryBuilder()
+            .update(ClubReport)
+            .set(this.toUpdateData(updateClubReportDto))
+            .where('id = :reportId', { reportId })
+            .andWhere('club_id = :clubId', { clubId })
+            .execute();
+
+        if (result.affected === 0) {
+            throw new NotFoundException(
+                '해당 활동보고서가 존재하지 않습니다.',
+            );
+        }
+
+        return result;
+    }
+
+    async remove(id: number) {
+        return await this.clubReportRepository.delete(id);
+    }
+
+    async removeByClubId(clubId: number, reportId: number) {
+        const result = await this.clubReportRepository
+            .createQueryBuilder()
+            .delete()
+            .from(ClubReport)
+            .where('id = :reportId', { reportId })
+            .andWhere('club_id = :clubId', { clubId })
+            .execute();
+
+        if (result.affected === 0) {
+            throw new NotFoundException(
+                '해당 활동보고서가 존재하지 않습니다.',
+            );
+        }
+
+        return result;
+    }
+
+    private toUpdateData(
+        updateClubReportDto: CreateClubReportDto,
+    ): QueryDeepPartialEntity<ClubReport> {
         const { club_id, ...updateData } = updateClubReportDto;
         void club_id;
 
@@ -62,16 +115,12 @@ export class ClubReportsService {
             Object.entries(updateData).filter(
                 ([, value]) => value !== undefined,
             ),
-        );
+        ) as QueryDeepPartialEntity<ClubReport>;
 
         if (Object.keys(cleanData).length === 0) {
             throw new Error('수정할 정보가 없습니다.');
         }
 
-        return await this.clubReportRepository.update(id, cleanData);
-    }
-
-    async remove(id: number) {
-        return await this.clubReportRepository.delete(id);
+        return cleanData;
     }
 }

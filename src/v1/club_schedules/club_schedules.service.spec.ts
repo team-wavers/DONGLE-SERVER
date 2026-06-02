@@ -149,6 +149,11 @@ describe('ClubSchedulesService', () => {
                 '일정 유형이 올바르지 않습니다.',
             ],
             [
+                'notice type',
+                { ...validDto, type: 'notice' as never },
+                '일정 유형이 올바르지 않습니다.',
+            ],
+            [
                 'start_at',
                 { ...validDto, start_at: '' },
                 '시작일시와 종료일시는 필수입니다.',

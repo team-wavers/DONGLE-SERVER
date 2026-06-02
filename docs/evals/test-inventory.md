@@ -18,7 +18,7 @@
 | clubs          | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                                  | code-graded | 동아리 service 계약, 단건 Not Found, 삭제된 동아리 제외/거부           |
 | users          | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)                                  | code-graded | 사용자 service 계약, 단건 Not Found                                    |
 | users          | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)                            | code-graded | 사용자 controller 계약, 단건 위임                                      |
-| club reports   | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)             | code-graded | 활동보고서 service 계약, 동아리 하위 단건 Not Found                    |
+| club reports   | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)             | code-graded | 활동보고서 service 계약, 동아리 하위 단건/수정/삭제 Not Found          |
 | club reports   | [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts)       | code-graded | 활동보고서 controller 계약                                             |
 | club schedules | [club_schedules.service.spec.ts](../../src/v1/club_schedules/club_schedules.service.spec.ts)       | code-graded | 일정 service 생성/수정/공개 조회/관리자 공개 상태 변경/삭제/필터/응답 매핑 계약 |
 | club schedules | [club_schedules.controller.spec.ts](../../src/v1/club_schedules/club_schedules.controller.spec.ts) | code-graded | 관리자 일정 controller 계약                                            |

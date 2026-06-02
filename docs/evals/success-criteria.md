@@ -24,7 +24,7 @@
 
 - timezone이 없는 날짜 입력은 Seoul 기준으로 파싱해야 한다.
 - 날짜만 있는 값, 분/초 단위 날짜-시간, 명시적 timezone 값을 지원해야 한다.
-- 날짜 형식이 올바르지 않으면 Bad Request로 거부해야 한다.
+- 날짜 형식이 올바르지 않거나 실제 존재하지 않는 날짜/시간이면 Bad Request로 거부해야 한다.
 - 시작일시는 종료일시보다 이전이어야 한다.
 
 관련 테스트:
@@ -66,6 +66,7 @@
 
 - 활동보고서 목록, 단건 조회, 생성, 수정, 삭제 흐름은 service 계약을 유지해야 한다.
 - 동아리 하위 활동보고서 단건 조회는 route의 동아리 ID와 보고서 ID가 모두 일치하는 대상만 반환해야 하며, 대상이 없으면 Not Found로 거부해야 한다.
+- 동아리 하위 활동보고서 수정과 삭제는 route의 동아리 ID와 보고서 ID가 모두 일치하는 대상에만 수행해야 하며, 대상이 없으면 Not Found로 거부해야 한다.
 - controller는 업로드 파일과 요청 payload를 service 계약에 맞게 전달해야 한다.
 - 업로드 이미지는 `image/jpeg`, `image/png`, `image/webp`만 허용해야 한다.
 
@@ -82,7 +83,7 @@
 - `title`과 `location`은 DB 길이 제약과 같이 100자를 넘지 않아야 한다.
 - 일정 선택값은 `location`, `description`, `external_url`만 허용하며 `external_url`이 없거나 공백이면 `null`로 정규화해야 한다.
 - 일정 생성과 수정은 `external_url` 값이 있으면 문자열 타입만 허용하고 2048자를 넘지 않아야 한다.
-- 일정 유형은 `recruitment`, `event`, `regular_meeting`, `notice`만 허용해야 한다.
+- 일정 유형은 `recruitment`, `event`, `regular_meeting`만 허용해야 한다.
 - 날짜 입력은 날짜만 있는 값, 분/초 단위 날짜-시간, 명시적 timezone 값을 지원하고 timezone이 없으면 Seoul 기준으로 파싱해야 한다.
 - 날짜 형식이 올바르지 않거나 시작일시가 종료일시와 같거나 늦으면 Bad Request로 거부해야 한다.
 - 회장은 본인이 관리하는 동아리 일정만 조회, 생성, 수정, 삭제할 수 있어야 한다.

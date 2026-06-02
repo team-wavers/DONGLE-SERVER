@@ -220,9 +220,10 @@ export class ClubsController {
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
-        updateClubReportDto.club_id = clubId;
-        return await this.clubReportsService.update(
-            reportId,
+        updateClubReportDto.club_id = Number(clubId);
+        return await this.clubReportsService.updateByClubId(
+            Number(clubId),
+            Number(reportId),
             updateClubReportDto,
         );
     }
@@ -236,7 +237,10 @@ export class ClubsController {
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
-        return await this.clubReportsService.remove(reportId);
+        return await this.clubReportsService.removeByClubId(
+            Number(clubId),
+            Number(reportId),
+        );
     }
 
     @Get(':id')

@@ -70,6 +70,22 @@ describe('date-time helpers', () => {
                 );
             },
         );
+
+        it.each([
+            ['nonexistent February date', '2026-02-31'],
+            ['nonexistent April date', '2026-04-31 09:30:00'],
+            ['hour overflow', '2026-05-01 24:00:00'],
+        ])(
+            'Date 정규화로 보정 가능한 잘못된 값도 거부한다 (%s)',
+            (_case, input) => {
+                expect(() => parseSeoulDateTime(input)).toThrow(
+                    expect.objectContaining({
+                        status: HttpStatus.BAD_REQUEST,
+                        message: '날짜 형식이 올바르지 않습니다.',
+                    }),
+                );
+            },
+        );
     });
 
     describe('validateDateRange', () => {
