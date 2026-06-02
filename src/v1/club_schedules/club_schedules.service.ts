@@ -210,6 +210,31 @@ export class ClubSchedulesService {
     }
 
     async findOneForAdmin(scheduleId: number) {
+        return toAdminClubScheduleResponse(
+            await this.findScheduleForAdmin(scheduleId),
+        );
+    }
+
+    async updateForAdmin(scheduleId: number, dto: UpdateClubScheduleDto) {
+        const schedule = await this.findScheduleForAdmin(scheduleId);
+        const payload = this.toUpdatePayload(dto, schedule);
+
+        if (Object.keys(payload).length === 0) {
+            throw new HttpException(
+                '수정할 정보가 없습니다.',
+                HttpStatus.BAD_REQUEST,
+            );
+        }
+
+        await this.clubScheduleRepository.update(
+            { id: scheduleId, deleted_at: IsNull() },
+            payload,
+        );
+
+        return await this.findOneForAdmin(scheduleId);
+    }
+
+    private async findScheduleForAdmin(scheduleId: number) {
         const schedule = await this.clubScheduleRepository
             .createQueryBuilder('schedule')
             .withDeleted()
@@ -224,7 +249,7 @@ export class ClubSchedulesService {
 
         this.assertAdminSchedulesHaveClub([schedule]);
 
-        return toAdminClubScheduleResponse(schedule);
+        return schedule;
     }
 
     async updateAdminStatus(

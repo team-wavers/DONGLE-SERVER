@@ -583,6 +583,59 @@ describe('ClubSchedulesService', () => {
             );
         });
 
+        it('관리자가 일정 내용을 수정하고 수정된 관리자 응답을 반환한다', async () => {
+            queryBuilder.getOne
+                .mockResolvedValueOnce(commonSchedule)
+                .mockResolvedValueOnce({
+                    ...commonSchedule,
+                    title: '변경된 공통 행사',
+                    start_at: seoulDate('2026-06-10T14:00:00'),
+                    end_at: seoulDate('2026-06-10T16:00:00'),
+                    location: null,
+                    external_url: 'https://forms.example.com/common',
+                });
+            repository.update.mockResolvedValue({
+                affected: 1,
+            } as UpdateResult);
+
+            const result = await service.updateForAdmin(9, {
+                title: ' 변경된 공통 행사 ',
+                start_at: '2026-06-10 14:00:00',
+                end_at: '2026-06-10 16:00:00',
+                location: ' ',
+                external_url: ' https://forms.example.com/common ',
+            });
+
+            expect(repository.update).toHaveBeenCalledWith(
+                { id: 9, deleted_at: expect.any(Object) },
+                {
+                    title: '변경된 공통 행사',
+                    start_at: seoulDate('2026-06-10T14:00:00'),
+                    end_at: seoulDate('2026-06-10T16:00:00'),
+                    location: null,
+                    external_url: 'https://forms.example.com/common',
+                },
+            );
+            expect(result).toEqual(
+                expect.objectContaining({
+                    id: 9,
+                    club_id: null,
+                    club: null,
+                    title: '변경된 공통 행사',
+                }),
+            );
+        });
+
+        it('관리자 내용 수정 payload가 비어 있으면 Bad Request를 던진다', async () => {
+            queryBuilder.getOne.mockResolvedValue(schedule);
+
+            await expect(service.updateForAdmin(7, {})).rejects.toMatchObject({
+                status: HttpStatus.BAD_REQUEST,
+                message: '수정할 정보가 없습니다.',
+            });
+            expect(repository.update).not.toHaveBeenCalled();
+        });
+
         it('관리자 삭제는 soft delete 처리한다', async () => {
             queryBuilder.getOne.mockResolvedValue(schedule);
             repository.update.mockResolvedValue({
