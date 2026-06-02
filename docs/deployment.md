@@ -164,7 +164,7 @@ sync 후 migration이 권한 문제로 실패하면 `.env.development`의 `DB_US
 
 ## 운영 DB 백업
 
-로컬 PostgreSQL을 유지하는 동안에는 [데이터베이스 백업 운영 가이드](database-backup.md)에 따라 매일 S3 백업을 생성합니다. 기본 운영 기준은 `daily` 7일, `weekly` 4주 보관과 월 1회 dev restore 리허설입니다.
+로컬 PostgreSQL을 유지하는 동안에는 [데이터베이스 백업 운영 가이드](database-backup.md)에 따라 매일 S3 백업을 생성합니다. 기본 운영 기준은 `daily` 7일, `weekly` 12주 보관, 실패 알림, 월 1회 dev restore 리허설입니다. 처음 세팅하는 경우 [데이터베이스 백업 최초 세팅 가이드](database-backup-setup.md)를 먼저 따릅니다.
 
 ## 주의사항
 
