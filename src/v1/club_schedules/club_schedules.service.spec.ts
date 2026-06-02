@@ -279,7 +279,7 @@ describe('ClubSchedulesService', () => {
                 { isPublic: true },
             );
             expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-                'club.deleted_at IS NULL',
+                'club.id IS NOT NULL',
             );
             expect(result).toEqual([
                 expect.objectContaining({
@@ -316,7 +316,7 @@ describe('ClubSchedulesService', () => {
                 { isPublic: true },
             );
             expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-                '(schedule.club_id IS NULL OR club.deleted_at IS NULL)',
+                '(schedule.club_id IS NULL OR club.id IS NOT NULL)',
             );
             expect(queryBuilder.andWhere).toHaveBeenCalledWith(
                 'schedule.start_at <= :to',

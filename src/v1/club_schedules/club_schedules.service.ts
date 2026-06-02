@@ -109,7 +109,7 @@ export class ClubSchedulesService {
             .where('schedule.club_id = :clubId', { clubId })
             .andWhere('schedule.deleted_at IS NULL')
             .andWhere('schedule.is_public = :isPublic', { isPublic: true })
-            .andWhere('club.deleted_at IS NULL')
+            .andWhere('club.id IS NOT NULL')
             .orderBy('schedule.start_at', 'ASC')
             .getMany();
 
@@ -132,7 +132,7 @@ export class ClubSchedulesService {
             .leftJoinAndSelect('schedule.club', 'club')
             .where('schedule.deleted_at IS NULL')
             .andWhere('schedule.is_public = :isPublic', { isPublic: true })
-            .andWhere('(schedule.club_id IS NULL OR club.deleted_at IS NULL)')
+            .andWhere('(schedule.club_id IS NULL OR club.id IS NOT NULL)')
             .andWhere('schedule.start_at <= :to', { to })
             .andWhere('schedule.end_at >= :from', { from })
             .orderBy('schedule.start_at', 'ASC')
