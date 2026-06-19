@@ -278,6 +278,18 @@ describe('DTO runtime validation rules', () => {
             );
         });
 
+        it('rejects null update field values instead of treating them as omitted', () => {
+            const errors = validatePlain(UpdateClubReportDto, {
+                title: null,
+                content: null,
+                image_urls: null,
+            });
+
+            expect(errors.map((error) => error.property)).toEqual(
+                expect.arrayContaining(['title', 'content', 'image_urls']),
+            );
+        });
+
         it('rejects route-derived club_id as a body field', async () => {
             await expect(
                 transformBody(UpdateClubReportDto, {
