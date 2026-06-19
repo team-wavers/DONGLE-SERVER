@@ -17,15 +17,31 @@ const makeUpdateResult = (affected: number): UpdateResult => ({
 describe('ClubsService', () => {
     let service: ClubsService;
     let clubRepository: {
+        create: jest.Mock;
         find: jest.Mock;
         findOne: jest.Mock;
+        save: jest.Mock;
         update: jest.Mock;
+    };
+    let authService: {
+        validateOneTimeKey: jest.Mock;
+    };
+    let usersService: {
+        findOne: jest.Mock;
     };
 
     beforeEach(async () => {
+        authService = {
+            validateOneTimeKey: jest.fn(),
+        };
+        usersService = {
+            findOne: jest.fn(),
+        };
         clubRepository = {
+            create: jest.fn((payload) => payload),
             find: jest.fn(),
             findOne: jest.fn(),
+            save: jest.fn(),
             update: jest.fn(),
         };
 
@@ -42,11 +58,11 @@ describe('ClubsService', () => {
                 },
                 {
                     provide: AuthService,
-                    useValue: {},
+                    useValue: authService,
                 },
                 {
                     provide: UsersService,
-                    useValue: {},
+                    useValue: usersService,
                 },
             ],
         }).compile();
@@ -56,6 +72,74 @@ describe('ClubsService', () => {
 
     it('should be defined', () => {
         expect(service).toBeDefined();
+    });
+
+    it('create는 모집일을 공통 날짜 포맷으로 파싱해 Seoul 기준 Date payload로 저장한다', async () => {
+        authService.validateOneTimeKey.mockResolvedValue(true);
+        clubRepository.save.mockImplementation(async (club) => club);
+
+        await expect(
+            service.create({
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+                recruit_start: '2026-05-01 09:00:00',
+                recruit_end: '2026-05-31',
+            }),
+        ).resolves.toMatchObject({
+            recruit_start: new Date('2026-05-01T09:00:00+09:00'),
+            recruit_end: new Date('2026-05-31T00:00:00+09:00'),
+        });
+
+        expect(clubRepository.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                recruit_start: new Date('2026-05-01T09:00:00+09:00'),
+                recruit_end: new Date('2026-05-31T00:00:00+09:00'),
+            }),
+        );
+    });
+
+    it('create는 문서화되지 않은 모집일 포맷을 거부한다', async () => {
+        authService.validateOneTimeKey.mockResolvedValue(true);
+
+        await expect(
+            service.create({
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+                recruit_start: '2026-05-01T00:00:00.000Z',
+            }),
+        ).rejects.toMatchObject({
+            status: HttpStatus.BAD_REQUEST,
+            message: '날짜 형식이 올바르지 않습니다.',
+        });
+
+        expect(clubRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('create는 null 모집일을 명시적 비우기로 저장한다', async () => {
+        authService.validateOneTimeKey.mockResolvedValue(true);
+        clubRepository.save.mockImplementation(async (club) => club);
+
+        await expect(
+            service.create({
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+                recruit_start: null,
+                recruit_end: null,
+            }),
+        ).resolves.toMatchObject({
+            recruit_start: null,
+            recruit_end: null,
+        });
+
+        expect(clubRepository.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                recruit_start: null,
+                recruit_end: null,
+            }),
+        );
     });
 
     it('findAll은 삭제되지 않은 동아리만 조회한다', async () => {
@@ -91,7 +175,11 @@ describe('ClubsService', () => {
     });
 
     it('update는 삭제되지 않은 동아리만 수정한다', async () => {
-        const updateClubDto = { name: '수정된 동아리' };
+        const updateClubDto = {
+            name: '수정된 동아리',
+            recruit_start: '2026-06-01 09:30:00',
+            recruit_end: null,
+        };
         const result = makeUpdateResult(1);
         clubRepository.update.mockResolvedValue(result);
 
@@ -99,7 +187,11 @@ describe('ClubsService', () => {
 
         expect(clubRepository.update).toHaveBeenCalledWith(
             { id: 1, deleted_at: IsNull() },
-            updateClubDto,
+            {
+                name: '수정된 동아리',
+                recruit_start: new Date('2026-06-01T09:30:00+09:00'),
+                recruit_end: null,
+            },
         );
     });
 

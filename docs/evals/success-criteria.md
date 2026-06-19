@@ -166,7 +166,7 @@
 
 - 앱 부트스트랩은 전역 `ValidationPipe`를 등록해 DTO 데코레이터 기반 런타임 검증을 수행해야 한다.
 - 전역 검증은 DTO에 정의되지 않은 body 필드를 거부하고, 라우트/쿼리 primitive 값 변환을 허용해야 한다.
-- `CreateClubDto`는 `key`, `name`, `category`를 필수 문자열로 받고, `sns`, `tags`, `is_recruiting`, `location`, `recruit_start`, `recruit_end`, `description`, `main_activities`, `president_id`는 선택 필드이되 선언된 런타임 타입을 지켜야 한다.
+- `CreateClubDto`는 `key`, `name`, `category`를 필수 문자열로 받고, `sns`, `tags`, `is_recruiting`, `location`, `recruit_start`, `recruit_end`, `description`, `main_activities`, `president_id`는 선택 필드이되 선언된 런타임 타입을 지켜야 하며, 모집일은 일정/배너와 같은 날짜 문자열 포맷 또는 명시적 비우기용 `null`로 받아야 한다.
 - `UpdateClubDto`는 `CreateClubDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
 - `CreateUserDto`는 `name`, `login_id`, `password`, `role`, `phone`을 필수 문자열로 받고, `refresh_token`은 선택 문자열로 받아야 한다.
 - `UpdateUserDto`는 `CreateUserDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
@@ -179,9 +179,18 @@
 - 일정 관리자 상태 DTO는 `is_public`을 필수 boolean으로 받아야 하며, 일정 query DTO는 선언된 필터 타입을 유지해야 한다.
 - DTO에는 persistence 전용 TypeORM column metadata를 두지 않고 entity에만 유지해야 한다.
 
+### DTO 검증 실패 400 응답
+
+- DTO 검증 실패 400은 `{ isSuccess: false, error: { message, detail } }` envelope을 유지해야 한다.
+- `error.message`는 비개발자가 그대로 볼 수 있는 구체 오류 문구를 담아야 하며, `"Bad Request Exception"` 같은 generic 메시지를 반환하면 안 된다.
+- DTO 검증 실패의 여러 필드 오류는 `error.message`에서 공백으로 join된 한글 문장으로 내려준다.
+- `error.detail`은 개발자 진단용 문자열이어야 하며, 예외 클래스와 상태코드 정보를 포함해야 한다.
+
 관련 테스트:
 
 - [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)
+- [format-validation-errors.spec.ts](../../src/common/format-validation-errors.spec.ts)
+- [extract-http-exception-detail.spec.ts](../../src/common/extract-http-exception-detail.spec.ts)
 
 ## HTTP Lifecycle
 

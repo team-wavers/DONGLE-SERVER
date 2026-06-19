@@ -1,8 +1,6 @@
-import { Type } from 'class-transformer';
 import {
     IsArray,
     IsBoolean,
-    IsDate,
     IsNumber,
     IsObject,
     IsOptional,
@@ -37,14 +35,12 @@ export class CreateClubDto {
     location?: string;
 
     @IsOptional()
-    @Type(() => Date)
-    @IsDate()
-    recruit_start?: Date;
+    @IsString()
+    recruit_start?: string | null;
 
     @IsOptional()
-    @Type(() => Date)
-    @IsDate()
-    recruit_end?: Date;
+    @IsString()
+    recruit_end?: string | null;
 
     @IsOptional()
     @IsString()
