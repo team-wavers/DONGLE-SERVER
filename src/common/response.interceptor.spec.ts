@@ -2,7 +2,6 @@ import {
     BadRequestException,
     CallHandler,
     ExecutionContext,
-    HttpException,
     HttpStatus,
 } from '@nestjs/common';
 import { lastValueFrom, throwError } from 'rxjs';
