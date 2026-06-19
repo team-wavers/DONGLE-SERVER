@@ -36,11 +36,11 @@ export class CreateClubDto {
 
     @IsOptional()
     @IsString()
-    recruit_start?: string;
+    recruit_start?: string | null;
 
     @IsOptional()
     @IsString()
-    recruit_end?: string;
+    recruit_end?: string | null;
 
     @IsOptional()
     @IsString()

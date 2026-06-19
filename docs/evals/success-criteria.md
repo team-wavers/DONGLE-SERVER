@@ -166,7 +166,7 @@
 
 - 앱 부트스트랩은 전역 `ValidationPipe`를 등록해 DTO 데코레이터 기반 런타임 검증을 수행해야 한다.
 - 전역 검증은 DTO에 정의되지 않은 body 필드를 거부하고, 라우트/쿼리 primitive 값 변환을 허용해야 한다.
-- `CreateClubDto`는 `key`, `name`, `category`를 필수 문자열로 받고, `sns`, `tags`, `is_recruiting`, `location`, `recruit_start`, `recruit_end`, `description`, `main_activities`, `president_id`는 선택 필드이되 선언된 런타임 타입을 지켜야 하며, 모집일은 일정/배너와 같은 날짜 문자열 포맷으로 받아야 한다.
+- `CreateClubDto`는 `key`, `name`, `category`를 필수 문자열로 받고, `sns`, `tags`, `is_recruiting`, `location`, `recruit_start`, `recruit_end`, `description`, `main_activities`, `president_id`는 선택 필드이되 선언된 런타임 타입을 지켜야 하며, 모집일은 일정/배너와 같은 날짜 문자열 포맷 또는 명시적 비우기용 `null`로 받아야 한다.
 - `UpdateClubDto`는 `CreateClubDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
 - `CreateUserDto`는 `name`, `login_id`, `password`, `role`, `phone`을 필수 문자열로 받고, `refresh_token`은 선택 문자열로 받아야 한다.
 - `UpdateUserDto`는 `CreateUserDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.

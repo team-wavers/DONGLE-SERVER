@@ -162,11 +162,17 @@ export class ClubsService {
         const payload = { ...dto } as DeepPartial<Club>;
 
         if (dto.recruit_start !== undefined) {
-            payload.recruit_start = parseSeoulDateTime(dto.recruit_start);
+            payload.recruit_start =
+                dto.recruit_start === null
+                    ? null
+                    : parseSeoulDateTime(dto.recruit_start);
         }
 
         if (dto.recruit_end !== undefined) {
-            payload.recruit_end = parseSeoulDateTime(dto.recruit_end);
+            payload.recruit_end =
+                dto.recruit_end === null
+                    ? null
+                    : parseSeoulDateTime(dto.recruit_end);
         }
 
         return payload;

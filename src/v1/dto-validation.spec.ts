@@ -75,7 +75,7 @@ describe('DTO runtime validation rules', () => {
                 is_recruiting: true,
                 location: '학생회관',
                 recruit_start: '2026-05-01 00:00:00',
-                recruit_end: '2026-05-31 00:00:00',
+                recruit_end: null,
                 description: '설명',
                 main_activities: '스터디',
                 president_id: 1,

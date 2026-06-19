@@ -34,10 +34,10 @@ export class Club {
     tags: string[];
 
     @Column({ type: 'timestamp with time zone', nullable: true })
-    recruit_start: Date;
+    recruit_start: Date | null;
 
     @Column({ type: 'timestamp with time zone', nullable: true })
-    recruit_end: Date;
+    recruit_end: Date | null;
 
     @Column({ type: 'text', nullable: true })
     description: string;

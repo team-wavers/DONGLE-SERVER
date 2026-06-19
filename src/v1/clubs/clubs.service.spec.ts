@@ -117,6 +117,31 @@ describe('ClubsService', () => {
         expect(clubRepository.create).not.toHaveBeenCalled();
     });
 
+    it('create는 null 모집일을 명시적 비우기로 저장한다', async () => {
+        authService.validateOneTimeKey.mockResolvedValue(true);
+        clubRepository.save.mockImplementation(async (club) => club);
+
+        await expect(
+            service.create({
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+                recruit_start: null,
+                recruit_end: null,
+            }),
+        ).resolves.toMatchObject({
+            recruit_start: null,
+            recruit_end: null,
+        });
+
+        expect(clubRepository.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                recruit_start: null,
+                recruit_end: null,
+            }),
+        );
+    });
+
     it('findAll은 삭제되지 않은 동아리만 조회한다', async () => {
         const clubs = [{ id: 1, name: '동아리', deleted_at: null }];
         clubRepository.find.mockResolvedValue(clubs);
@@ -153,6 +178,7 @@ describe('ClubsService', () => {
         const updateClubDto = {
             name: '수정된 동아리',
             recruit_start: '2026-06-01 09:30:00',
+            recruit_end: null,
         };
         const result = makeUpdateResult(1);
         clubRepository.update.mockResolvedValue(result);
@@ -164,6 +190,7 @@ describe('ClubsService', () => {
             {
                 name: '수정된 동아리',
                 recruit_start: new Date('2026-06-01T09:30:00+09:00'),
+                recruit_end: null,
             },
         );
     });
