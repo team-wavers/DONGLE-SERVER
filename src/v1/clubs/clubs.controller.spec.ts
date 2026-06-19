@@ -123,7 +123,6 @@ describe('ClubsController', () => {
     describe('club reports ownership', () => {
         it('활동보고서 수정은 route clubId와 reportId로 service에 위임한다', async () => {
             const dto = {
-                club_id: 1,
                 title: '수정된 제목',
                 content: '수정된 본문',
                 image_urls: ['https://example.com/image.png'],
@@ -171,7 +170,6 @@ describe('ClubsController', () => {
                     2,
                     7,
                     {
-                        club_id: 2,
                         title: '수정된 제목',
                         content: '수정된 본문',
                         image_urls: [],

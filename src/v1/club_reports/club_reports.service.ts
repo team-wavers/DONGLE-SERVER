@@ -59,13 +59,6 @@ export class ClubReportsService {
         return report;
     }
 
-    async update(id: number, updateClubReportDto: CreateClubReportDto) {
-        return await this.clubReportRepository.update(
-            id,
-            this.toUpdateData(updateClubReportDto),
-        );
-    }
-
     async updateByClubId(
         clubId: number,
         reportId: number,
@@ -113,11 +106,8 @@ export class ClubReportsService {
     private toUpdateData(
         updateClubReportDto: UpdateClubReportDto,
     ): QueryDeepPartialEntity<ClubReport> {
-        const { club_id, ...updateData } = updateClubReportDto;
-        void club_id;
-
         const cleanData = Object.fromEntries(
-            Object.entries(updateData).filter(
+            Object.entries(updateClubReportDto).filter(
                 ([, value]) => value !== undefined,
             ),
         ) as QueryDeepPartialEntity<ClubReport>;

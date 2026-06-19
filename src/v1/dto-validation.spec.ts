@@ -263,24 +263,28 @@ describe('DTO runtime validation rules', () => {
     });
 
     describe('UpdateClubReportDto', () => {
-        it('makes all CreateClubReportDto fields optional while preserving their types', () => {
+        it('makes report content fields optional while preserving their types', () => {
             expect(validatePlain(UpdateClubReportDto, {})).toHaveLength(0);
-            expect(validatePlain(UpdateClubReportDto, { club_id: 1 })).toHaveLength(
-                0,
-            );
-
             expect(
                 validatePlain(UpdateClubReportDto, { title: '수정된 제목' }),
             ).toHaveLength(0);
             const errors = validatePlain(UpdateClubReportDto, {
-                club_id: '1',
                 title: 1,
                 image_urls: ['ok', 3],
             });
 
             expect(errors.map((error) => error.property)).toEqual(
-                expect.arrayContaining(['club_id', 'title', 'image_urls']),
+                expect.arrayContaining(['title', 'image_urls']),
             );
+        });
+
+        it('rejects route-derived club_id as a body field', async () => {
+            await expect(
+                transformBody(UpdateClubReportDto, {
+                    club_id: 1,
+                    title: '수정된 제목',
+                }),
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
     });
 

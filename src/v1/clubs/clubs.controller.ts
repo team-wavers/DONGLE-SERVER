@@ -221,7 +221,6 @@ export class ClubsController {
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
-        updateClubReportDto.club_id = Number(clubId);
         return await this.clubReportsService.updateByClubId(
             Number(clubId),
             Number(reportId),

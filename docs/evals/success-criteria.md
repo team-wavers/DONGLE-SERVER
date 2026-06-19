@@ -67,7 +67,7 @@
 - 활동보고서 목록, 단건 조회, 생성, 수정, 삭제 흐름은 service 계약을 유지해야 한다.
 - 동아리 하위 활동보고서 단건 조회는 route의 동아리 ID와 보고서 ID가 모두 일치하는 대상만 반환해야 하며, 대상이 없으면 Not Found로 거부해야 한다.
 - 동아리 하위 활동보고서 수정과 삭제는 route의 동아리 ID와 보고서 ID가 모두 일치하는 대상에만 수행해야 하며, 대상이 없으면 Not Found로 거부해야 한다.
-- 활동보고서 수정 payload는 route에서 주입되는 `club_id`를 제외한 실제 수정 필드가 하나 이상 있어야 하며, 없으면 Bad Request로 거부해야 한다.
+- 활동보고서 수정 payload는 실제 수정 필드가 하나 이상 있어야 하며, 없으면 Bad Request로 거부해야 한다.
 - controller는 업로드 파일과 요청 payload를 service 계약에 맞게 전달해야 한다.
 - 업로드 이미지는 `image/jpeg`, `image/png`, `image/webp`만 허용해야 한다.
 
@@ -173,7 +173,7 @@
 - `UpsertMainBannerDto`는 `image_url`, `publish_start_at`, `publish_end_at`을 필수 문자열로 받고 `is_active`를 필수 boolean으로 받아야 한다.
 - auth 요청 DTO는 `LoginDto.login_id`, `LoginDto.password`, `RefreshTokenDto.refreshToken`, `VerifyTokenDto.token`을 필수 문자열로 받아야 한다.
 - `CreateClubReportDto`는 route parameter에서 주입되는 `club_id`를 선택 number로 두고, `title`, `content`, `image_urls`를 각각 필수 문자열/문자열 배열로 검증해야 한다.
-- `UpdateClubReportDto`는 `CreateClubReportDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
+- `UpdateClubReportDto`는 `title`, `content`, `image_urls`를 선택 필드로 만들되 타입 규칙을 유지하고, route에서 주입되는 `club_id`를 body 필드로 받지 않아야 한다.
 - `CreateClubScheduleDto`는 route parameter에서 주입되는 `club_id`를 body 필드로 받지 않고, `title`, `type`, `start_at`, `end_at`, `is_public`을 필수값으로 검증하며 선택 필드는 `location`, `description`, `external_url`만 허용해야 한다.
 - `UpdateClubScheduleDto`는 `CreateClubScheduleDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
 - 일정 관리자 상태 DTO는 `is_public`을 필수 boolean으로 받아야 하며, 일정 query DTO는 선언된 필터 타입을 유지해야 한다.
