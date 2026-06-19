@@ -179,9 +179,18 @@
 - 일정 관리자 상태 DTO는 `is_public`을 필수 boolean으로 받아야 하며, 일정 query DTO는 선언된 필터 타입을 유지해야 한다.
 - DTO에는 persistence 전용 TypeORM column metadata를 두지 않고 entity에만 유지해야 한다.
 
+### DTO 검증 실패 400 응답
+
+- DTO 검증 실패 400은 `{ isSuccess: false, error: { message, detail } }` envelope을 유지해야 한다.
+- `error.message`는 상태코드 요약 한글(`잘못된 요청입니다.`)을 담는다.
+- `error.detail`은 필드별 한글 오류 요약 문자열을 담아야 하며, `"Bad Request Exception"` 같은 generic 메시지를 반환하면 안 된다.
+- 여러 필드 오류는 `error.detail`에서 공백으로 join된 한글 문장으로 내려준다.
+
 관련 테스트:
 
 - [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)
+- [format-validation-errors.spec.ts](../../src/common/format-validation-errors.spec.ts)
+- [extract-http-exception-detail.spec.ts](../../src/common/extract-http-exception-detail.spec.ts)
 
 ## HTTP Lifecycle
 

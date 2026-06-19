@@ -11,6 +11,7 @@ import {
 import { Response } from 'express';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
+import { extractHttpExceptionDetail } from './extract-http-exception-detail';
 
 @Injectable()
 export class TransformResponseInterceptor implements NestInterceptor {
@@ -60,7 +61,7 @@ export class TransformResponseInterceptor implements NestInterceptor {
 
                     const error = {
                         message,
-                        detail: String(err?.message ?? err),
+                        detail: extractHttpExceptionDetail(err),
                         stack: process.env.NODE_ENV === 'production' ? undefined : err?.stack,
                     };
 
