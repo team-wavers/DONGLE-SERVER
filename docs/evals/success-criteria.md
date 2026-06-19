@@ -182,9 +182,9 @@
 ### DTO 검증 실패 400 응답
 
 - DTO 검증 실패 400은 `{ isSuccess: false, error: { message, detail } }` envelope을 유지해야 한다.
-- `error.message`는 상태코드 요약 한글(`잘못된 요청입니다.`)을 담는다.
-- `error.detail`은 필드별 한글 오류 요약 문자열을 담아야 하며, `"Bad Request Exception"` 같은 generic 메시지를 반환하면 안 된다.
-- 여러 필드 오류는 `error.detail`에서 공백으로 join된 한글 문장으로 내려준다.
+- `error.message`는 비개발자가 그대로 볼 수 있는 구체 오류 문구를 담아야 하며, `"Bad Request Exception"` 같은 generic 메시지를 반환하면 안 된다.
+- DTO 검증 실패의 여러 필드 오류는 `error.message`에서 공백으로 join된 한글 문장으로 내려준다.
+- `error.detail`은 개발자 진단용 문자열이어야 하며, 예외 클래스와 상태코드 정보를 포함해야 한다.
 
 관련 테스트:
 
