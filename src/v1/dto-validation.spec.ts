@@ -14,6 +14,7 @@ import { CreateClubScheduleDto } from './club_schedules/dto/create-club-schedule
 import { UpdateClubScheduleAdminStatusDto } from './club_schedules/dto/update-club-schedule-admin-status.dto';
 import { UpdateClubScheduleDto } from './club_schedules/dto/update-club-schedule.dto';
 import { CreateClubReportDto } from './club_reports/dto/create-club_report.dto';
+import { UpdateClubReportDto } from './club_reports/dto/update-club_report.dto';
 import { CreateClubDto } from './clubs/dto/create-club.dto';
 import { UpdateClubDto } from './clubs/dto/update-club.dto';
 import { UpsertMainBannerDto } from './main_banners/dto/upsert-main-banner.dto';
@@ -258,6 +259,44 @@ describe('DTO runtime validation rules', () => {
                     'image_urls',
                 ]),
             );
+        });
+    });
+
+    describe('UpdateClubReportDto', () => {
+        it('makes report content fields optional while preserving their types', () => {
+            expect(validatePlain(UpdateClubReportDto, {})).toHaveLength(0);
+            expect(
+                validatePlain(UpdateClubReportDto, { title: '수정된 제목' }),
+            ).toHaveLength(0);
+            const errors = validatePlain(UpdateClubReportDto, {
+                title: 1,
+                image_urls: ['ok', 3],
+            });
+
+            expect(errors.map((error) => error.property)).toEqual(
+                expect.arrayContaining(['title', 'image_urls']),
+            );
+        });
+
+        it('rejects null update field values instead of treating them as omitted', () => {
+            const errors = validatePlain(UpdateClubReportDto, {
+                title: null,
+                content: null,
+                image_urls: null,
+            });
+
+            expect(errors.map((error) => error.property)).toEqual(
+                expect.arrayContaining(['title', 'content', 'image_urls']),
+            );
+        });
+
+        it('rejects route-derived club_id as a body field', async () => {
+            await expect(
+                transformBody(UpdateClubReportDto, {
+                    club_id: 1,
+                    title: '수정된 제목',
+                }),
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
     });
 

@@ -1,5 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    BadRequestException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { CreateClubReportDto } from './dto/create-club_report.dto';
+import { UpdateClubReportDto } from './dto/update-club_report.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClubReport } from '../club_reports/entities/club_report.entity';
 import { Repository } from 'typeorm';
@@ -54,17 +59,10 @@ export class ClubReportsService {
         return report;
     }
 
-    async update(id: number, updateClubReportDto: CreateClubReportDto) {
-        return await this.clubReportRepository.update(
-            id,
-            this.toUpdateData(updateClubReportDto),
-        );
-    }
-
     async updateByClubId(
         clubId: number,
         reportId: number,
-        updateClubReportDto: CreateClubReportDto,
+        updateClubReportDto: UpdateClubReportDto,
     ) {
         const result = await this.clubReportRepository
             .createQueryBuilder()
@@ -106,19 +104,16 @@ export class ClubReportsService {
     }
 
     private toUpdateData(
-        updateClubReportDto: CreateClubReportDto,
+        updateClubReportDto: UpdateClubReportDto,
     ): QueryDeepPartialEntity<ClubReport> {
-        const { club_id, ...updateData } = updateClubReportDto;
-        void club_id;
-
         const cleanData = Object.fromEntries(
-            Object.entries(updateData).filter(
+            Object.entries(updateClubReportDto).filter(
                 ([, value]) => value !== undefined,
             ),
         ) as QueryDeepPartialEntity<ClubReport>;
 
         if (Object.keys(cleanData).length === 0) {
-            throw new Error('수정할 정보가 없습니다.');
+            throw new BadRequestException('수정할 정보가 없습니다.');
         }
 
         return cleanData;

@@ -90,7 +90,6 @@ describe('ClubReportsService', () => {
             queryBuilder.execute.mockResolvedValue({ affected: 1 });
 
             const result = await service.updateByClubId(1, 7, {
-                club_id: 1,
                 title: '수정된 제목',
                 content: '수정된 본문',
                 image_urls: ['https://example.com/image.png'],
@@ -118,7 +117,6 @@ describe('ClubReportsService', () => {
 
             await expect(
                 service.updateByClubId(1, 404, {
-                    club_id: 1,
                     title: '수정된 제목',
                     content: '수정된 본문',
                     image_urls: [],
@@ -128,6 +126,16 @@ describe('ClubReportsService', () => {
                 message: '해당 활동보고서가 존재하지 않습니다.',
             });
             expect(repository.update).not.toHaveBeenCalled();
+        });
+
+        it('수정할 활동보고서 필드가 없으면 Bad Request를 던진다', async () => {
+            await expect(
+                service.updateByClubId(1, 7, {}),
+            ).rejects.toMatchObject({
+                status: HttpStatus.BAD_REQUEST,
+                message: '수정할 정보가 없습니다.',
+            });
+            expect(queryBuilder.execute).not.toHaveBeenCalled();
         });
     });
 
