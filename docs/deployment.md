@@ -75,7 +75,7 @@
 - `DEV_EXTERNAL_HEALTHCHECK_URL`
 - `PROD_EXTERNAL_HEALTHCHECK_URL`
 
-프론트에서 쓰던 `LIGHTSAIL_HOST`, `LIGHTSAIL_SSH_KEY`는 그대로 재사용해도 됩니다.  
+프론트에서 쓰던 `LIGHTSAIL_HOST`, `LIGHTSAIL_SSH_KEY`는 그대로 재사용해도 됩니다.
 백엔드에서는 SSH 접속용 사용자 계정인 `LIGHTSAIL_USER`를 추가로 두는 것을 권장합니다.
 
 ## 서버에 미리 준비할 것
@@ -117,8 +117,6 @@ vi .env.development
 cd /home/ec2-user/dongle.server.prod
 vi .env.production
 ```
-
-앱은 `NODE_ENV`에 따라 [`src/app.module.ts`](/Users/bigsheep/Desktop/projects/DONGLE-SERVER/src/app.module.ts#L17) 에서 `.env.${NODE_ENV}` 파일을 읽습니다.
 
 ## PM2 설정
 

@@ -43,13 +43,13 @@ VALUES ('운영 관리자', 'internal_admin', '<bcrypt_hash>', 'admin', '0000000
 운영 환경 파일을 읽도록 `NODE_ENV=production`을 포함해 서버를 실행합니다.
 
 ```bash
-NODE_ENV=production node dist/main.js
+NODE_ENV=production PORT=5000 node dist/main.js
 ```
 
-PM2 사용 시:
+PM2 사용 시 [`ecosystem.prod.config.js`](../ecosystem.prod.config.js)로 기동합니다. 이 설정은 `PORT: 5000`을 포함합니다.
 
 ```bash
-NODE_ENV=production pm2 start dist/main.js --name dongle.server.prod --update-env
+pm2 start ecosystem.prod.config.js --update-env
 ```
 
 ## 2. 최초 관리자 계정 생성
@@ -96,7 +96,7 @@ curl -X POST http://localhost:5000/v1/auth/login \
 최초 생성 이후에는 반드시 관리자 토큰이 필요합니다.
 
 ```bash
-curl -X POST http://localhost:3000/v1/users \
+curl -X POST http://localhost:5000/v1/users \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <ACCESS_TOKEN>" \
   -d '{
