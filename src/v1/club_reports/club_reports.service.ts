@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    BadRequestException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { CreateClubReportDto } from './dto/create-club_report.dto';
 import { UpdateClubReportDto } from './dto/update-club_report.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -119,7 +123,7 @@ export class ClubReportsService {
         ) as QueryDeepPartialEntity<ClubReport>;
 
         if (Object.keys(cleanData).length === 0) {
-            throw new Error('수정할 정보가 없습니다.');
+            throw new BadRequestException('수정할 정보가 없습니다.');
         }
 
         return cleanData;

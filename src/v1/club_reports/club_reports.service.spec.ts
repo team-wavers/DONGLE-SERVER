@@ -129,6 +129,18 @@ describe('ClubReportsService', () => {
             });
             expect(repository.update).not.toHaveBeenCalled();
         });
+
+        it('수정할 활동보고서 필드가 없으면 Bad Request를 던진다', async () => {
+            await expect(
+                service.updateByClubId(1, 7, {
+                    club_id: 1,
+                }),
+            ).rejects.toMatchObject({
+                status: HttpStatus.BAD_REQUEST,
+                message: '수정할 정보가 없습니다.',
+            });
+            expect(queryBuilder.execute).not.toHaveBeenCalled();
+        });
     });
 
     describe('removeByClubId', () => {
