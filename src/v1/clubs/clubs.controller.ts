@@ -19,6 +19,7 @@ import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 import { ClubReportsService } from '../club_reports/club_reports.service';
 import { CreateClubReportDto } from '../club_reports/dto/create-club_report.dto';
+import { UpdateClubReportDto } from '../club_reports/dto/update-club_report.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
@@ -216,7 +217,7 @@ export class ClubsController {
     async updateReport(
         @Param('id') clubId: number,
         @Param('reportId') reportId: number,
-        @Body() updateClubReportDto: CreateClubReportDto,
+        @Body() updateClubReportDto: UpdateClubReportDto,
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));

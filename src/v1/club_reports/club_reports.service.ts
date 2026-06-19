@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateClubReportDto } from './dto/create-club_report.dto';
+import { UpdateClubReportDto } from './dto/update-club_report.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClubReport } from '../club_reports/entities/club_report.entity';
 import { Repository } from 'typeorm';
@@ -64,7 +65,7 @@ export class ClubReportsService {
     async updateByClubId(
         clubId: number,
         reportId: number,
-        updateClubReportDto: CreateClubReportDto,
+        updateClubReportDto: UpdateClubReportDto,
     ) {
         const result = await this.clubReportRepository
             .createQueryBuilder()
@@ -106,7 +107,7 @@ export class ClubReportsService {
     }
 
     private toUpdateData(
-        updateClubReportDto: CreateClubReportDto,
+        updateClubReportDto: UpdateClubReportDto,
     ): QueryDeepPartialEntity<ClubReport> {
         const { club_id, ...updateData } = updateClubReportDto;
         void club_id;
