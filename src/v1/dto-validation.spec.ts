@@ -74,8 +74,8 @@ describe('DTO runtime validation rules', () => {
                 tags: ['it', 'study'],
                 is_recruiting: true,
                 location: '학생회관',
-                recruit_start: '2026-05-01T00:00:00.000Z',
-                recruit_end: '2026-05-31T00:00:00.000Z',
+                recruit_start: '2026-05-01 00:00:00',
+                recruit_end: '2026-05-31 00:00:00',
                 description: '설명',
                 main_activities: '스터디',
                 president_id: 1,
@@ -87,6 +87,7 @@ describe('DTO runtime validation rules', () => {
                 category: '학술',
                 tags: ['it', 1],
                 is_recruiting: 'true',
+                recruit_start: new Date('2026-05-01T00:00:00.000Z'),
                 president_id: '1',
             });
 
@@ -95,6 +96,7 @@ describe('DTO runtime validation rules', () => {
                 expect.arrayContaining([
                     'tags',
                     'is_recruiting',
+                    'recruit_start',
                     'president_id',
                 ]),
             );

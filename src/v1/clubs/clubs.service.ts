@@ -10,12 +10,13 @@ import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 import { Club } from './entities/club.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { DeepPartial, IsNull, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { getRequiredEnv } from '../../common/lib/utils';
 import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
+import { parseSeoulDateTime } from '../../common/lib/date-time';
 @Injectable()
 export class ClubsService {
     constructor(
@@ -38,7 +39,9 @@ export class ClubsService {
                 HttpStatus.BAD_REQUEST,
             );
         }
-        const newClub = this.clubRepository.create(createClubDto);
+        const newClub = this.clubRepository.create(
+            this.toPersistencePayload(createClubDto),
+        );
         return await this.clubRepository.save(newClub);
     }
 
@@ -89,9 +92,10 @@ export class ClubsService {
             }
         }
 
+        const updateData = this.toPersistencePayload(updateClubDto);
         const result = await this.clubRepository.update(
             { id, deleted_at: IsNull() },
-            updateClubDto,
+            updateData,
         );
         if (result.affected === 0) {
             throw new HttpException(
@@ -150,5 +154,21 @@ export class ClubsService {
         );
         const url = `${getRequiredEnv(this.config, 'APP_URL')}/${getRequiredEnv(this.config, 'CLUB_REGISTRATION_PATH')}?key=${oneTimeKey.key}`;
         return url;
+    }
+
+    private toPersistencePayload(
+        dto: CreateClubDto | UpdateClubDto,
+    ): DeepPartial<Club> {
+        const payload = { ...dto } as DeepPartial<Club>;
+
+        if (dto.recruit_start !== undefined) {
+            payload.recruit_start = parseSeoulDateTime(dto.recruit_start);
+        }
+
+        if (dto.recruit_end !== undefined) {
+            payload.recruit_end = parseSeoulDateTime(dto.recruit_end);
+        }
+
+        return payload;
     }
 }
