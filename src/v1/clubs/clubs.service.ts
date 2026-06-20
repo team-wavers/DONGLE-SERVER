@@ -1,14 +1,22 @@
-import { HttpException, HttpStatus, Inject, Injectable, forwardRef } from '@nestjs/common';
+import {
+    HttpException,
+    HttpStatus,
+    Inject,
+    Injectable,
+    NotFoundException,
+    forwardRef,
+} from '@nestjs/common';
 import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 import { Club } from './entities/club.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { DeepPartial, IsNull, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { getRequiredEnv } from '../../common/lib/utils';
 import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
+import { parseSeoulDateTime } from '../../common/lib/date-time';
 @Injectable()
 export class ClubsService {
     constructor(
@@ -31,33 +39,55 @@ export class ClubsService {
                 HttpStatus.BAD_REQUEST,
             );
         }
-        const newClub = this.clubRepository.create(createClubDto);
+        const newClub = this.clubRepository.create(
+            this.toPersistencePayload(createClubDto),
+        );
         return await this.clubRepository.save(newClub);
     }
 
     async findAll() {
-        return await this.clubRepository.find();
+        return await this.clubRepository.find({
+            where: { deleted_at: IsNull() },
+        });
     }
 
     async findOne(id: number) {
-        return await this.clubRepository.findOne({
+        const club = await this.clubRepository.findOne({
             where: {
                 id: id,
                 deleted_at: IsNull(), // deleted_at이 null인 경우만 조회
             },
             relations: ['president', 'reports'],
         });
+
+        if (!club) {
+            throw new NotFoundException('해당 동아리가 존재하지 않습니다.');
+        }
+
+        return club;
     }
 
     async update(id: number, updateClubDto: UpdateClubDto) {
-        if (updateClubDto.president_id) { // 동아리 회장 변경 시
-            const president = await this.usersService.findOne(updateClubDto.president_id);
-            if (!president) {
-                throw new HttpException('존재하지 않는 사용자입니다.', HttpStatus.BAD_REQUEST);
+        if (updateClubDto.president_id !== undefined) {
+            // 동아리 회장 변경 시
+            try {
+                await this.usersService.findOne(updateClubDto.president_id);
+            } catch (error) {
+                if (error instanceof NotFoundException) {
+                    throw new HttpException(
+                        '존재하지 않는 사용자입니다.',
+                        HttpStatus.BAD_REQUEST,
+                    );
+                }
+                throw error;
             }
         }
 
-        const result = await this.clubRepository.update(id, updateClubDto);
+        const updateData = this.toPersistencePayload(updateClubDto);
+        const result = await this.clubRepository.update(
+            { id, deleted_at: IsNull() },
+            updateData,
+        );
         if (result.affected === 0) {
             throw new HttpException(
                 '해당 동아리가 존재하지 않습니다.',
@@ -68,9 +98,12 @@ export class ClubsService {
     }
 
     async delete(id: number) {
-        const result = await this.clubRepository.update(id, {
-            deleted_at: new Date(),
-        });
+        const result = await this.clubRepository.update(
+            { id, deleted_at: IsNull() },
+            {
+                deleted_at: new Date(),
+            },
+        );
         if (result.affected === 0) {
             throw new HttpException(
                 '해당 동아리가 존재하지 않습니다.',
@@ -112,5 +145,27 @@ export class ClubsService {
         );
         const url = `${getRequiredEnv(this.config, 'APP_URL')}/${getRequiredEnv(this.config, 'CLUB_REGISTRATION_PATH')}?key=${oneTimeKey.key}`;
         return url;
+    }
+
+    private toPersistencePayload(
+        dto: CreateClubDto | UpdateClubDto,
+    ): DeepPartial<Club> {
+        const payload = { ...dto } as DeepPartial<Club>;
+
+        if (dto.recruit_start !== undefined) {
+            payload.recruit_start =
+                dto.recruit_start === null
+                    ? null
+                    : parseSeoulDateTime(dto.recruit_start);
+        }
+
+        if (dto.recruit_end !== undefined) {
+            payload.recruit_end =
+                dto.recruit_end === null
+                    ? null
+                    : parseSeoulDateTime(dto.recruit_end);
+        }
+
+        return payload;
     }
 }

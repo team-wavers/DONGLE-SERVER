@@ -6,29 +6,41 @@ import {
     Body,
     Param,
     Delete,
+    Patch,
     Put,
     UseInterceptors,
     UploadedFile,
     UseGuards,
     Request,
+    Query,
 } from '@nestjs/common';
 import { ClubsService } from './clubs.service';
 import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 import { ClubReportsService } from '../club_reports/club_reports.service';
 import { CreateClubReportDto } from '../club_reports/dto/create-club_report.dto';
+import { UpdateClubReportDto } from '../club_reports/dto/update-club_report.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ROLES, normalizeRole } from '../auth/constants/roles';
 import { S3Service } from '../../common/lib/s3-uploads';
+import {
+    IMAGE_UPLOAD_INTERCEPTOR_OPTIONS,
+    validateImageUploadFile,
+} from '../../common/lib/upload-file-validation';
+import { ClubSchedulesService } from '../club_schedules/club_schedules.service';
+import { CreateClubScheduleDto } from '../club_schedules/dto/create-club-schedule.dto';
+import { ClubSchedulePresidentQueryDto } from '../club_schedules/dto/club-schedule-query.dto';
+import { UpdateClubScheduleDto } from '../club_schedules/dto/update-club-schedule.dto';
 
 @Controller()
 export class ClubsController {
     constructor(
         private readonly clubsService: ClubsService,
         private readonly clubReportsService: ClubReportsService,
+        private readonly clubSchedulesService: ClubSchedulesService,
         private readonly s3Service: S3Service,
     ) {}
 
@@ -71,13 +83,14 @@ export class ClubsController {
     @Post(':id/icons')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.PRESIDENT, ROLES.ADMIN)
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(FileInterceptor('file', IMAGE_UPLOAD_INTERCEPTOR_OPTIONS))
     async uploadIcon(
         @Param('id') clubId: number,
-        @UploadedFile() file: Express.Multer.File,
+        @UploadedFile() file: Express.Multer.File | undefined,
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
+        validateImageUploadFile(file);
         const url = await this.s3Service.upload(
             file.buffer,
             'club-icons',
@@ -89,13 +102,14 @@ export class ClubsController {
     @Post(':id/report-images')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.PRESIDENT)
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(FileInterceptor('file', IMAGE_UPLOAD_INTERCEPTOR_OPTIONS))
     async uploadReportImage(
         @Param('id') clubId: number,
-        @UploadedFile() file: Express.Multer.File,
+        @UploadedFile() file: Express.Multer.File | undefined,
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
+        validateImageUploadFile(file);
         const buffer = file.buffer;
         const key = `club-reports`;
         const contentType = file.mimetype;
@@ -105,6 +119,83 @@ export class ClubsController {
     @Get(':id/reports')
     async findReportsByClubId(@Param('id') clubId: number) {
         return await this.clubReportsService.findAllByClubId(clubId);
+    }
+
+    @Get(':id/public-schedules')
+    async findPublicSchedulesByClubId(@Param('id') clubId: number) {
+        return await this.clubSchedulesService.findPublicByClubId(
+            Number(clubId),
+        );
+    }
+
+    @Get(':id/schedules')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
+    async findSchedulesByClubId(
+        @Param('id') clubId: number,
+        @Query() query: ClubSchedulePresidentQueryDto,
+        @Request() req,
+    ) {
+        this.assertClubWritePermission(req, Number(clubId));
+        return await this.clubSchedulesService.findAllByClubId(
+            Number(clubId),
+            query,
+        );
+    }
+
+    @Post(':id/schedules')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
+    async createSchedule(
+        @Param('id') clubId: number,
+        @Body() dto: CreateClubScheduleDto,
+        @Request() req,
+    ) {
+        this.assertClubWritePermission(req, Number(clubId));
+        return await this.clubSchedulesService.create(Number(clubId), dto);
+    }
+
+    @Patch(':id/schedules/:scheduleId')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
+    async updateSchedule(
+        @Param('id') clubId: number,
+        @Param('scheduleId') scheduleId: number,
+        @Body() dto: UpdateClubScheduleDto,
+        @Request() req,
+    ) {
+        this.assertClubWritePermission(req, Number(clubId));
+        return await this.clubSchedulesService.update(
+            Number(clubId),
+            Number(scheduleId),
+            dto,
+        );
+    }
+
+    @Delete(':id/schedules/:scheduleId')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.PRESIDENT)
+    async deleteSchedule(
+        @Param('id') clubId: number,
+        @Param('scheduleId') scheduleId: number,
+        @Request() req,
+    ) {
+        this.assertClubWritePermission(req, Number(clubId));
+        return await this.clubSchedulesService.removeByClubId(
+            Number(clubId),
+            Number(scheduleId),
+        );
+    }
+
+    @Get(':id/reports/:reportId')
+    async findReportById(
+        @Param('id') clubId: number,
+        @Param('reportId') reportId: number,
+    ) {
+        return await this.clubReportsService.findOneByClubId(
+            Number(clubId),
+            Number(reportId),
+        );
     }
 
     @Post(':id/reports')
@@ -126,13 +217,13 @@ export class ClubsController {
     async updateReport(
         @Param('id') clubId: number,
         @Param('reportId') reportId: number,
-        @Body() updateClubReportDto: CreateClubReportDto,
+        @Body() updateClubReportDto: UpdateClubReportDto,
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
-        updateClubReportDto.club_id = clubId;
-        return await this.clubReportsService.update(
-            reportId,
+        return await this.clubReportsService.updateByClubId(
+            Number(clubId),
+            Number(reportId),
             updateClubReportDto,
         );
     }
@@ -146,7 +237,10 @@ export class ClubsController {
         @Request() req,
     ) {
         this.assertClubWritePermission(req, Number(clubId));
-        return await this.clubReportsService.remove(reportId);
+        return await this.clubReportsService.removeByClubId(
+            Number(clubId),
+            Number(reportId),
+        );
     }
 
     @Get(':id')

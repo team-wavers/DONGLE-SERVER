@@ -3,8 +3,6 @@ import {
     Controller,
     Delete,
     Get,
-    HttpException,
-    HttpStatus,
     Param,
     Post,
     Put,
@@ -14,6 +12,10 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { S3Service } from '../../common/lib/s3-uploads';
+import {
+    IMAGE_UPLOAD_INTERCEPTOR_OPTIONS,
+    validateImageUploadFile,
+} from '../../common/lib/upload-file-validation';
 import { ROLES } from '../auth/constants/roles';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -31,6 +33,20 @@ export class MainBannersController {
     @Get()
     async findActive() {
         return await this.mainBannersService.findActive();
+    }
+
+    @Get('admin')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.ADMIN)
+    async findAllForAdmin() {
+        return await this.mainBannersService.findAllForAdmin();
+    }
+
+    @Get('admin/:id')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Roles(ROLES.ADMIN)
+    async findOneForAdmin(@Param('id') id: number) {
+        return await this.mainBannersService.findOneForAdmin(Number(id));
     }
 
     @Post()
@@ -57,24 +73,9 @@ export class MainBannersController {
     @Post('images')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.ADMIN)
-    @UseInterceptors(
-        FileInterceptor('file', {
-            limits: {
-                fileSize: 10 * 1024 * 1024,
-            },
-        }),
-    )
-    async uploadImage(@UploadedFile() file: Express.Multer.File) {
-        if (!file) {
-            throw new HttpException('파일이 필요합니다.', HttpStatus.BAD_REQUEST);
-        }
-
-        if (!this.isAllowedImageType(file.mimetype)) {
-            throw new HttpException(
-                '허용되지 않는 이미지 형식입니다. (jpg, png, webp)',
-                HttpStatus.BAD_REQUEST,
-            );
-        }
+    @UseInterceptors(FileInterceptor('file', IMAGE_UPLOAD_INTERCEPTOR_OPTIONS))
+    async uploadImage(@UploadedFile() file: Express.Multer.File | undefined) {
+        validateImageUploadFile(file);
 
         const imageUrl = await this.s3Service.upload(
             file.buffer,
@@ -83,10 +84,5 @@ export class MainBannersController {
         );
 
         return { image_url: imageUrl };
-    }
-
-    private isAllowedImageType(mimeType: string) {
-        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        return allowed.includes(mimeType);
     }
 }

@@ -1,7 +1,22 @@
 ## PR Review
-- Codex가 GitHub PR 리뷰를 작성할 때는 항상 한국어로 작성한다.
+- AI 코딩 에이전트가 GitHub PR 리뷰를 작성할 때는 항상 한국어로 작성한다.
 - 리뷰 요약, 지적 사항, 변경 제안은 모두 한국어로 작성한다.
 - 코드 식별자, 에러 메시지, 로그, 커밋 해시는 원문 그대로 유지한다.
+
+## Commit and PR
+- AI 코딩 에이전트가 커밋 메시지를 작성할 때는 항상 한국어로 작성한다.
+- AI 코딩 에이전트가 PR 제목과 PR 본문을 작성할 때는 항상 한국어로 작성한다.
+- 코드 식별자, 파일 경로, 에러 메시지, 로그, 커밋 해시는 원문 그대로 유지한다.
+- PR 본문에는 변경 요약, 검증 결과, 남은 리스크를 한국어로 작성한다.
+
+## Coding Behavior
+- AI 코딩 에이전트는 구현 전에 요구사항, 가정, 성공 기준을 짧게 정리한다.
+- 요구사항이 모호하거나 여러 해석이 가능하면 임의로 결정하지 말고 먼저 질문한다.
+- 요청 범위를 벗어난 기능, 설정, 추상화, 리팩터링을 추가하지 않는다.
+- 기존 코드 스타일과 구조를 우선 따르고, 선호하는 방식이라는 이유만으로 주변 코드를 바꾸지 않는다.
+- 변경한 모든 라인은 사용자 요청이나 검증 실패 해결과 직접 연결되어야 한다.
+- 변경으로 인해 새로 생긴 미사용 import, 변수, helper는 정리하되, 기존 dead code는 요청이 없으면 삭제하지 않는다.
+- 복잡한 작업은 성공 기준과 검증 방법을 먼저 정하고, 검증이 통과할 때까지 반복한다.
 
 ## Harness Contract
 - 시작 전에 [docs/evals/README.md](docs/evals/README.md), [docs/evals/success-criteria.md](docs/evals/success-criteria.md), [docs/evals/test-inventory.md](docs/evals/test-inventory.md), [docs/evals/known-gaps.md](docs/evals/known-gaps.md), [docs/evals/roadmap.md](docs/evals/roadmap.md) 를 먼저 확인한다.
@@ -11,6 +26,14 @@
 - 인증, 라우팅, DB 연결, HTTP lifecycle이 꼭 필요한 경우만 E2E 후보다.
 - 컨트롤러 존재 여부나 단순 DI 확인만 하는 케이스는 E2E로 만들지 않는다.
 - 기본 진입 명령은 `yarn verify:fast`다.
+
+## Large Change / TDD Contract
+- 큰 기능 추가, 도메인 로직 변경, payload transform, validation, parser, formatter, helper 변경은 TDD 흐름을 우선한다.
+- 구현 전에 먼저 실패하는 테스트 또는 테스트 계획을 작성한다.
+- 테스트가 새 성공 기준을 올바르게 표현하는지 사용자에게 먼저 확인받는다.
+- 사용자 확인 후 실제 구현을 진행하고, 작성한 테스트가 통과하는지 검증한다.
+- 단순 rename, import 정리, 스타일 조정, 컨트롤러 위임처럼 순수 로직 검증 가치가 낮은 작업은 TDD 대상에서 제외할 수 있다.
+- TDD를 적용하지 않았다면 종료 보고에 이유를 남긴다.
 
 ## Done Contract
 - 성공 기준이 바뀌면 관련 문서를 같이 갱신한다.
