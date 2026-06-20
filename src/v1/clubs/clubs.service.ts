@@ -68,13 +68,10 @@ export class ClubsService {
     }
 
     async update(id: number, updateClubDto: UpdateClubDto) {
-        if (updateClubDto.president_id) {
+        if (updateClubDto.president_id !== undefined) {
             // 동아리 회장 변경 시
-            let president;
             try {
-                president = await this.usersService.findOne(
-                    updateClubDto.president_id,
-                );
+                await this.usersService.findOne(updateClubDto.president_id);
             } catch (error) {
                 if (error instanceof NotFoundException) {
                     throw new HttpException(
@@ -83,12 +80,6 @@ export class ClubsService {
                     );
                 }
                 throw error;
-            }
-            if (!president) {
-                throw new HttpException(
-                    '존재하지 않는 사용자입니다.',
-                    HttpStatus.BAD_REQUEST,
-                );
             }
         }
 
