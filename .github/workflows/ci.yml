@@ -15,6 +15,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,6 +51,9 @@ jobs:
 
       - name: Test
         run: yarn test --runInBand
+
+      - name: Run migrations against CI database
+        run: NODE_ENV=ci yarn migration:run
 
       - name: Check migrations
         run: yarn migration:check
