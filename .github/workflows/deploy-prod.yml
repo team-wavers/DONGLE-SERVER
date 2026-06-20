@@ -141,6 +141,12 @@ jobs:
 
           test -f "${{ env.REMOTE_ENV_FILE }}"
 
+          rm -rf .release.bak
+          if [ -d dist ]; then
+            mkdir -p .release.bak
+            cp -r dist package.json yarn.lock "${{ env.PM2_CONFIG }}" .release.bak/
+          fi
+
           rm -rf dist
           tar -xzf /tmp/backend-prod.tar.gz -C "${{ env.REMOTE_APP_DIR }}"
           rm -f /tmp/backend-prod.tar.gz
@@ -149,12 +155,13 @@ jobs:
           NODE_ENV=production yarn migration:show </dev/null
           NODE_ENV=production yarn migration:run </dev/null
           pm2 startOrReload "${{ env.PM2_CONFIG }}" --update-env </dev/null
+          sleep 5
 
-          for i in $(seq 1 15); do
+          for i in $(seq 1 20); do
             if curl --fail --silent "${{ env.HEALTHCHECK_URL }}" >/dev/null; then
               exit 0
             fi
-            sleep 2
+            sleep 3
           done
 
           exit 1
@@ -165,11 +172,43 @@ jobs:
           set -euo pipefail
           test -n "${EXTERNAL_HEALTHCHECK_URL}"
 
-          for i in $(seq 1 15); do
+          for i in $(seq 1 20); do
             if curl --fail --silent "${EXTERNAL_HEALTHCHECK_URL}" >/dev/null; then
               exit 0
             fi
-            sleep 2
+            sleep 3
           done
 
           exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" /bin/bash <<'EOF'
+          set -euo pipefail
+          cd "${{ env.REMOTE_APP_DIR }}"
+
+          if [ ! -d .release.bak ]; then
+            echo "이전 release 백업이 없어 자동 롤백할 수 없습니다. 수동 조치가 필요합니다."
+            exit 1
+          fi
+
+          rm -rf dist package.json yarn.lock "${{ env.PM2_CONFIG }}"
+          cp -r .release.bak/dist .release.bak/package.json .release.bak/yarn.lock \
+            ".release.bak/${{ env.PM2_CONFIG }}" .
+
+          yarn install --frozen-lockfile --production=true </dev/null
+          pm2 startOrReload "${{ env.PM2_CONFIG }}" --update-env </dev/null
+          sleep 5
+
+          for i in $(seq 1 20); do
+            if curl --fail --silent "${{ env.HEALTHCHECK_URL }}" >/dev/null; then
+              echo "롤백 성공: 이전 release로 복원되었습니다."
+              exit 0
+            fi
+            sleep 3
+          done
+
+          echo "롤백 후에도 헬스체크가 실패했습니다. 즉시 수동 점검이 필요합니다."
+          exit 1
+          EOF
