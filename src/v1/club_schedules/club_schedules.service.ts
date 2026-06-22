@@ -523,10 +523,11 @@ export class ClubSchedulesService {
     }
 
     private validateDateOrder(startAt: Date, endAt: Date) {
-        validateDateRange(
-            startAt,
-            endAt,
-            '시작일시는 종료일시보다 이전이어야 합니다.',
-        );
+        if (startAt > endAt) {
+            throw new HttpException(
+                '시작일시는 종료일시보다 이전이거나 같아야 합니다.',
+                HttpStatus.BAD_REQUEST,
+            );
+        }
     }
 }
