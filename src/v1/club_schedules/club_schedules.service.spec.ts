@@ -184,17 +184,27 @@ describe('ClubSchedulesService', () => {
             },
         );
 
-        it('시작일시가 종료일시와 같거나 늦으면 Bad Request를 던진다', async () => {
+        it('시작일시가 종료일시보다 늦으면 Bad Request를 던진다', async () => {
+            await expect(
+                service.create(1, {
+                    ...validDto,
+                    start_at: '2026-05-20 21:00:00',
+                    end_at: '2026-05-20 20:00:00',
+                }),
+            ).rejects.toMatchObject({
+                status: HttpStatus.BAD_REQUEST,
+                message: '시작일시는 종료일시보다 이전이거나 같아야 합니다.',
+            });
+        });
+
+        it('시작일시와 종료일시가 같으면 허용한다', async () => {
             await expect(
                 service.create(1, {
                     ...validDto,
                     start_at: '2026-05-20 21:00:00',
                     end_at: '2026-05-20 21:00:00',
                 }),
-            ).rejects.toMatchObject({
-                status: HttpStatus.BAD_REQUEST,
-                message: '시작일시는 종료일시보다 이전이어야 합니다.',
-            });
+            ).resolves.not.toThrow();
         });
 
         it('관리자 공통 일정은 club_id와 club 없이 생성한다', async () => {
