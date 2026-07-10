@@ -43,7 +43,7 @@ export class Club {
     description: string;
 
     @Column({ type: 'varchar', length: 255, nullable: true })
-    icon_url: string;
+    icon_url: string | null;
 
     @Column({ type: 'varchar', length: 100, nullable: true })
     location: string;
