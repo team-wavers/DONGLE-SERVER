@@ -51,6 +51,9 @@ export class Club {
     @Column({ type: 'text', nullable: true })
     main_activities: string;
 
+    @Column({ type: 'varchar', length: 2048, nullable: true })
+    apply_url: string | null;
+
     @Column({ nullable: true })
     president_id: number | null;
 
