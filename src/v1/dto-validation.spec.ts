@@ -101,6 +101,26 @@ describe('DTO runtime validation rules', () => {
                 ]),
             );
         });
+
+        it('validates apply_url length before persistence', () => {
+            const validErrors = validatePlain(CreateClubDto, {
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+                apply_url: 'https://forms.example.com/apply',
+            });
+            const invalidErrors = validatePlain(CreateClubDto, {
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+                apply_url: 'a'.repeat(2049),
+            });
+
+            expect(validErrors).toHaveLength(0);
+            expect(invalidErrors.map((error) => error.property)).toContain(
+                'apply_url',
+            );
+        });
     });
 
     describe('UpdateClubDto', () => {
