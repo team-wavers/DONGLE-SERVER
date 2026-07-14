@@ -5,6 +5,7 @@ import {
     IsObject,
     IsOptional,
     IsString,
+    MaxLength,
 } from 'class-validator';
 
 export class CreateClubDto {
@@ -49,6 +50,11 @@ export class CreateClubDto {
     @IsOptional()
     @IsString()
     main_activities?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(2048)
+    apply_url?: string | null;
 
     @IsOptional()
     @IsNumber()
