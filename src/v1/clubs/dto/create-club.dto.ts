@@ -51,6 +51,10 @@ export class CreateClubDto {
     main_activities?: string;
 
     @IsOptional()
+    @IsString()
+    icon_url?: string | null;
+
+    @IsOptional()
     @IsNumber()
     president_id?: number;
 }
