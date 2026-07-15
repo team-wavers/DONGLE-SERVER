@@ -53,6 +53,10 @@ export class CreateClubDto {
 
     @IsOptional()
     @IsString()
+    icon_url?: string | null;
+
+    @IsOptional()
+    @IsString()
     @MaxLength(2048)
     apply_url?: string | null;
 
