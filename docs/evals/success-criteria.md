@@ -136,6 +136,19 @@
 
 - [main_banners.controller.spec.ts](../../src/v1/main_banners/main_banners.controller.spec.ts)
 
+## Dashboard
+
+### 관리자 홈 집계
+
+- 동아리 집계는 삭제되지 않은 동아리의 전체 수와 모집중 수를 반환해야 하며, 최근 항목은 생성일 역순으로 최대 4개까지 `id`, `name`, `category`, `is_recruiting` 필드만 포함해야 한다.
+- 사용자 집계는 삭제되지 않고 시스템 계정이 아닌 사용자의 전체 수를 반환해야 하며, 최근 항목은 생성일 역순으로 최대 4개까지 `id`, `name`, `login_id`, `role`, `created_at` 필드만 포함하고 비밀번호 해시와 refresh_token은 절대 포함하지 않아야 한다.
+- 배너 집계는 삭제되지 않은 전체 배너 수와 `is_active`가 true인 배너 수를 반환해야 한다.
+- 일정 집계는 서울 기준 이번 달 범위(이번 달 1일 00:00 이상, 다음 달 1일 00:00 미만)와 겹치는 삭제되지 않은 일정 수를 반환해야 하며, 다음 달 1일 00:00 정각에 시작하는 일정은 이번 달 집계에서 제외해야 한다.
+
+관련 테스트:
+
+- [dashboard.service.spec.ts](../../src/v1/dashboard/dashboard.service.spec.ts)
+
 ## Auth
 
 ### 로그인과 refresh token

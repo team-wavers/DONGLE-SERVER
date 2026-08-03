@@ -83,7 +83,7 @@ export class DashboardService {
         const thisMonth = await this.clubScheduleRepository
             .createQueryBuilder('schedule')
             .where('schedule.deleted_at IS NULL')
-            .andWhere('schedule.start_at <= :to', { to })
+            .andWhere('schedule.start_at < :to', { to })
             .andWhere('schedule.end_at >= :from', { from })
             .getCount();
 
