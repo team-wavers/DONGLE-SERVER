@@ -28,6 +28,7 @@
 | validation     | [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)                                      | code-graded | 요청 DTO 필수/선택/타입 런타임 validation 계약; 400 message 한글화는 common helper spec 참조 |
 | main banners   | [main_banners.service.spec.ts](../../src/v1/main_banners/main_banners.service.spec.ts)             | code-graded | 메인 배너 service 생성/수정/삭제/관리자 목록/활성 목록/검증 계약       |
 | main banners   | [main_banners.controller.spec.ts](../../src/v1/main_banners/main_banners.controller.spec.ts)       | code-graded | 메인 배너 조회 위임, 이미지 업로드 controller 계약                     |
+| dashboard      | [dashboard.service.spec.ts](../../src/v1/dashboard/dashboard.service.spec.ts)                      | code-graded | 관리자 홈 집계(동아리/사용자/배너/일정) select 필드, 정렬, 이번 달 범위 반개방 구간 계약 |
 | auth           | [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)                                     | code-graded | 로그인 실패/성공, refresh token 실패/rotation 계약                     |
 | auth           | [jwt.strategy.spec.ts](../../src/v1/auth/strategies/jwt.strategy.spec.ts)                          | code-graded | JWT payload 사용자 정보/club_id 검증 계약                              |
 
