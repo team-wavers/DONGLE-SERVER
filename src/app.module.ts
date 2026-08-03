@@ -13,6 +13,7 @@ import { getRequiredEnv } from './common/lib/utils';
 import { MainBannersModule } from './v1/main_banners/main_banners.module';
 import { ClubSchedulesModule } from './v1/club_schedules/club_schedules.module';
 import { PublicClubSchedulesModule } from './v1/club_schedules/public_club_schedules.module';
+import { DashboardModule } from './v1/dashboard/dashboard.module';
 
 @Module({
     imports: [
@@ -47,6 +48,7 @@ import { PublicClubSchedulesModule } from './v1/club_schedules/public_club_sched
                     { path: 'main-banners', module: MainBannersModule },
                     { path: 'auth', module: AuthModule },
                     { path: 'healthCheck', module: HealthModule },
+                    { path: 'dashboard', module: DashboardModule },
                 ],
             },
         ]),
@@ -59,6 +61,7 @@ import { PublicClubSchedulesModule } from './v1/club_schedules/public_club_sched
         PublicClubSchedulesModule,
         MainBannersModule,
         AuthModule,
+        DashboardModule,
     ],
     controllers: [AppController],
     providers: [AppService],
