@@ -14,6 +14,7 @@ import { MainBannersModule } from './v1/main_banners/main_banners.module';
 import { ClubSchedulesModule } from './v1/club_schedules/club_schedules.module';
 import { PublicClubSchedulesModule } from './v1/club_schedules/public_club_schedules.module';
 import { DashboardModule } from './v1/dashboard/dashboard.module';
+import { FeedbackModule } from './v1/feedback/feedback.module';
 
 @Module({
     imports: [
@@ -49,6 +50,7 @@ import { DashboardModule } from './v1/dashboard/dashboard.module';
                     { path: 'auth', module: AuthModule },
                     { path: 'healthCheck', module: HealthModule },
                     { path: 'dashboard', module: DashboardModule },
+                    { path: 'feedback', module: FeedbackModule },
                 ],
             },
         ]),
@@ -62,6 +64,7 @@ import { DashboardModule } from './v1/dashboard/dashboard.module';
         MainBannersModule,
         AuthModule,
         DashboardModule,
+        FeedbackModule,
     ],
     controllers: [AppController],
     providers: [AppService],

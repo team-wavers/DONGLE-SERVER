@@ -31,6 +31,9 @@
 | dashboard      | [dashboard.service.spec.ts](../../src/v1/dashboard/dashboard.service.spec.ts)                      | code-graded | 관리자 홈 집계(동아리/사용자/배너/일정) select 필드, 정렬, 이번 달 범위 반개방 구간 계약 |
 | auth           | [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)                                     | code-graded | 로그인 실패/성공, refresh token 실패/rotation 계약                     |
 | auth           | [jwt.strategy.spec.ts](../../src/v1/auth/strategies/jwt.strategy.spec.ts)                          | code-graded | JWT payload 사용자 정보/club_id 검증 계약                              |
+| feedback       | [feedback.service.spec.ts](../../src/v1/feedback/feedback.service.spec.ts)                         | code-graded | GitHub Issue 제목/본문 조립, API 성공/실패(4xx·네트워크 오류) 계약     |
+| feedback       | [create-feedback.dto.spec.ts](../../src/v1/feedback/dto/create-feedback.dto.spec.ts)               | code-graded | category enum, content 공백 전용 값 거부 계약                          |
+| feedback       | [feedback.controller.spec.ts](../../src/v1/feedback/feedback.controller.spec.ts)                   | code-graded | controller DI 계약                                                     |
 
 ## 잔존 E2E
 

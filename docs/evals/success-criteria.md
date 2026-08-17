@@ -149,6 +149,22 @@
 
 - [dashboard.service.spec.ts](../../src/v1/dashboard/dashboard.service.spec.ts)
 
+## Feedback
+
+### 관리자 피드백 GitHub Issue 생성
+
+- `POST /v1/feedback`은 `admin`/`president` 역할만 호출할 수 있어야 한다.
+- 요청 body의 `category`는 `bug`/`inconvenience`/`feature`/`other` 중 하나여야 하고, `content`는 공백만 있는 값을 허용하지 않아야 한다.
+- 이슈 제목/본문에 포함되는 사용자 역할과 동아리 ID는 요청 body가 아니라 JWT에서 검증된 `req.user`로부터 도출해야 한다(클라이언트 입력 신뢰 금지).
+- `president` 역할이고 동아리 ID가 있으면 이슈 본문에 동아리 ID를 포함하고, 그 외에는 포함하지 않아야 한다.
+- GitHub API 호출이 실패(4xx/5xx 응답 또는 네트워크 오류)하면 `InternalServerErrorException`으로 응답해야 한다.
+- 성공 시 생성된 이슈의 `issueUrl`, `issueNumber`를 반환해야 한다.
+
+관련 테스트:
+
+- [feedback.service.spec.ts](../../src/v1/feedback/feedback.service.spec.ts)
+- [create-feedback.dto.spec.ts](../../src/v1/feedback/dto/create-feedback.dto.spec.ts)
+
 ## Auth
 
 ### 로그인과 refresh token
