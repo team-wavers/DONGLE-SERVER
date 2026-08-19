@@ -56,7 +56,7 @@ describe('FeedbackService', () => {
         config = {
             get: jest.fn((key: string) => {
                 if (key === 'GH_FEEDBACK_TOKEN') return 'test-token';
-                if (key === 'GITHUB_FEEDBACK_REPO') return 'team-wavers/DONGLE-FRONT';
+                if (key === 'GH_FEEDBACK_REPO') return 'team-wavers/DONGLE-FRONT';
                 return undefined;
             }),
         };
