@@ -65,6 +65,25 @@ describe('FeedbackService', () => {
         global.fetch = fetchMock as unknown as typeof fetch;
     });
 
+    it('GitHub 설정이 없어도 서비스를 생성할 수 있다', () => {
+        const emptyConfig = { get: jest.fn().mockReturnValue(undefined) };
+
+        expect(() => new FeedbackService(emptyConfig as unknown as ConfigService)).not.toThrow();
+    });
+
+    it('GitHub 설정이 없으면 이슈 생성 시 실패하고 API를 호출하지 않는다', async () => {
+        const emptyConfig = { get: jest.fn().mockReturnValue(undefined) };
+        const unconfiguredService = new FeedbackService(emptyConfig as unknown as ConfigService);
+
+        await expect(
+            unconfiguredService.create(
+                { category: 'bug', content: '오류 문의', pageUrl: 'https://admin.dongle.app' },
+                { role: 'admin', club_id: null },
+            ),
+        ).rejects.toThrow(InternalServerErrorException);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('GitHub API 성공 시 이슈 URL/번호를 반환하고 올바른 요청을 보낸다', async () => {
         fetchMock.mockResolvedValue({
             ok: true,
