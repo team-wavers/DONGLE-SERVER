@@ -66,8 +66,8 @@ export class FeedbackService {
         });
 
         try {
-            const token = getRequiredEnv(this.config, 'GITHUB_FEEDBACK_TOKEN');
-            const repo = getRequiredEnv(this.config, 'GITHUB_FEEDBACK_REPO');
+            const token = getRequiredEnv(this.config, 'GH_FEEDBACK_TOKEN');
+            const repo = getRequiredEnv(this.config, 'GH_FEEDBACK_REPO');
             const response = await fetch(`https://api.github.com/repos/${repo}/issues`, {
                 method: 'POST',
                 headers: {
