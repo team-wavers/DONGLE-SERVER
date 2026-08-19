@@ -53,13 +53,7 @@ ${content.trim()}`;
 
 @Injectable()
 export class FeedbackService {
-    private readonly token: string;
-    private readonly repo: string;
-
-    constructor(private readonly config: ConfigService) {
-        this.token = getRequiredEnv(this.config, 'GITHUB_FEEDBACK_TOKEN');
-        this.repo = getRequiredEnv(this.config, 'GITHUB_FEEDBACK_REPO');
-    }
+    constructor(private readonly config: ConfigService) {}
 
     async create(dto: CreateFeedbackDto, requester: FeedbackRequester): Promise<{ issueUrl: string; issueNumber: number }> {
         const role: FeedbackRole = requester.role.toLowerCase() === 'admin' ? 'admin' : 'president';
@@ -72,10 +66,12 @@ export class FeedbackService {
         });
 
         try {
-            const response = await fetch(`https://api.github.com/repos/${this.repo}/issues`, {
+            const token = getRequiredEnv(this.config, 'GH_FEEDBACK_TOKEN');
+            const repo = getRequiredEnv(this.config, 'GITHUB_FEEDBACK_REPO');
+            const response = await fetch(`https://api.github.com/repos/${repo}/issues`, {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${this.token}`,
+                    Authorization: `Bearer ${token}`,
                     Accept: 'application/vnd.github+json',
                     'X-GitHub-Api-Version': '2022-11-28',
                     'Content-Type': 'application/json',
