@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { getRequiredEnv } from '../../common/lib/utils';
 import { CreateFeedbackDto, FeedbackCategory } from './dto/create-feedback.dto';
@@ -53,6 +53,8 @@ ${content.trim()}`;
 
 @Injectable()
 export class FeedbackService {
+    private readonly logger = new Logger(FeedbackService.name);
+
     constructor(private readonly config: ConfigService) {}
 
     async create(dto: CreateFeedbackDto, requester: FeedbackRequester): Promise<{ issueUrl: string; issueNumber: number }> {
@@ -86,6 +88,7 @@ export class FeedbackService {
             const issue = (await response.json()) as { html_url: string; number: number };
             return { issueUrl: issue.html_url, issueNumber: issue.number };
         } catch (err) {
+            this.logger.error('GitHub 이슈 생성 실패', err instanceof Error ? err.stack : err);
             throw new InternalServerErrorException('피드백 이슈 생성에 실패했습니다.', {
                 cause: err instanceof Error ? err : undefined,
             });
