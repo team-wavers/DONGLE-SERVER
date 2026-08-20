@@ -1,4 +1,4 @@
-import { InternalServerErrorException } from '@nestjs/common';
+import { InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FeedbackService, buildFeedbackIssue } from './feedback.service';
 
@@ -114,12 +114,13 @@ describe('FeedbackService', () => {
         );
     });
 
-    it('GitHub API가 실패 응답을 반환하면 InternalServerErrorException을 던진다', async () => {
+    it('GitHub API가 실패 응답을 반환하면 InternalServerErrorException을 던지고 원인을 로깅한다', async () => {
         fetchMock.mockResolvedValue({
             ok: false,
             status: 401,
             json: jest.fn().mockResolvedValue({}),
         });
+        const loggerErrorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
 
         await expect(
             service.create(
@@ -127,10 +128,17 @@ describe('FeedbackService', () => {
                 { role: 'admin', club_id: null },
             ),
         ).rejects.toThrow(InternalServerErrorException);
+        expect(loggerErrorSpy).toHaveBeenCalledWith(
+            'GitHub 이슈 생성 실패',
+            expect.stringContaining('GitHub API 응답 실패 (status: 401)'),
+        );
+
+        loggerErrorSpy.mockRestore();
     });
 
-    it('fetch가 네트워크 오류로 실패하면 InternalServerErrorException을 던진다', async () => {
+    it('fetch가 네트워크 오류로 실패하면 InternalServerErrorException을 던지고 원인을 로깅한다', async () => {
         fetchMock.mockRejectedValue(new Error('network down'));
+        const loggerErrorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
 
         await expect(
             service.create(
@@ -138,5 +146,8 @@ describe('FeedbackService', () => {
                 { role: 'president', club_id: 5 },
             ),
         ).rejects.toThrow(InternalServerErrorException);
+        expect(loggerErrorSpy).toHaveBeenCalledWith('GitHub 이슈 생성 실패', expect.stringContaining('network down'));
+
+        loggerErrorSpy.mockRestore();
     });
 });
