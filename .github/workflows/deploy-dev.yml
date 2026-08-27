@@ -30,6 +30,9 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
+    environment:
+      name: development
+
     env:
       NODE_VERSION: '22'
       REMOTE_APP_DIR: /home/ec2-user/dongle.server.dev
@@ -77,6 +80,47 @@ jobs:
           printf '%s\n' "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/lightsail.key
           chmod 600 ~/.ssh/lightsail.key
           ssh-keyscan -H "${{ secrets.LIGHTSAIL_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Prepare remote directory
+        run: |
+          ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" \
+            "mkdir -p '${{ env.REMOTE_APP_DIR }}'"
+
+      - name: Render env file from secrets
+        run: |
+          umask 077
+          printf '%s\n' "${{ secrets.ENV_FILE }}" > backend-dev.env
+
+      - name: Validate required env keys
+        run: |
+          set -euo pipefail
+          missing=0
+          while IFS= read -r line; do
+            key="${line%%=*}"
+            [ -z "$key" ] && continue
+            if ! grep -Eq "^${key}=.+" backend-dev.env; then
+              echo "::error::필수 환경변수 누락: $key"
+              missing=1
+            fi
+          done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env.sample)
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Upload env file
+        run: |
+          scp -i ~/.ssh/lightsail.key backend-dev.env \
+            "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:${{ env.REMOTE_APP_DIR }}/${{ env.REMOTE_ENV_FILE }}.new"
+          ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" /bin/bash <<'EOF'
+          set -euo pipefail
+          cd "${{ env.REMOTE_APP_DIR }}"
+          chmod 600 "${{ env.REMOTE_ENV_FILE }}.new"
+          if [ -f "${{ env.REMOTE_ENV_FILE }}" ]; then
+            cp "${{ env.REMOTE_ENV_FILE }}" "${{ env.REMOTE_ENV_FILE }}.bak"
+          fi
+          mv "${{ env.REMOTE_ENV_FILE }}.new" "${{ env.REMOTE_ENV_FILE }}"
+          EOF
+          rm -f backend-dev.env
 
       - name: Upload release
         run: |
@@ -138,6 +182,10 @@ jobs:
           ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" /bin/bash <<'EOF'
           set -euo pipefail
           cd "${{ env.REMOTE_APP_DIR }}"
+
+          if [ -f "${{ env.REMOTE_ENV_FILE }}.bak" ]; then
+            mv "${{ env.REMOTE_ENV_FILE }}.bak" "${{ env.REMOTE_ENV_FILE }}"
+          fi
 
           if [ ! -d .release.bak ]; then
             echo "이전 release 백업이 없어 자동 롤백할 수 없습니다. 수동 조치가 필요합니다."

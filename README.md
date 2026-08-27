@@ -34,7 +34,7 @@ yarn install
 cp .env.sample .env.local
 ```
 
-`.env.sample`에는 필요한 환경변수 키가 정리되어 있습니다. 실제 실행 전 `.env.local`의 빈 값을 로컬 DB, S3, JWT, CORS 설정에 맞게 채워야 합니다. 배포 환경에서는 같은 기준으로 `.env.development` 또는 `.env.production`을 서버에 배치하되, `.env.*` 파일은 저장소에 커밋하지 않습니다.
+`.env.sample`에는 필요한 환경변수 키가 정리되어 있습니다. 실제 실행 전 `.env.local`의 빈 값을 로컬 DB, S3, JWT, CORS 설정에 맞게 채워야 합니다. 배포 환경(`.env.development`, `.env.production`)은 서버에 수동으로 배치하지 않고 배포 워크플로우가 GitHub Environment 시크릿으로 자동 렌더링합니다. 자세한 내용은 [배포 가이드](docs/deployment.md)를 참고하세요. `.env.*` 파일은 저장소에 커밋하지 않습니다.
 
 ### 3. 개발 서버 실행
 
