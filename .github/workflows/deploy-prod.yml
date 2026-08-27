@@ -121,9 +121,11 @@ jobs:
             ecosystem.prod.config.js
 
       - name: Configure SSH
+        env:
+          SSH_KEY_CONTENT: ${{ secrets.LIGHTSAIL_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/lightsail.key
+          printf '%s\n' "$SSH_KEY_CONTENT" > ~/.ssh/lightsail.key
           chmod 600 ~/.ssh/lightsail.key
           ssh-keyscan -H "${{ secrets.LIGHTSAIL_HOST }}" >> ~/.ssh/known_hosts
 
@@ -133,9 +135,11 @@ jobs:
             "mkdir -p '${{ env.REMOTE_APP_DIR }}'"
 
       - name: Render env file from secrets
+        env:
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
         run: |
           umask 077
-          printf '%s\n' "${{ secrets.ENV_FILE }}" > backend-prod.env
+          printf '%s\n' "$ENV_FILE_CONTENT" > backend-prod.env
 
       - name: Validate required env keys
         run: |
