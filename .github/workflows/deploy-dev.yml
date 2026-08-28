@@ -30,6 +30,9 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
+    environment:
+      name: development
+
     env:
       NODE_VERSION: '22'
       REMOTE_APP_DIR: /home/ec2-user/dongle.server.dev
@@ -37,6 +40,8 @@ jobs:
       PM2_CONFIG: ecosystem.dev.config.js
       HEALTHCHECK_URL: http://127.0.0.1:5001/v1/healthCheck
       EXTERNAL_HEALTHCHECK_URL: ${{ secrets.DEV_EXTERNAL_HEALTHCHECK_URL }}
+      ENV_DEPLOY_MARKER: .env-deploy-${{ github.run_id }}-${{ github.run_attempt }}.started
+      RELEASE_DEPLOY_MARKER: .release-deploy-${{ github.run_id }}-${{ github.run_attempt }}.started
 
     steps:
       - name: Checkout
@@ -72,11 +77,57 @@ jobs:
             ecosystem.dev.config.js
 
       - name: Configure SSH
+        env:
+          SSH_KEY_CONTENT: ${{ secrets.LIGHTSAIL_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/lightsail.key
+          printf '%s\n' "$SSH_KEY_CONTENT" > ~/.ssh/lightsail.key
           chmod 600 ~/.ssh/lightsail.key
           ssh-keyscan -H "${{ secrets.LIGHTSAIL_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Prepare remote directory
+        run: |
+          ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" \
+            "mkdir -p '${{ env.REMOTE_APP_DIR }}'"
+
+      - name: Render env file from secrets
+        env:
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
+        run: |
+          umask 077
+          printf '%s\n' "$ENV_FILE_CONTENT" > backend-dev.env
+
+      - name: Validate required env keys
+        run: |
+          set -euo pipefail
+          missing=0
+          while IFS= read -r line; do
+            key="${line%%=*}"
+            [ -z "$key" ] && continue
+            if ! grep -Eq "^${key}=.+" backend-dev.env; then
+              echo "::error::필수 환경변수 누락: $key"
+              missing=1
+            fi
+          done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env.sample)
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Upload env file
+        run: |
+          scp -i ~/.ssh/lightsail.key backend-dev.env \
+            "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:${{ env.REMOTE_APP_DIR }}/${{ env.REMOTE_ENV_FILE }}.new"
+          ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" /bin/bash <<'EOF'
+          set -euo pipefail
+          cd "${{ env.REMOTE_APP_DIR }}"
+          chmod 600 "${{ env.REMOTE_ENV_FILE }}.new"
+          touch "${{ env.ENV_DEPLOY_MARKER }}"
+          if [ -f "${{ env.REMOTE_ENV_FILE }}" ]; then
+            cp "${{ env.REMOTE_ENV_FILE }}" "${{ env.REMOTE_ENV_FILE }}.bak"
+          fi
+          mv "${{ env.REMOTE_ENV_FILE }}.new" "${{ env.REMOTE_ENV_FILE }}"
+          EOF
+          rm -f backend-dev.env
 
       - name: Upload release
         run: |
@@ -98,6 +149,7 @@ jobs:
             cp -r dist package.json yarn.lock "${{ env.PM2_CONFIG }}" .release.bak/
           fi
 
+          touch "${{ env.RELEASE_DEPLOY_MARKER }}"
           rm -rf dist
           tar -xzf /tmp/backend-dev.tar.gz -C "${{ env.REMOTE_APP_DIR }}"
           rm -f /tmp/backend-dev.tar.gz
@@ -125,6 +177,8 @@ jobs:
 
           for i in $(seq 1 20); do
             if curl --fail --silent "${EXTERNAL_HEALTHCHECK_URL}" >/dev/null; then
+              ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" \
+                "rm -f '${{ env.REMOTE_APP_DIR }}/${{ env.ENV_DEPLOY_MARKER }}' '${{ env.REMOTE_APP_DIR }}/${{ env.RELEASE_DEPLOY_MARKER }}'"
               exit 0
             fi
             sleep 3
@@ -138,6 +192,21 @@ jobs:
           ssh -i ~/.ssh/lightsail.key "${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}" /bin/bash <<'EOF'
           set -euo pipefail
           cd "${{ env.REMOTE_APP_DIR }}"
+
+          if [ ! -f "${{ env.ENV_DEPLOY_MARKER }}" ] && [ ! -f "${{ env.RELEASE_DEPLOY_MARKER }}" ]; then
+            echo "이번 실행에서 시작한 원격 변경이 없어 롤백을 건너뜁니다."
+            exit 0
+          fi
+
+          if [ -f "${{ env.ENV_DEPLOY_MARKER }}" ] && [ -f "${{ env.REMOTE_ENV_FILE }}.bak" ]; then
+            mv "${{ env.REMOTE_ENV_FILE }}.bak" "${{ env.REMOTE_ENV_FILE }}"
+          fi
+
+          if [ ! -f "${{ env.RELEASE_DEPLOY_MARKER }}" ]; then
+            rm -f "${{ env.ENV_DEPLOY_MARKER }}"
+            echo "release 교체 전 실패하여 환경 파일만 복원했습니다."
+            exit 0
+          fi
 
           if [ ! -d .release.bak ]; then
             echo "이전 release 백업이 없어 자동 롤백할 수 없습니다. 수동 조치가 필요합니다."
@@ -154,6 +223,7 @@ jobs:
 
           for i in $(seq 1 20); do
             if curl --fail --silent "${{ env.HEALTHCHECK_URL }}" >/dev/null; then
+              rm -f "${{ env.ENV_DEPLOY_MARKER }}" "${{ env.RELEASE_DEPLOY_MARKER }}"
               echo "롤백 성공: 이전 release로 복원되었습니다."
               exit 0
             fi
