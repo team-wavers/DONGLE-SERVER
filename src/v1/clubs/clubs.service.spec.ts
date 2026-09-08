@@ -2,7 +2,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { IsNull, UpdateResult } from 'typeorm';
+import { DataSource, IsNull, UpdateResult } from 'typeorm';
 import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
 import { Club } from './entities/club.entity';
@@ -25,17 +25,33 @@ describe('ClubsService', () => {
     };
     let authService: {
         validateOneTimeKey: jest.Mock;
+        isOneTimeKeyValid: jest.Mock;
+        consumeOneTimeKey: jest.Mock;
     };
     let usersService: {
         findOne: jest.Mock;
+        create: jest.Mock;
+    };
+    let dataSource: {
+        transaction: jest.Mock;
+    };
+    let transactionManager: {
+        getRepository: jest.Mock;
+    };
+    let transactionClubRepository: {
+        create: jest.Mock;
+        save: jest.Mock;
     };
 
     beforeEach(async () => {
         authService = {
             validateOneTimeKey: jest.fn(),
+            isOneTimeKeyValid: jest.fn(),
+            consumeOneTimeKey: jest.fn(),
         };
         usersService = {
             findOne: jest.fn(),
+            create: jest.fn(),
         };
         clubRepository = {
             create: jest.fn((payload) => payload),
@@ -43,6 +59,16 @@ describe('ClubsService', () => {
             findOne: jest.fn(),
             save: jest.fn(),
             update: jest.fn(),
+        };
+        transactionClubRepository = {
+            create: jest.fn((payload) => payload),
+            save: jest.fn(),
+        };
+        transactionManager = {
+            getRepository: jest.fn(() => transactionClubRepository),
+        };
+        dataSource = {
+            transaction: jest.fn((callback) => callback(transactionManager)),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -63,6 +89,10 @@ describe('ClubsService', () => {
                 {
                     provide: UsersService,
                     useValue: usersService,
+                },
+                {
+                    provide: DataSource,
+                    useValue: dataSource,
                 },
             ],
         }).compile();
@@ -140,6 +170,98 @@ describe('ClubsService', () => {
                 recruit_end: null,
             }),
         );
+    });
+
+    it('create는 newPresident가 있으면 User 생성과 키 소모, Club 생성을 하나의 트랜잭션으로 처리한다', async () => {
+        authService.isOneTimeKeyValid.mockResolvedValue(true);
+        authService.consumeOneTimeKey.mockResolvedValue(true);
+        usersService.create.mockResolvedValue({ id: 99 });
+        transactionClubRepository.save.mockImplementation(
+            async (club) => club,
+        );
+
+        const result = await service.create({
+            key: 'one-time-key',
+            name: '동아리',
+            category: '학술',
+            newPresident: {
+                name: '회장',
+                login_id: 'president1',
+                password: 'password',
+                phone: '01000000000',
+            },
+        });
+
+        expect(authService.isOneTimeKeyValid).toHaveBeenCalledWith(
+            'one-time-key',
+        );
+        expect(dataSource.transaction).toHaveBeenCalled();
+        expect(authService.consumeOneTimeKey).toHaveBeenCalledWith(
+            'one-time-key',
+            transactionManager,
+        );
+        expect(usersService.create).toHaveBeenCalledWith(
+            {
+                name: '회장',
+                login_id: 'president1',
+                password: 'password',
+                phone: '01000000000',
+                role: 'president',
+            },
+            transactionManager,
+        );
+        expect(transactionClubRepository.create).toHaveBeenCalledWith(
+            expect.objectContaining({ president_id: 99 }),
+        );
+        expect(result).toMatchObject({ president_id: 99 });
+        expect(clubRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('create는 키가 이미 만료/사용됐으면 트랜잭션을 시작하지 않는다', async () => {
+        authService.isOneTimeKeyValid.mockResolvedValue(false);
+
+        await expect(
+            service.create({
+                key: 'expired-key',
+                name: '동아리',
+                category: '학술',
+                newPresident: {
+                    name: '회장',
+                    login_id: 'president1',
+                    password: 'password',
+                    phone: '01000000000',
+                },
+            }),
+        ).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST });
+
+        expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('create는 동아리 저장이 실패하면 트랜잭션이 롤백돼 회장 계정도 남지 않는다', async () => {
+        authService.isOneTimeKeyValid.mockResolvedValue(true);
+        authService.consumeOneTimeKey.mockResolvedValue(true);
+        usersService.create.mockResolvedValue({ id: 99 });
+        transactionClubRepository.save.mockRejectedValue(
+            new Error('club save failed'),
+        );
+
+        await expect(
+            service.create({
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+                newPresident: {
+                    name: '회장',
+                    login_id: 'president1',
+                    password: 'password',
+                    phone: '01000000000',
+                },
+            }),
+        ).rejects.toThrow('club save failed');
+
+        // 실제 롤백은 TypeORM의 dataSource.transaction()이 예외 전파로 처리한다.
+        // 여기서는 콜백이 예외를 그대로 던져 트랜잭션이 커밋되지 않는지만 확인한다.
+        expect(usersService.create).toHaveBeenCalled();
     });
 
     it('findAll은 삭제되지 않은 동아리만 조회한다', async () => {

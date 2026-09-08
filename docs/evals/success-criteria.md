@@ -196,7 +196,7 @@
 
 - 앱 부트스트랩은 전역 `ValidationPipe`를 등록해 DTO 데코레이터 기반 런타임 검증을 수행해야 한다.
 - 전역 검증은 DTO에 정의되지 않은 body 필드를 거부하고, 라우트/쿼리 primitive 값 변환을 허용해야 한다.
-- `CreateClubDto`는 `key`, `name`, `category`를 필수 문자열로 받고, `sns`, `tags`, `is_recruiting`, `location`, `recruit_start`, `recruit_end`, `description`, `main_activities`, `apply_url`, `president_id`는 선택 필드이되 선언된 런타임 타입을 지켜야 하며, 모집일은 일정/배너와 같은 날짜 문자열 포맷 또는 명시적 비우기용 `null`로 받아야 한다.
+- `CreateClubDto`는 `key`, `name`, `category`를 필수 문자열로 받고, `sns`, `tags`, `is_recruiting`, `location`, `recruit_start`, `recruit_end`, `description`, `main_activities`, `apply_url`, `president_id`, `newPresident`는 선택 필드이되 선언된 런타임 타입을 지켜야 하며, 모집일은 일정/배너와 같은 날짜 문자열 포맷 또는 명시적 비우기용 `null`로 받아야 한다. `newPresident`(`NewClubPresidentDto`: `name`, `login_id`, `password`, `phone` 전부 필수 문자열)가 있으면 User 생성·키 소모·Club 생성이 하나의 트랜잭션으로 처리되어, Club 저장이 실패해도 방금 만든 회장 계정과 키 소모가 함께 롤백돼야 한다.
 - `CreateClubDto`와 `UpdateClubDto`는 `apply_url` 값이 있으면 문자열 타입만 허용하고 2048자를 넘지 않아야 한다.
 - `UpdateClubDto`는 `CreateClubDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
 - `CreateUserDto`는 `name`, `login_id`, `password`, `role`, `phone`을 필수 문자열로 받고, `refresh_token`은 선택 문자열로 받아야 한다.

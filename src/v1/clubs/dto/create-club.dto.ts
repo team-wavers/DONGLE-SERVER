@@ -6,7 +6,25 @@ import {
     IsOptional,
     IsString,
     MaxLength,
+    ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+// 공개 등록 플로우에서 회장 계정을 함께 생성할 때 쓰는 페이로드.
+// 이 값이 있으면 User+Club 생성이 하나의 트랜잭션으로 묶인다.
+export class NewClubPresidentDto {
+    @IsString()
+    name: string;
+
+    @IsString()
+    login_id: string;
+
+    @IsString()
+    password: string;
+
+    @IsString()
+    phone: string;
+}
 
 export class CreateClubDto {
     @IsString()
@@ -63,4 +81,9 @@ export class CreateClubDto {
     @IsOptional()
     @IsNumber()
     president_id?: number;
+
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => NewClubPresidentDto)
+    newPresident?: NewClubPresidentDto;
 }

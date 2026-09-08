@@ -10,7 +10,7 @@ import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 import { Club } from './entities/club.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, IsNull, Repository } from 'typeorm';
+import { DataSource, DeepPartial, IsNull, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { getRequiredEnv } from '../../common/lib/utils';
@@ -27,22 +27,67 @@ export class ClubsService {
         private readonly authService: AuthService,
         @Inject(forwardRef(() => UsersService))
         private readonly usersService: UsersService,
+        private readonly dataSource: DataSource,
     ) {}
 
     // 저장된 키 대조 후 동아리 생성
     async create(createClubDto: CreateClubDto) {
-        const { key } = createClubDto;
-        const isValid = await this.authService.validateOneTimeKey(key);
+        const { key, newPresident, ...clubFields } = createClubDto;
+
+        // newPresident가 없는 기존 흐름(관리자가 기존 유저를 회장으로 지정)은
+        // 그대로 둔다 — 키는 여기서 바로 소모된다.
+        if (!newPresident) {
+            const isValid = await this.authService.validateOneTimeKey(key);
+            if (!isValid) {
+                throw new HttpException(
+                    '유효하지 않은 키입니다.',
+                    HttpStatus.BAD_REQUEST,
+                );
+            }
+            const newClub = this.clubRepository.create(
+                this.toPersistencePayload(createClubDto),
+            );
+            return await this.clubRepository.save(newClub);
+        }
+
+        // 공개 등록(회장 계정을 함께 생성)은 User 생성 + 키 소모 + Club 생성을
+        // 하나의 트랜잭션으로 묶는다 — 동아리 생성이 실패하면 계정도, 키 소모도
+        // 전부 롤백돼서 고아 계정이 남지 않는다.
+        const isValid = await this.authService.isOneTimeKeyValid(key);
         if (!isValid) {
             throw new HttpException(
                 '유효하지 않은 키입니다.',
                 HttpStatus.BAD_REQUEST,
             );
         }
-        const newClub = this.clubRepository.create(
-            this.toPersistencePayload(createClubDto),
-        );
-        return await this.clubRepository.save(newClub);
+
+        return await this.dataSource.transaction(async (manager) => {
+            const consumed = await this.authService.consumeOneTimeKey(
+                key,
+                manager,
+            );
+            if (!consumed) {
+                throw new HttpException(
+                    '유효하지 않은 키입니다.',
+                    HttpStatus.BAD_REQUEST,
+                );
+            }
+
+            const president = await this.usersService.create(
+                { ...newPresident, role: 'president' },
+                manager,
+            );
+
+            const clubRepo = manager.getRepository(Club);
+            const newClub = clubRepo.create(
+                this.toPersistencePayload({
+                    ...clubFields,
+                    key,
+                    president_id: president.id,
+                } as CreateClubDto),
+            );
+            return await clubRepo.save(newClub);
+        });
     }
 
     async findAll() {
