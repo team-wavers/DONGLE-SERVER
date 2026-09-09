@@ -174,10 +174,16 @@
 - 로그인 성공 시 access/refresh token을 생성하고 생성된 refresh token을 사용자 저장소에 저장해야 한다.
 - refresh token 재발급은 만료/invalid token, 저장된 token 불일치, 사용자 없음 상태를 거부해야 한다.
 - refresh token 재발급 성공 시 token rotation을 수행하고 새 refresh token을 사용자 저장소에 저장해야 한다.
+- 로그인 성공 시 access/refresh token을 body 응답으로 유지하면서 httpOnly, secure, SameSite=Lax 쿠키를 발급해야 하며 쿠키 만료 시각은 JWT `exp`와 일치해야 한다.
+- refresh token 재발급은 refresh 쿠키를 사용할 수 있어야 하며 rotation된 access/refresh 쿠키를 발급해야 한다.
+- refresh 실패와 로그아웃은 accessToken과 refreshToken 쿠키를 삭제해야 한다.
+- Bearer 헤더와 access 쿠키 기반 인증을 모두 유지해야 한다.
+- 인증된 사용자의 `GET /v1/auth/me`는 세션 사용자 식별 정보 다섯 필드를 반환해야 하며 미인증 요청은 401로 거부해야 한다.
 
 관련 테스트:
 
 - [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)
+- [auth.cookie-contract.spec.ts](../../src/v1/auth/auth.cookie-contract.spec.ts)
 
 ### JWT payload 검증
 
@@ -202,7 +208,7 @@
 - `CreateUserDto`는 `name`, `login_id`, `password`, `role`, `phone`을 필수 문자열로 받고, `refresh_token`은 선택 문자열로 받아야 한다.
 - `UpdateUserDto`는 `CreateUserDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
 - `UpsertMainBannerDto`는 `image_url`, `publish_start_at`, `publish_end_at`을 필수 문자열로 받고 `is_active`를 필수 boolean으로 받아야 한다.
-- auth 요청 DTO는 `LoginDto.login_id`, `LoginDto.password`, `RefreshTokenDto.refreshToken`, `VerifyTokenDto.token`을 필수 문자열로 받아야 한다.
+- auth 요청 DTO는 `LoginDto.login_id`, `LoginDto.password`, `VerifyTokenDto.token`을 필수 문자열로 받고, `RefreshTokenDto.refreshToken`은 쿠키 사용을 위해 생략할 수 있으나 제공되면 문자열이어야 한다.
 - `CreateClubReportDto`는 route parameter에서 주입되는 `club_id`를 선택 number로 두고, `title`, `content`, `image_urls`를 각각 필수 문자열/문자열 배열로 검증해야 한다.
 - `UpdateClubReportDto`는 `title`, `content`, `image_urls`를 선택 필드로 만들되 값이 제공되면 `null`이 아닌 타입 규칙을 유지하고, route에서 주입되는 `club_id`를 body 필드로 받지 않아야 한다.
 - `CreateClubScheduleDto`는 route parameter에서 주입되는 `club_id`를 body 필드로 받지 않고, `title`, `type`, `start_at`, `end_at`, `is_public`을 필수값으로 검증하며 선택 필드는 `location`, `description`, `external_url`만 허용해야 한다.
