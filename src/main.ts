@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { createValidationPipe } from './common/create-validation-pipe';
 import { TransformResponseInterceptor } from './common/response.interceptor';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
@@ -10,9 +11,16 @@ async function bootstrap() {
 
     app.useGlobalPipes(createValidationPipe());
     app.useGlobalInterceptors(new TransformResponseInterceptor());
+    app.use(cookieParser());
     // CORS 설정
+    const corsOrigins = config
+        .get<string>('CORS_ORIGIN')
+        ?.split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
     app.enableCors({
-        origin: config.get<string>('CORS_ORIGIN')?.split(','),
+        // Origin 미설정 시 cross-origin을 허용하지 않아 credentials와의 조합을 안전하게 유지한다.
+        origin: corsOrigins?.length ? corsOrigins : false,
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
     });

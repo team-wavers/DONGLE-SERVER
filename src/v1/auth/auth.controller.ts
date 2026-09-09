@@ -9,7 +9,10 @@ import {
     UnauthorizedException,
     BadRequestException,
     InternalServerErrorException,
+    Get,
+    Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -27,8 +30,13 @@ export class AuthController {
     // return: 토큰 응답
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    async login(@Body() loginDto: LoginDto): Promise<TokenResponseDto> {
-        return this.authService.login(loginDto);
+    async login(
+        @Body() loginDto: LoginDto,
+        @Res({ passthrough: true }) response: Response,
+    ): Promise<TokenResponseDto> {
+        const tokens = await this.authService.login(loginDto);
+        this.setTokenCookies(response, tokens);
+        return tokens;
     }
 
     // 액세스 토큰 재발급
@@ -37,9 +45,26 @@ export class AuthController {
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
     async refreshToken(
-        @Body() refreshTokenDto: RefreshTokenDto,
+        @Body() refreshTokenDto: Partial<RefreshTokenDto>,
+        @Request() req,
+        @Res({ passthrough: true }) response: Response,
     ): Promise<TokenResponseDto> {
-        return this.authService.refreshToken(refreshTokenDto);
+        const refreshToken =
+            refreshTokenDto?.refreshToken || this.getCookie(req, 'refreshToken');
+        if (!refreshToken) {
+            throw new UnauthorizedException('리프레시 토큰이 필요합니다.');
+        }
+
+        try {
+            const tokens = await this.authService.refreshToken({ refreshToken });
+            this.setTokenCookies(response, tokens);
+            return tokens;
+        } catch (error) {
+            if (error instanceof UnauthorizedException) {
+                this.clearTokenCookies(response);
+            }
+            throw error;
+        }
     }
 
     // 사용자 로그아웃
@@ -48,8 +73,76 @@ export class AuthController {
     @Post('logout')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async logout(@Request() req): Promise<{ message: string }> {
-        return this.authService.logout(req.user.userId);
+    async logout(
+        @Request() req,
+        @Res({ passthrough: true }) response: Response,
+    ): Promise<{ message: string }> {
+        const result = await this.authService.logout(req.user.userId);
+        this.clearTokenCookies(response);
+        return result;
+    }
+
+    @Get('me')
+    @UseGuards(JwtAuthGuard)
+    async me(@Request() req) {
+        return req.user;
+    }
+
+    private getCookie(req: any, name: string): string | undefined {
+        if (req.cookies?.[name]) {
+            return req.cookies[name];
+        }
+        return req.headers?.cookie
+            ?.split(';')
+            .map((value: string) => value.trim())
+            .find((value: string) => value.startsWith(`${name}=`))
+            ?.slice(name.length + 1);
+    }
+
+    private setTokenCookies(response: Response, tokens: TokenResponseDto) {
+        const cookieOptions = {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax' as const,
+        };
+        const accessPayload = this.decodeToken(tokens.accessToken);
+        const refreshPayload = this.decodeToken(tokens.refreshToken);
+        if (accessPayload.exp) {
+            response.cookie('accessToken', tokens.accessToken, {
+                ...cookieOptions,
+                expires: new Date(accessPayload.exp * 1000),
+            });
+        }
+        if (refreshPayload.exp) {
+            response.cookie('refreshToken', tokens.refreshToken, {
+                ...cookieOptions,
+                expires: new Date(refreshPayload.exp * 1000),
+            });
+        }
+    }
+
+    private clearTokenCookies(response: Response) {
+        response.clearCookie('accessToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+        });
+        response.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+        });
+    }
+
+    private decodeToken(token: string): { exp?: number } {
+        try {
+            const payload = JSON.parse(
+                Buffer.from(token.split('.')[1], 'base64url').toString('utf8'),
+            );
+            return payload && typeof payload === 'object' ? payload : {};
+        } catch {
+            return {};
+        }
     }
 
     // 토큰 유효성 검증
