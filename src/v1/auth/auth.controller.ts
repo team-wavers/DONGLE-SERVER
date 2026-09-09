@@ -45,7 +45,7 @@ export class AuthController {
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
     async refreshToken(
-        @Body() refreshTokenDto: Partial<RefreshTokenDto>,
+        @Body() refreshTokenDto: RefreshTokenDto,
         @Request() req,
         @Res({ passthrough: true }) response: Response,
     ): Promise<TokenResponseDto> {

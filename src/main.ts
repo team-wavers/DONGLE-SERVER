@@ -3,9 +3,11 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { createValidationPipe } from './common/create-validation-pipe';
 import { TransformResponseInterceptor } from './common/response.interceptor';
-import cookieParser from 'cookie-parser';
+// cookie-parser exports a CommonJS function and must not be accessed through `.default`.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+import cookieParser = require('cookie-parser');
 
-async function bootstrap() {
+export async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const config = app.get(ConfigService);
 
@@ -32,4 +34,7 @@ async function bootstrap() {
         `🚀 Application running on port ${port} (env: ${process.env.NODE_ENV})`,
     );
 }
-bootstrap();
+
+if (require.main === module) {
+    void bootstrap();
+}

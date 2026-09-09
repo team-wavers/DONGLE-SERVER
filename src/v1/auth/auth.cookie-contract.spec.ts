@@ -19,6 +19,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { createValidationPipe } from '../../common/create-validation-pipe';
 
 @Controller('protected')
 @UseGuards(JwtAuthGuard)
@@ -135,6 +136,7 @@ describe('Auth cookie HTTP contract', () => {
 
         app = moduleFixture.createNestApplication();
         app.setGlobalPrefix('v1/auth');
+        app.useGlobalPipes(createValidationPipe());
         await app.init();
     });
 
@@ -166,8 +168,8 @@ describe('Auth cookie HTTP contract', () => {
             expect(cookie).toMatch(/; SameSite=Lax/i);
         }
 
-        const accessPayload = jwtService.decode(response.body.accessToken) as { exp: number };
-        const refreshPayload = jwtService.decode(response.body.refreshToken) as { exp: number };
+        const accessPayload = jwtService.decode(response.body.accessToken);
+        const refreshPayload = jwtService.decode(response.body.refreshToken);
         expect(expiresAt(accessCookie)).toBe(accessPayload.exp);
         expect(expiresAt(refreshCookie)).toBe(refreshPayload.exp);
 
@@ -240,6 +242,18 @@ describe('Auth cookie HTTP contract', () => {
         expect(findCookie(setCookieHeaders(response.headers), 'refreshToken')).toMatch(
             /; HttpOnly/i,
         );
+    });
+
+    it.each([
+        ['refreshToken 타입이 숫자일 때', { refreshToken: 123 }],
+        ['선언되지 않은 필드가 있을 때', { unexpected: 'field' }],
+    ])('refresh DTO는 %s 400을 반환하고 service까지 전달하지 않는다', async (_, body) => {
+        await request(app.getHttpServer())
+            .post('/v1/auth/refresh')
+            .send(body)
+            .expect(400);
+
+        expect(authService.refreshToken).not.toHaveBeenCalled();
     });
 
     it('무효 refresh 쿠키는 401과 두 쿠키 삭제 헤더를 반환한다', async () => {

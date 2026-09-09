@@ -26,11 +26,13 @@
 | club schedules | [club_schedules.service.spec.ts](../../src/v1/club_schedules/club_schedules.service.spec.ts)       | code-graded | 일정 service 생성/수정/공통 일정 생성/공개 조회/전체 공개 기간 조회/관리자 내용 수정/공개 상태 변경/삭제/필터/응답 매핑 계약 |
 | club schedules | [club_schedules.controller.spec.ts](../../src/v1/club_schedules/club_schedules.controller.spec.ts) | code-graded | public/관리자 일정 controller 계약                                     |
 | validation     | [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)                                      | code-graded | 요청 DTO 필수/선택/타입 런타임 validation 계약; 400 message 한글화는 common helper spec 참조 |
+| bootstrap      | [main.spec.ts](../../src/main.spec.ts)                                                             | code-graded | Nest 앱 부트스트랩에서 CommonJS `cookie-parser` middleware 등록 계약                 |
 | main banners   | [main_banners.service.spec.ts](../../src/v1/main_banners/main_banners.service.spec.ts)             | code-graded | 메인 배너 service 생성/수정/삭제/관리자 목록/활성 목록/검증 계약       |
 | main banners   | [main_banners.controller.spec.ts](../../src/v1/main_banners/main_banners.controller.spec.ts)       | code-graded | 메인 배너 조회 위임, 이미지 업로드 controller 계약                     |
 | dashboard      | [dashboard.service.spec.ts](../../src/v1/dashboard/dashboard.service.spec.ts)                      | code-graded | 관리자 홈 집계(동아리/사용자/배너/일정) select 필드, 정렬, 이번 달 범위 반개방 구간 계약 |
 | auth           | [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)                                     | code-graded | 로그인 실패/성공, refresh token 실패/rotation 계약                     |
 | auth           | [jwt.strategy.spec.ts](../../src/v1/auth/strategies/jwt.strategy.spec.ts)                          | code-graded | JWT payload 사용자 정보/club_id 검증 계약                              |
+| auth           | [auth.cookie-contract.spec.ts](../../src/v1/auth/auth.cookie-contract.spec.ts)                     | code-graded | 쿠키 발급·rotation·삭제, 쿠키/Bearer 인증, `GET /v1/auth/me`, global pipe refresh DTO 검증 |
 | feedback       | [feedback.service.spec.ts](../../src/v1/feedback/feedback.service.spec.ts)                         | code-graded | GitHub Issue 제목/본문 조립, 설정 지연 조회, API 성공/실패(4xx·네트워크 오류) 계약 |
 | feedback       | [create-feedback.dto.spec.ts](../../src/v1/feedback/dto/create-feedback.dto.spec.ts)               | code-graded | category enum, content 공백 전용 값 거부 계약                          |
 | feedback       | [feedback.controller.spec.ts](../../src/v1/feedback/feedback.controller.spec.ts)                   | code-graded | controller DI 계약                                                     |
