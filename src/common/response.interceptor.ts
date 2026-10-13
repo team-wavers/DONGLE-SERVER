@@ -13,6 +13,7 @@ import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import {
     extractHttpExceptionMessage,
+    extractHttpExceptionCode,
     formatHttpExceptionDetail,
 } from './extract-http-exception-detail';
 
@@ -35,9 +36,11 @@ export class TransformResponseInterceptor implements NestInterceptor {
                 // 이미 HttpException인 경우: 상태코드 보존
                 if (err instanceof HttpException) {
                     const status = err.getStatus();
+                    const code = extractHttpExceptionCode(err);
                     const error = {
                         message: extractHttpExceptionMessage(err),
                         detail: formatHttpExceptionDetail(err),
+                        ...(code !== undefined && { code }),
                     };
 
                     throw new HttpException({ isSuccess: false, error }, status);

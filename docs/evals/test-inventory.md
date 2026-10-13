@@ -14,22 +14,23 @@
 | -------------- | -------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------- |
 | app            | [app.controller.spec.ts](../../src/app.controller.spec.ts)                                         | code-graded | 기본 컨트롤러 응답                                                     |
 | common helpers | [date-time.spec.ts](../../src/common/lib/date-time.spec.ts)                                        | code-graded | Seoul 기준 날짜 파싱, 명시적 timezone 처리, 날짜 범위 검증             |
+| common helpers | [normalize-korean-phone.spec.ts](../../src/common/lib/normalize-korean-phone.spec.ts)              | code-graded | 한국 휴대폰 번호 형식 검증과 정규화                                    |
 | common helpers | [format-validation-errors.spec.ts](../../src/common/format-validation-errors.spec.ts)              | code-graded | ValidationError 한글 메시지 변환, nested field, 커스텀 message override |
 | common helpers | [extract-http-exception-detail.spec.ts](../../src/common/extract-http-exception-detail.spec.ts)  | code-graded | HttpException response body에서 사용자용 message와 개발자용 detail 문자열 추출 |
-| common response | [response.interceptor.spec.ts](../../src/common/response.interceptor.spec.ts)                    | code-graded | 에러 응답 envelope의 message/detail 분리 계약                          |
+| common response | [response.interceptor.spec.ts](../../src/common/response.interceptor.spec.ts)                    | code-graded | 에러 응답 envelope의 message/detail 분리와 선택적 code 전달 계약         |
 | clubs          | [clubs.controller.spec.ts](../../src/v1/clubs/clubs.controller.spec.ts)                            | code-graded | 동아리 controller 계약, 활동보고서 단건 위임, 이미지 업로드 validation |
-| clubs          | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                                  | code-graded | 동아리 service 계약, 단건 Not Found, 삭제된 동아리 제외/거부           |
-| users          | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)                                  | code-graded | 사용자 service 계약, 단건 Not Found                                    |
+| clubs          | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                                  | code-graded | 동아리 service 계약, 공개 등록 및 `president_id` 경로의 트랜잭션 키 소모/재시도/동시 경합, 모집일 병합 범위 검증, 회장 존재 검증 |
+| users          | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)                                  | code-graded | 사용자 service 계약, 전화번호 정규화/중복 코드, 단건 Not Found, 필수값 누락 400 |
 | users          | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)                            | code-graded | 사용자 controller 계약, 단건 위임                                      |
 | club reports   | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)             | code-graded | 활동보고서 service 계약, 동아리 하위 단건/수정/삭제 Not Found          |
 | club reports   | [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts)       | code-graded | 활동보고서 controller 계약                                             |
 | club schedules | [club_schedules.service.spec.ts](../../src/v1/club_schedules/club_schedules.service.spec.ts)       | code-graded | 일정 service 생성/수정/공통 일정 생성/공개 조회/전체 공개 기간 조회/관리자 내용 수정/공개 상태 변경/삭제/필터/응답 매핑 계약 |
 | club schedules | [club_schedules.controller.spec.ts](../../src/v1/club_schedules/club_schedules.controller.spec.ts) | code-graded | public/관리자 일정 controller 계약                                     |
-| validation     | [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)                                      | code-graded | 요청 DTO 필수/선택/타입 런타임 validation 계약; 400 message 한글화는 common helper spec 참조 |
+| validation     | [dto-validation.spec.ts](../../src/v1/dto-validation.spec.ts)                                      | code-graded | 요청 DTO 필수/선택/타입 런타임 validation 계약, 동아리 수정 DTO의 `key`/`newPresident` 거부, 신규 회장 payload 검증 |
 | main banners   | [main_banners.service.spec.ts](../../src/v1/main_banners/main_banners.service.spec.ts)             | code-graded | 메인 배너 service 생성/수정/삭제/관리자 목록/활성 목록/검증 계약       |
 | main banners   | [main_banners.controller.spec.ts](../../src/v1/main_banners/main_banners.controller.spec.ts)       | code-graded | 메인 배너 조회 위임, 이미지 업로드 controller 계약                     |
 | dashboard      | [dashboard.service.spec.ts](../../src/v1/dashboard/dashboard.service.spec.ts)                      | code-graded | 관리자 홈 집계(동아리/사용자/배너/일정) select 필드, 정렬, 이번 달 범위 반개방 구간 계약 |
-| auth           | [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)                                     | code-graded | 로그인 실패/성공, refresh token 실패/rotation 계약                     |
+| auth           | [auth.service.spec.ts](../../src/v1/auth/auth.service.spec.ts)                                     | code-graded | 로그인 실패/성공, refresh token 실패/rotation, 1회용 키 소모의 만료 조건 계약 |
 | auth           | [jwt.strategy.spec.ts](../../src/v1/auth/strategies/jwt.strategy.spec.ts)                          | code-graded | JWT payload 사용자 정보/club_id 검증 계약                              |
 | feedback       | [feedback.service.spec.ts](../../src/v1/feedback/feedback.service.spec.ts)                         | code-graded | GitHub Issue 제목/본문 조립, 설정 지연 조회, API 성공/실패(4xx·네트워크 오류) 계약 |
 | feedback       | [create-feedback.dto.spec.ts](../../src/v1/feedback/dto/create-feedback.dto.spec.ts)               | code-graded | category enum, content 공백 전용 값 거부 계약                          |

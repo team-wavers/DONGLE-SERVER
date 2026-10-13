@@ -56,6 +56,36 @@ describe('DTO runtime validation rules', () => {
         });
     });
 
+    describe('UpdateClubDto', () => {
+        it.each(['key', 'newPresident'])(
+            'rejects %s before it can reach the service',
+            async (field) => {
+                const payload = {
+                    [field]: field === 'newPresident' ? {} : 'one-time-key',
+                };
+
+                await expect(
+                    transformBody(UpdateClubDto, payload),
+                ).rejects.toMatchObject({
+                    response: expect.objectContaining({
+                        message: expect.arrayContaining([
+                            expect.stringContaining(field),
+                        ]),
+                    }),
+                });
+            },
+        );
+
+        it('accepts normal partial updates and president_id', async () => {
+            await expect(
+                transformBody(UpdateClubDto, { name: 'Updated club' }),
+            ).resolves.toMatchObject({ name: 'Updated club' });
+            await expect(
+                transformBody(UpdateClubDto, { president_id: 12 }),
+            ).resolves.toMatchObject({ president_id: 12 });
+        });
+    });
+
     describe('CreateClubDto', () => {
         it('requires key, name, and category strings', () => {
             const errors = validationPropertyNames(new CreateClubDto());
@@ -63,6 +93,89 @@ describe('DTO runtime validation rules', () => {
             expect(errors).toEqual(
                 expect.arrayContaining(['key', 'name', 'category']),
             );
+        });
+
+        it('validates the public registration president payload and requires exactly one president source', async () => {
+            const club = {
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+            };
+            const president = {
+                name: '회장',
+                login_id: 'president1',
+                password: 'password1',
+                phone: '010-1234-5678',
+            };
+
+            await expect(
+                transformBody(CreateClubDto, club),
+            ).rejects.toMatchObject({
+                response: expect.objectContaining({
+                    message: expect.arrayContaining([
+                        'president_id 또는 newPresident 중 하나만 입력해야 합니다.',
+                    ]),
+                }),
+            });
+            await expect(
+                transformBody(CreateClubDto, {
+                    ...club,
+                    president_id: 1,
+                    newPresident: president,
+                }),
+            ).rejects.toBeInstanceOf(BadRequestException);
+            await expect(
+                transformBody(CreateClubDto, {
+                    ...club,
+                    newPresident: { ...president, name: '   ' },
+                }),
+            ).rejects.toBeInstanceOf(BadRequestException);
+
+            for (const invalidPresident of [
+                { ...president, name: undefined },
+                { ...president, login_id: undefined },
+                { ...president, password: undefined },
+                { ...president, phone: undefined },
+                { ...president, phone: '02-123-4567' },
+                { ...president, phone: '010-123-456' },
+                { ...president, login_id: 'President1' },
+                { ...president, login_id: 'abc' },
+                { ...president, password: 'password' },
+                { ...president, password: '12345678' },
+                { ...president, password: 'pw1' },
+                { ...president, password: 'a1'.repeat(37) },
+            ]) {
+                await expect(
+                    transformBody(CreateClubDto, {
+                        ...club,
+                        newPresident: invalidPresident,
+                    }),
+                ).rejects.toBeInstanceOf(BadRequestException);
+            }
+
+            await expect(
+                transformBody(CreateClubDto, {
+                    ...club,
+                    newPresident: {
+                        ...president,
+                        phone: '010 1234 5678',
+                    },
+                }),
+            ).resolves.toMatchObject({
+                newPresident: { phone: '01012345678' },
+            });
+            await expect(
+                transformBody(CreateClubDto, {
+                    ...club,
+                    president_id: 1,
+                }),
+            ).resolves.toMatchObject({ president_id: 1 });
+            await expect(
+                transformBody(CreateClubDto, {
+                    ...club,
+                    president_id: null,
+                }),
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
 
         it('accepts optional typed fields only when their runtime type matches', () => {
@@ -108,12 +221,14 @@ describe('DTO runtime validation rules', () => {
                 name: '동아리',
                 category: '학술',
                 apply_url: 'https://forms.example.com/apply',
+                president_id: 1,
             });
             const invalidErrors = validatePlain(CreateClubDto, {
                 key: 'one-time-key',
                 name: '동아리',
                 category: '학술',
                 apply_url: 'a'.repeat(2049),
+                president_id: 1,
             });
 
             expect(validErrors).toHaveLength(0);
@@ -124,7 +239,7 @@ describe('DTO runtime validation rules', () => {
     });
 
     describe('UpdateClubDto', () => {
-        it('makes all CreateClubDto fields optional while preserving their types', () => {
+        it('makes updatable CreateClubDto fields optional while preserving their types', () => {
             expect(validateSync(new UpdateClubDto())).toHaveLength(0);
 
             const errors = validatePlain(UpdateClubDto, {

@@ -1,16 +1,26 @@
 import {
+    BadRequestException,
     ConflictException,
     ForbiddenException,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, Not, FindOptionsWhere } from 'typeorm';
+import {
+    EntityManager,
+    In,
+    Repository,
+    IsNull,
+    Not,
+    FindOptionsWhere,
+} from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { Club } from '../clubs/entities/club.entity';
 import * as bcrypt from 'bcrypt';
+import { normalizeKoreanPhone } from '../../common/lib/normalize-korean-phone';
+import { ERROR_CODES } from '../../common/error-codes';
 
 @Injectable()
 export class UsersService {
@@ -29,6 +39,7 @@ export class UsersService {
         login_id?: string,
         phone?: string,
         excludeUserId?: number,
+        repo: Repository<User> = this.userRepository,
     ): Promise<void> {
         const baseWhere: FindOptionsWhere<User> = {
             deleted_at: IsNull(),
@@ -36,47 +47,66 @@ export class UsersService {
         };
 
         if (login_id) {
-            const existing = await this.userRepository.findOne({
+            const existing = await repo.findOne({
                 where: { ...baseWhere, login_id },
             });
             if (existing) {
-                throw new ConflictException(
-                    '이미 사용 중인 로그인 아이디입니다.',
-                );
+                throw new ConflictException({
+                    message: '이미 사용 중인 로그인 아이디입니다.',
+                    code: ERROR_CODES.LOGIN_ID_DUPLICATED,
+                });
             }
         }
         if (phone) {
-            const existing = await this.userRepository.findOne({
-                where: { ...baseWhere, phone },
+            const existing = await repo.findOne({
+                where: {
+                    ...baseWhere,
+                    phone: In([phone, phone.replace(/-/g, '')]),
+                },
             });
             if (existing) {
-                throw new ConflictException('이미 사용 중인 전화번호입니다.');
+                throw new ConflictException({
+                    message: '이미 사용 중인 전화번호입니다.',
+                    code: ERROR_CODES.PHONE_DUPLICATED,
+                });
             }
         }
     }
 
-    async create(createUserDto: CreateUserDto) {
+    // manager가 주어지면 그 트랜잭션 안에서 실행한다 (동아리 공개 등록처럼
+    // User+Club 생성을 하나의 트랜잭션으로 묶어야 하는 호출부에서 사용)
+    async create(createUserDto: CreateUserDto, manager?: EntityManager) {
         const { name, login_id, password, role, phone } = createUserDto;
         if (!name || !login_id || !password || !role || !phone) {
-            throw new Error('필수값이 누락되었습니다.');
+            throw new BadRequestException('필수값이 누락되었습니다.');
         }
 
-        await this.checkDuplicateLoginIdAndPhone(login_id, phone);
+        const userRepo = manager
+            ? manager.getRepository(User)
+            : this.userRepository;
+        const normalizedPhone = normalizeKoreanPhone(phone);
+
+        await this.checkDuplicateLoginIdAndPhone(
+            login_id,
+            normalizedPhone,
+            undefined,
+            userRepo,
+        );
 
         // 비밀번호 해시 처리
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // User 엔티티 생성 (club_id 없이)
-        const user = this.userRepository.create({
+        const user = userRepo.create({
             name,
             login_id,
             password: hashedPassword,
             role,
-            phone,
+            phone: normalizedPhone,
         });
 
         // 데이터베이스에 저장
-        const savedUser = await this.userRepository.save(user);
+        const savedUser = await userRepo.save(user);
 
         return savedUser;
     }
@@ -128,7 +158,13 @@ export class UsersService {
         const login_id =
             'login_id' in updateUserDto ? updateUserDto.login_id : undefined;
         const phone =
-            'phone' in updateUserDto ? updateUserDto.phone : undefined;
+            'phone' in updateUserDto && updateUserDto.phone !== undefined
+                ? normalizeKoreanPhone(updateUserDto.phone)
+                : undefined;
+
+        if ('phone' in updateData && phone !== undefined) {
+            updateData.phone = phone;
+        }
 
         await this.checkDuplicateLoginIdAndPhone(login_id, phone, id);
 

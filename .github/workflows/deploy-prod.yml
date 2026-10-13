@@ -259,6 +259,7 @@ jobs:
             exit 1
           fi
 
+          # 환경 파일은 위에서 .bak으로 이미 이전 값으로 복원했으므로 건드리지 않는다.
           rm -rf dist package.json yarn.lock "${{ env.PM2_CONFIG }}"
           cp -r .release.bak/dist .release.bak/package.json .release.bak/yarn.lock \
             ".release.bak/${{ env.PM2_CONFIG }}" .

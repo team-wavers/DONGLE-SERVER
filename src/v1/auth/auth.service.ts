@@ -15,7 +15,7 @@ import { Club } from '../clubs/entities/club.entity';
 import { normalizeRole } from './constants/roles';
 import { OneTimeKey } from './entities/one_time_key.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, IsNull, MoreThan, Repository } from 'typeorm';
 
 // 인증 서비스
 @Injectable()
@@ -241,25 +241,32 @@ export class AuthService {
         return await this.oneTimeKeyRepository.save(oneTimeKey);
     }
 
-    // 일회용 키 조회
-    // key: 키
-    // return: 키 유효 여부
-    async validateOneTimeKey(key: string): Promise<boolean> {
+    // 소모(usedAt 갱신) 없이 유효성만 확인한다. 트랜잭션 안에서 소모까지
+    // 같이 묶어야 하는 호출부(동아리 공개 등록)를 위한 읽기 전용 체크.
+    async isOneTimeKeyValid(key: string): Promise<boolean> {
         const oneTimeKey = await this.oneTimeKeyRepository.findOne({
             where: { key },
         });
-        if (
-            !oneTimeKey ||
-            oneTimeKey.expiredAt < new Date() ||
-            oneTimeKey.usedAt
-        ) {
-            return false; // 키가 존재하지 않거나 만료되었거나 사용된 경우
-        }
-        await this.oneTimeKeyRepository.update(
-            { key },
-            { usedAt: new Date(), updatedAt: new Date() },
+        return Boolean(
+            oneTimeKey &&
+                oneTimeKey.expiredAt >= new Date() &&
+                !oneTimeKey.usedAt,
         );
-        return true; // 키가 유효한 경우
+    }
+
+    // 주어진 manager(트랜잭션) 안에서 키를 소모한다. 아직 사용되지 않은
+    // 경우에만 갱신되므로, 동시에 같은 키를 소모하려는 경쟁을 막는다.
+    async consumeOneTimeKey(
+        key: string,
+        manager: EntityManager,
+    ): Promise<boolean> {
+        const result = await manager
+            .getRepository(OneTimeKey)
+            .update(
+                { key, usedAt: IsNull(), expiredAt: MoreThan(new Date()) },
+                { usedAt: new Date(), updatedAt: new Date() },
+            );
+        return (result.affected ?? 0) > 0;
     }
 
     // 액세스 토큰 수동 검증

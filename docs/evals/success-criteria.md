@@ -31,6 +31,15 @@
 
 - [date-time.spec.ts](../../src/common/lib/date-time.spec.ts)
 
+### 전화번호 정규화
+
+- 한국 휴대폰 번호는 공백과 하이픈을 제거한 뒤 10~11자리 `01[016789]` 번호만 허용해야 한다.
+- 유효한 전화번호는 `010-1234-5678` 형식으로 정규화해야 하며, 잘못된 입력은 Bad Request로 거부해야 한다.
+
+관련 테스트:
+
+- [normalize-korean-phone.spec.ts](../../src/common/lib/normalize-korean-phone.spec.ts)
+
 ## Clubs
 
 ### 동아리 관리
@@ -54,6 +63,8 @@
 - 사용자 단건 조회는 삭제되지 않은 일반 사용자만 반환해야 하며, 대상이 없으면 Not Found로 거부해야 한다.
 - 시스템 계정은 일반 목록/수정/삭제 흐름에서 보호되어야 한다.
 - 사용자 중복, 역할, 식별자 조건은 service 계약대로 처리되어야 한다.
+- 사용자 생성/수정은 전화번호를 정규화해 저장하고, 하이픈 포함/미포함 형식 모두를 중복 검사해야 한다.
+- 중복 로그인 ID와 전화번호는 각각 `LOGIN_ID_DUPLICATED`, `PHONE_DUPLICATED` 코드를 반환해야 한다.
 
 관련 테스트:
 
@@ -196,9 +207,13 @@
 
 - 앱 부트스트랩은 전역 `ValidationPipe`를 등록해 DTO 데코레이터 기반 런타임 검증을 수행해야 한다.
 - 전역 검증은 DTO에 정의되지 않은 body 필드를 거부하고, 라우트/쿼리 primitive 값 변환을 허용해야 한다.
-- `CreateClubDto`는 `key`, `name`, `category`를 필수 문자열로 받고, `sns`, `tags`, `is_recruiting`, `location`, `recruit_start`, `recruit_end`, `description`, `main_activities`, `apply_url`, `president_id`는 선택 필드이되 선언된 런타임 타입을 지켜야 하며, 모집일은 일정/배너와 같은 날짜 문자열 포맷 또는 명시적 비우기용 `null`로 받아야 한다.
+- `CreateClubDto`는 `key`, `name`, `category`를 필수 문자열로 받고, `sns`, `tags`, `is_recruiting`, `location`, `recruit_start`, `recruit_end`, `description`, `main_activities`, `apply_url`은 선택 필드이되 선언된 런타임 타입을 지켜야 하며, 모집일은 일정/배너와 같은 날짜 문자열 포맷 또는 명시적 비우기용 `null`로 받아야 한다. `president_id`와 `newPresident` 중 정확히 하나를 지정해야 한다. `newPresident`(`NewClubPresidentDto`)는 trim 후 공백이 아닌 `name`, `^[a-z0-9]{4,20}$` 형식의 `login_id`, 영문과 숫자를 포함하는 8~72자 `password`, 프런트 유틸리티와 같은 규칙의 한국 휴대폰 `phone`을 요구한다. User 생성·키 소모·Club 생성은 하나의 트랜잭션으로 처리되어, 계정 중복이나 Club 저장 실패 시 방금 만든 회장 계정과 키 소모가 함께 롤백돼 같은 키로 재시도할 수 있어야 한다. 키가 유효하지 않으면 안내 메시지로 Bad Request를 반환해야 한다. `president_id` 경로는 기존 사용자가 있어야 한다.
+- 동아리 생성에서 `recruit_start`와 `recruit_end`가 모두 지정되면 시작일은 종료일보다 이전이어야 한다. 수정은 입력 날짜와 삭제되지 않은 기존 날짜를 병합해 검사하며, `undefined`는 기존 값 유지, `null`은 값 지우기로 처리한다. 병합 결과 양쪽 날짜가 있을 때 시작일은 종료일보다 이전이어야 하고, 날짜 수정 대상이 없으면 `해당 동아리가 존재하지 않습니다.` Bad Request를 반환해야 한다. 날짜 미포함 수정은 기존 모집일 조회를 추가하지 않아야 한다.
+- `UsersService.create` 필수값 누락은 Bad Request로 거부해야 한다.
 - `CreateClubDto`와 `UpdateClubDto`는 `apply_url` 값이 있으면 문자열 타입만 허용하고 2048자를 넘지 않아야 한다.
-- `UpdateClubDto`는 `CreateClubDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
+- `UpdateClubDto`는 `CreateClubDto`에서 `key`, `newPresident`를 제외한 필드만 선택 필드로 받아야 하며, 두 필드가 포함된 수정 요청은 400으로 거부해야 한다. `president_id`를 포함한 정상 부분 수정은 타입 규칙을 유지해야 한다.
+- 동아리 생성의 1회용 키 소모는 `key`, 미사용 상태, `expiredAt > now` 조건을 한 번의 원자적 갱신으로 검사해야 한다. 소모 시점에 만료된 키는 Bad Request로 거부하고 사용자나 동아리를 생성하지 않아야 한다.
+- `president_id` 생성 경로는 기존 사용자 확인 후 `consumeOneTimeKey(key, manager)`와 Club 저장을 같은 트랜잭션에서 처리해야 한다. 키 소모 실패는 기존 `유효하지 않은 키입니다.` Bad Request를 반환하고, Club 저장 실패는 키 소모를 포함해 롤백되어야 한다.
 - `CreateUserDto`는 `name`, `login_id`, `password`, `role`, `phone`을 필수 문자열로 받고, `refresh_token`은 선택 문자열로 받아야 한다.
 - `UpdateUserDto`는 `CreateUserDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
 - `UpsertMainBannerDto`는 `image_url`, `publish_start_at`, `publish_end_at`을 필수 문자열로 받고 `is_active`를 필수 boolean으로 받아야 한다.
@@ -224,6 +239,15 @@
 - [extract-http-exception-detail.spec.ts](../../src/common/extract-http-exception-detail.spec.ts)
 
 ## HTTP Lifecycle
+
+### 에러 응답 코드
+
+- HttpException 응답 객체에 문자열 `code`가 있으면 공통 에러 envelope의 `error.code`로 전달해야 한다.
+- 문자열 `code`가 없으면 응답의 기존 형태를 유지하고 `error.code`를 추가하지 않아야 한다.
+
+관련 테스트:
+
+- [response.interceptor.spec.ts](../../src/common/response.interceptor.spec.ts)
 
 ### 앱 부트스트랩
 

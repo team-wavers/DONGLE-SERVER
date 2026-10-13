@@ -1,7 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Repository } from 'typeorm';
+import { FindOperator, Repository } from 'typeorm';
 import { Club } from '../clubs/entities/club.entity';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
@@ -269,6 +269,110 @@ describe('AuthService', () => {
             expect(usersService.updateRefreshToken).toHaveBeenCalledWith(
                 adminUser.id,
                 'rotated-refresh-token',
+            );
+        });
+    });
+
+    describe('oneTimeKey', () => {
+        let oneTimeKeyRepository: {
+            findOne: jest.Mock;
+            update: jest.Mock;
+        };
+        let oneTimeKeyService: AuthService;
+
+        beforeEach(() => {
+            oneTimeKeyRepository = {
+                findOne: jest.fn(),
+                update: jest.fn(),
+            };
+            oneTimeKeyService = new AuthService(
+                usersService as unknown as UsersService,
+                jwtService as unknown as JwtService,
+                configService as unknown as ConfigService,
+                oneTimeKeyRepository as unknown as Repository<OneTimeKey>,
+                clubRepository as unknown as Repository<Club>,
+            );
+        });
+
+        it('isOneTimeKeyValid는 usedAt 없이 유효성만 확인하고 갱신하지 않는다', async () => {
+            oneTimeKeyRepository.findOne.mockResolvedValue({
+                key: 'k',
+                expiredAt: new Date(Date.now() + 60_000),
+                usedAt: null,
+            });
+
+            await expect(
+                oneTimeKeyService.isOneTimeKeyValid('k'),
+            ).resolves.toBe(true);
+            expect(oneTimeKeyRepository.update).not.toHaveBeenCalled();
+        });
+
+        it('isOneTimeKeyValid는 만료되거나 이미 사용된 키는 false를 반환한다', async () => {
+            oneTimeKeyRepository.findOne.mockResolvedValue({
+                key: 'k',
+                expiredAt: new Date(Date.now() - 1),
+                usedAt: null,
+            });
+
+            await expect(
+                oneTimeKeyService.isOneTimeKeyValid('k'),
+            ).resolves.toBe(false);
+        });
+
+        it('consumeOneTimeKey는 주어진 manager의 repository로 usedAt을 갱신하고 성공 여부를 반환한다', async () => {
+            const managerRepo = { update: jest.fn() };
+            const manager = {
+                getRepository: jest.fn().mockReturnValue(managerRepo),
+            };
+            managerRepo.update.mockResolvedValue({ affected: 1 });
+
+            await expect(
+                oneTimeKeyService.consumeOneTimeKey(
+                    'k',
+                    manager as never,
+                ),
+            ).resolves.toBe(true);
+            expect(manager.getRepository).toHaveBeenCalledWith(OneTimeKey);
+        });
+
+        it('consumeOneTimeKey는 이미 소모된 키면(affected 0) false를 반환한다', async () => {
+            const managerRepo = { update: jest.fn() };
+            const manager = {
+                getRepository: jest.fn().mockReturnValue(managerRepo),
+            };
+            managerRepo.update.mockResolvedValue({ affected: 0 });
+
+            await expect(
+                oneTimeKeyService.consumeOneTimeKey(
+                    'k',
+                    manager as never,
+                ),
+            ).resolves.toBe(false);
+        });
+
+        it('consumeOneTimeKey adds an atomic expiration condition to the update', async () => {
+            const managerRepo = { update: jest.fn() };
+            const manager = {
+                getRepository: jest.fn().mockReturnValue(managerRepo),
+            };
+            managerRepo.update.mockResolvedValue({ affected: 1 });
+            const beforeConsume = new Date();
+
+            await expect(
+                oneTimeKeyService.consumeOneTimeKey('k', manager as never),
+            ).resolves.toBe(true);
+
+            const [where] = managerRepo.update.mock.calls[0];
+            expect(where).toEqual(
+                expect.objectContaining({
+                    key: 'k',
+                    usedAt: expect.any(FindOperator),
+                    expiredAt: expect.any(FindOperator),
+                }),
+            );
+            expect(where.expiredAt.type).toBe('moreThan');
+            expect(where.expiredAt.value.getTime()).toBeGreaterThanOrEqual(
+                beforeConsume.getTime(),
             );
         });
     });
