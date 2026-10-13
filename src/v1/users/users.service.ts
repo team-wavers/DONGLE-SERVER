@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     ForbiddenException,
     Injectable,
@@ -67,7 +68,7 @@ export class UsersService {
     async create(createUserDto: CreateUserDto, manager?: EntityManager) {
         const { name, login_id, password, role, phone } = createUserDto;
         if (!name || !login_id || !password || !role || !phone) {
-            throw new Error('필수값이 누락되었습니다.');
+            throw new BadRequestException('필수값이 누락되었습니다.');
         }
 
         const userRepo = manager

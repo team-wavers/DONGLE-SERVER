@@ -16,7 +16,10 @@ import { ConfigService } from '@nestjs/config';
 import { getRequiredEnv } from '../../common/lib/utils';
 import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
-import { parseSeoulDateTime } from '../../common/lib/date-time';
+import {
+    parseSeoulDateTime,
+    validateDateRange,
+} from '../../common/lib/date-time';
 @Injectable()
 export class ClubsService {
     constructor(
@@ -33,10 +36,15 @@ export class ClubsService {
     // 저장된 키 대조 후 동아리 생성
     async create(createClubDto: CreateClubDto) {
         const { key, newPresident, ...clubFields } = createClubDto;
+        this.validateRecruitDateRange(createClubDto);
 
         // newPresident가 없는 기존 흐름(관리자가 기존 유저를 회장으로 지정)은
         // 그대로 둔다 — 키는 여기서 바로 소모된다.
         if (!newPresident) {
+            if (createClubDto.president_id !== undefined) {
+                await this.ensurePresidentExists(createClubDto.president_id);
+            }
+
             const isValid = await this.authService.validateOneTimeKey(key);
             if (!isValid) {
                 throw new HttpException(
@@ -56,7 +64,7 @@ export class ClubsService {
         const isValid = await this.authService.isOneTimeKeyValid(key);
         if (!isValid) {
             throw new HttpException(
-                '유효하지 않은 키입니다.',
+                this.publicRegistrationKeyErrorMessage(),
                 HttpStatus.BAD_REQUEST,
             );
         }
@@ -68,7 +76,7 @@ export class ClubsService {
             );
             if (!consumed) {
                 throw new HttpException(
-                    '유효하지 않은 키입니다.',
+                    this.publicRegistrationKeyErrorMessage(),
                     HttpStatus.BAD_REQUEST,
                 );
             }
@@ -113,6 +121,8 @@ export class ClubsService {
     }
 
     async update(id: number, updateClubDto: UpdateClubDto) {
+        this.validateRecruitDateRange(updateClubDto);
+
         if (updateClubDto.president_id !== undefined) {
             // 동아리 회장 변경 시
             try {
@@ -212,5 +222,35 @@ export class ClubsService {
         }
 
         return payload;
+    }
+
+    private async ensurePresidentExists(presidentId: number): Promise<void> {
+        try {
+            await this.usersService.findOne(presidentId);
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw new HttpException(
+                    '존재하지 않는 사용자입니다.',
+                    HttpStatus.BAD_REQUEST,
+                );
+            }
+            throw error;
+        }
+    }
+
+    private validateRecruitDateRange(
+        dto: Pick<CreateClubDto, 'recruit_start' | 'recruit_end'>,
+    ): void {
+        if (dto.recruit_start != null && dto.recruit_end != null) {
+            validateDateRange(
+                parseSeoulDateTime(dto.recruit_start),
+                parseSeoulDateTime(dto.recruit_end),
+                '모집 시작일은 종료일보다 이전이어야 합니다.',
+            );
+        }
+    }
+
+    private publicRegistrationKeyErrorMessage(): string {
+        return '이미 사용되었거나 유효하지 않은 키입니다. 방금 입력한 아이디로 로그인해 보시고, 안 되면 총동연에 문의해주세요.';
     }
 }

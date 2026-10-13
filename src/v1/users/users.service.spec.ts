@@ -38,6 +38,13 @@ describe('UsersService', () => {
         expect(service).toBeDefined();
     });
 
+    it('필수값이 누락되면 Bad Request를 던진다', async () => {
+        await expect(service.create({} as never)).rejects.toMatchObject({
+            status: HttpStatus.BAD_REQUEST,
+            message: '필수값이 누락되었습니다.',
+        });
+    });
+
     describe('findOne', () => {
         it('삭제되지 않은 일반 사용자 단건을 조회한다', async () => {
             const user = { id: 1, name: '사용자', is_system: false };
