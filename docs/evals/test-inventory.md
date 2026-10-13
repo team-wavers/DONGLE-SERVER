@@ -14,12 +14,13 @@
 | -------------- | -------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------- |
 | app            | [app.controller.spec.ts](../../src/app.controller.spec.ts)                                         | code-graded | 기본 컨트롤러 응답                                                     |
 | common helpers | [date-time.spec.ts](../../src/common/lib/date-time.spec.ts)                                        | code-graded | Seoul 기준 날짜 파싱, 명시적 timezone 처리, 날짜 범위 검증             |
+| common helpers | [normalize-korean-phone.spec.ts](../../src/common/lib/normalize-korean-phone.spec.ts)              | code-graded | 한국 휴대폰 번호 형식 검증과 정규화                                    |
 | common helpers | [format-validation-errors.spec.ts](../../src/common/format-validation-errors.spec.ts)              | code-graded | ValidationError 한글 메시지 변환, nested field, 커스텀 message override |
 | common helpers | [extract-http-exception-detail.spec.ts](../../src/common/extract-http-exception-detail.spec.ts)  | code-graded | HttpException response body에서 사용자용 message와 개발자용 detail 문자열 추출 |
-| common response | [response.interceptor.spec.ts](../../src/common/response.interceptor.spec.ts)                    | code-graded | 에러 응답 envelope의 message/detail 분리 계약                          |
+| common response | [response.interceptor.spec.ts](../../src/common/response.interceptor.spec.ts)                    | code-graded | 에러 응답 envelope의 message/detail 분리와 선택적 code 전달 계약         |
 | clubs          | [clubs.controller.spec.ts](../../src/v1/clubs/clubs.controller.spec.ts)                            | code-graded | 동아리 controller 계약, 활동보고서 단건 위임, 이미지 업로드 validation |
 | clubs          | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                                  | code-graded | 동아리 service 계약, 공개 등록 트랜잭션 키 재시도, 모집 기간, 회장 존재 검증 |
-| users          | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)                                  | code-graded | 사용자 service 계약, 단건 Not Found, 생성 필수값 누락 400               |
+| users          | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)                                  | code-graded | 사용자 service 계약, 전화번호 정규화/중복 코드, 단건 Not Found, 필수값 누락 400 |
 | users          | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)                            | code-graded | 사용자 controller 계약, 단건 위임                                      |
 | club reports   | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)             | code-graded | 활동보고서 service 계약, 동아리 하위 단건/수정/삭제 Not Found          |
 | club reports   | [club_reports.controller.spec.ts](../../src/v1/club_reports/club_reports.controller.spec.ts)       | code-graded | 활동보고서 controller 계약                                             |

@@ -335,63 +335,83 @@ describe('ClubsService', () => {
         expect(usersService.create).toHaveBeenCalled();
     });
 
-    it('create는 계정 중복 충돌 뒤 같은 키로 재시도할 수 있다', async () => {
-        let keyConsumed = false;
-        dataSource.transaction.mockImplementation(async (callback) => {
-            const previousKeyConsumed = keyConsumed;
-            try {
-                return await callback(transactionManager);
-            } catch (error) {
-                keyConsumed = previousKeyConsumed;
-                throw error;
-            }
-        });
-        authService.isOneTimeKeyValid.mockImplementation(
-            async () => !keyConsumed,
-        );
-        authService.consumeOneTimeKey.mockImplementation(async () => {
-            if (keyConsumed) return false;
-            keyConsumed = true;
-            return true;
-        });
-        usersService.create
-            .mockRejectedValueOnce(
-                new ConflictException('이미 사용 중인 로그인 아이디입니다.'),
-            )
-            .mockResolvedValueOnce({ id: 101 });
-        transactionClubRepository.save.mockImplementation(async (club) => club);
-        const request = {
-            key: 'retryable-key',
-            name: '동아리',
-            category: '학술',
-            newPresident: {
-                name: '회장',
-                login_id: 'president1',
-                password: 'password1',
-                phone: '01012345678',
-            },
-        };
+    it.each([
+        {
+            message: '이미 사용 중인 로그인 아이디입니다.',
+            code: 'LOGIN_ID_DUPLICATED',
+        },
+        {
+            message: '이미 사용 중인 전화번호입니다.',
+            code: 'PHONE_DUPLICATED',
+        },
+    ])(
+        'create는 $code 충돌 뒤 같은 키로 재시도할 수 있다',
+        async (conflict) => {
+            let keyConsumed = false;
+            dataSource.transaction.mockImplementation(async (callback) => {
+                const previousKeyConsumed = keyConsumed;
+                try {
+                    return await callback(transactionManager);
+                } catch (error) {
+                    keyConsumed = previousKeyConsumed;
+                    throw error;
+                }
+            });
+            authService.isOneTimeKeyValid.mockImplementation(
+                async () => !keyConsumed,
+            );
+            authService.consumeOneTimeKey.mockImplementation(async () => {
+                if (keyConsumed) return false;
+                keyConsumed = true;
+                return true;
+            });
+            usersService.create
+                .mockRejectedValueOnce(
+                    new ConflictException({
+                        message: conflict.message,
+                        code: conflict.code,
+                    }),
+                )
+                .mockResolvedValueOnce({ id: 101 });
+            transactionClubRepository.save.mockImplementation(
+                async (club) => club,
+            );
+            const request = {
+                key: 'retryable-key',
+                name: '동아리',
+                category: '학술',
+                newPresident: {
+                    name: '회장',
+                    login_id: 'president1',
+                    password: 'password1',
+                    phone: '01012345678',
+                },
+            };
 
-        await expect(service.create(request)).rejects.toBeInstanceOf(
-            ConflictException,
-        );
-        await expect(service.create(request)).resolves.toMatchObject({
-            president_id: 101,
-        });
+            await expect(service.create(request)).rejects.toMatchObject({
+                response: {
+                    message: conflict.message,
+                    code: conflict.code,
+                },
+            });
+            await expect(service.create(request)).resolves.toMatchObject({
+                president_id: 101,
+            });
 
-        expect(authService.consumeOneTimeKey).toHaveBeenNthCalledWith(
-            1,
-            'retryable-key',
-            transactionManager,
-        );
-        expect(authService.consumeOneTimeKey).toHaveBeenNthCalledWith(
-            2,
-            'retryable-key',
-            transactionManager,
-        );
-        expect(keyConsumed).toBe(true);
-        expect(authService.validateOneTimeKey).not.toHaveBeenCalled();
-    });
+            expect(authService.consumeOneTimeKey).toHaveBeenNthCalledWith(
+                1,
+                'retryable-key',
+                transactionManager,
+            );
+            expect(authService.consumeOneTimeKey).toHaveBeenNthCalledWith(
+                2,
+                'retryable-key',
+                transactionManager,
+            );
+            expect(keyConsumed).toBe(true);
+            expect(authService.validateOneTimeKey).not.toHaveBeenCalled();
+        },
+    );
 
     it('create는 존재하지 않는 president_id를 거부한다', async () => {
         usersService.findOne.mockRejectedValue(

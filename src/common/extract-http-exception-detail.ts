@@ -6,6 +6,7 @@ type HttpExceptionResponse =
           error?: string;
           message?: string | string[];
           statusCode?: number;
+          code?: unknown;
       };
 
 function joinDetailMessages(messages: string[]): string {
@@ -66,6 +67,18 @@ export function extractHttpExceptionMessage(exception: HttpException): string {
     }
 
     return message;
+}
+
+export function extractHttpExceptionCode(
+    exception: HttpException,
+): string | undefined {
+    const response = exception.getResponse();
+    if (typeof response !== 'object' || response === null) {
+        return undefined;
+    }
+
+    const code = (response as Exclude<HttpExceptionResponse, string>).code;
+    return typeof code === 'string' ? code : undefined;
 }
 
 export function formatHttpExceptionDetail(exception: HttpException): string {

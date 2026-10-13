@@ -62,7 +62,7 @@ export class NewClubPresidentDto {
 
     @Transform(({ value }) => removeWhitespace(value))
     @IsString()
-    @Matches(/^01[0-9]-?\d{3,4}-?\d{4}$/, {
+    @Matches(/^01[016789]-?\d{3,4}-?\d{4}$/, {
         message: 'phone은(는) 올바른 한국 휴대폰 번호여야 합니다.',
     })
     phone: string;

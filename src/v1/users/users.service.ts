@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     EntityManager,
+    In,
     Repository,
     IsNull,
     Not,
@@ -18,6 +19,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { Club } from '../clubs/entities/club.entity';
 import * as bcrypt from 'bcrypt';
+import { normalizeKoreanPhone } from '../../common/lib/normalize-korean-phone';
+import { ERROR_CODES } from '../../common/error-codes';
 
 @Injectable()
 export class UsersService {
@@ -48,17 +51,24 @@ export class UsersService {
                 where: { ...baseWhere, login_id },
             });
             if (existing) {
-                throw new ConflictException(
-                    '이미 사용 중인 로그인 아이디입니다.',
-                );
+                throw new ConflictException({
+                    message: '이미 사용 중인 로그인 아이디입니다.',
+                    code: ERROR_CODES.LOGIN_ID_DUPLICATED,
+                });
             }
         }
         if (phone) {
             const existing = await repo.findOne({
-                where: { ...baseWhere, phone },
+                where: {
+                    ...baseWhere,
+                    phone: In([phone, phone.replace(/-/g, '')]),
+                },
             });
             if (existing) {
-                throw new ConflictException('이미 사용 중인 전화번호입니다.');
+                throw new ConflictException({
+                    message: '이미 사용 중인 전화번호입니다.',
+                    code: ERROR_CODES.PHONE_DUPLICATED,
+                });
             }
         }
     }
@@ -74,10 +84,11 @@ export class UsersService {
         const userRepo = manager
             ? manager.getRepository(User)
             : this.userRepository;
+        const normalizedPhone = normalizeKoreanPhone(phone);
 
         await this.checkDuplicateLoginIdAndPhone(
             login_id,
-            phone,
+            normalizedPhone,
             undefined,
             userRepo,
         );
@@ -91,7 +102,7 @@ export class UsersService {
             login_id,
             password: hashedPassword,
             role,
-            phone,
+            phone: normalizedPhone,
         });
 
         // 데이터베이스에 저장
@@ -147,7 +158,13 @@ export class UsersService {
         const login_id =
             'login_id' in updateUserDto ? updateUserDto.login_id : undefined;
         const phone =
-            'phone' in updateUserDto ? updateUserDto.phone : undefined;
+            'phone' in updateUserDto && updateUserDto.phone !== undefined
+                ? normalizeKoreanPhone(updateUserDto.phone)
+                : undefined;
+
+        if ('phone' in updateData && phone !== undefined) {
+            updateData.phone = phone;
+        }
 
         await this.checkDuplicateLoginIdAndPhone(login_id, phone, id);
 
