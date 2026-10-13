@@ -38,24 +38,31 @@ export class ClubsService {
         const { key, newPresident, ...clubFields } = createClubDto;
         this.validateRecruitDateRange(createClubDto);
 
-        // newPresident가 없는 기존 흐름(관리자가 기존 유저를 회장으로 지정)은
-        // 그대로 둔다 — 키는 여기서 바로 소모된다.
+        // 기존 유저를 회장으로 지정하거나 회장 없이 생성하는 흐름도 키 소모와
+        // 동아리 저장을 하나의 트랜잭션으로 처리한다.
         if (!newPresident) {
             if (createClubDto.president_id !== undefined) {
                 await this.ensurePresidentExists(createClubDto.president_id);
             }
 
-            const isValid = await this.authService.validateOneTimeKey(key);
-            if (!isValid) {
-                throw new HttpException(
-                    '유효하지 않은 키입니다.',
-                    HttpStatus.BAD_REQUEST,
+            return await this.dataSource.transaction(async (manager) => {
+                const consumed = await this.authService.consumeOneTimeKey(
+                    key,
+                    manager,
                 );
-            }
-            const newClub = this.clubRepository.create(
-                this.toPersistencePayload(createClubDto),
-            );
-            return await this.clubRepository.save(newClub);
+                if (!consumed) {
+                    throw new HttpException(
+                        '유효하지 않은 키입니다.',
+                        HttpStatus.BAD_REQUEST,
+                    );
+                }
+
+                const clubRepo = manager.getRepository(Club);
+                const newClub = clubRepo.create(
+                    this.toPersistencePayload(createClubDto),
+                );
+                return await clubRepo.save(newClub);
+            });
         }
 
         // 공개 등록(회장 계정을 함께 생성)은 User 생성 + 키 소모 + Club 생성을
@@ -121,7 +128,32 @@ export class ClubsService {
     }
 
     async update(id: number, updateClubDto: UpdateClubDto) {
-        this.validateRecruitDateRange(updateClubDto);
+        if (
+            updateClubDto.recruit_start !== undefined ||
+            updateClubDto.recruit_end !== undefined
+        ) {
+            const existingClub = await this.clubRepository.findOne({
+                where: { id, deleted_at: IsNull() },
+                select: ['recruit_start', 'recruit_end'],
+            });
+            if (!existingClub) {
+                throw new HttpException(
+                    '해당 동아리가 존재하지 않습니다.',
+                    HttpStatus.BAD_REQUEST,
+                );
+            }
+
+            this.validateRecruitDateRange({
+                recruit_start:
+                    updateClubDto.recruit_start === undefined
+                        ? existingClub.recruit_start
+                        : updateClubDto.recruit_start,
+                recruit_end:
+                    updateClubDto.recruit_end === undefined
+                        ? existingClub.recruit_end
+                        : updateClubDto.recruit_end,
+            });
+        }
 
         if (updateClubDto.president_id !== undefined) {
             // 동아리 회장 변경 시
@@ -238,13 +270,18 @@ export class ClubsService {
         }
     }
 
-    private validateRecruitDateRange(
-        dto: Pick<CreateClubDto, 'recruit_start' | 'recruit_end'>,
-    ): void {
+    private validateRecruitDateRange(dto: {
+        recruit_start?: string | Date | null;
+        recruit_end?: string | Date | null;
+    }): void {
         if (dto.recruit_start != null && dto.recruit_end != null) {
             validateDateRange(
-                parseSeoulDateTime(dto.recruit_start),
-                parseSeoulDateTime(dto.recruit_end),
+                typeof dto.recruit_start === 'string'
+                    ? parseSeoulDateTime(dto.recruit_start)
+                    : dto.recruit_start,
+                typeof dto.recruit_end === 'string'
+                    ? parseSeoulDateTime(dto.recruit_end)
+                    : dto.recruit_end,
                 '모집 시작일은 종료일보다 이전이어야 합니다.',
             );
         }

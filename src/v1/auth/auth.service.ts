@@ -241,27 +241,6 @@ export class AuthService {
         return await this.oneTimeKeyRepository.save(oneTimeKey);
     }
 
-    // 일회용 키 조회
-    // key: 키
-    // return: 키 유효 여부
-    async validateOneTimeKey(key: string): Promise<boolean> {
-        const oneTimeKey = await this.oneTimeKeyRepository.findOne({
-            where: { key },
-        });
-        if (
-            !oneTimeKey ||
-            oneTimeKey.expiredAt < new Date() ||
-            oneTimeKey.usedAt
-        ) {
-            return false; // 키가 존재하지 않거나 만료되었거나 사용된 경우
-        }
-        await this.oneTimeKeyRepository.update(
-            { key },
-            { usedAt: new Date(), updatedAt: new Date() },
-        );
-        return true; // 키가 유효한 경우
-    }
-
     // 소모(usedAt 갱신) 없이 유효성만 확인한다. 트랜잭션 안에서 소모까지
     // 같이 묶어야 하는 호출부(동아리 공개 등록)를 위한 읽기 전용 체크.
     async isOneTimeKeyValid(key: string): Promise<boolean> {

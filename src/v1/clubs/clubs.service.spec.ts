@@ -29,7 +29,6 @@ describe('ClubsService', () => {
         update: jest.Mock;
     };
     let authService: {
-        validateOneTimeKey: jest.Mock;
         isOneTimeKeyValid: jest.Mock;
         consumeOneTimeKey: jest.Mock;
     };
@@ -50,7 +49,6 @@ describe('ClubsService', () => {
 
     beforeEach(async () => {
         authService = {
-            validateOneTimeKey: jest.fn(),
             isOneTimeKeyValid: jest.fn(),
             consumeOneTimeKey: jest.fn(),
         };
@@ -110,8 +108,8 @@ describe('ClubsService', () => {
     });
 
     it('create는 모집일을 공통 날짜 포맷으로 파싱해 Seoul 기준 Date payload로 저장한다', async () => {
-        authService.validateOneTimeKey.mockResolvedValue(true);
-        clubRepository.save.mockImplementation(async (club) => club);
+        authService.consumeOneTimeKey.mockResolvedValue(true);
+        transactionClubRepository.save.mockImplementation(async (club) => club);
 
         await expect(
             service.create({
@@ -126,7 +124,12 @@ describe('ClubsService', () => {
             recruit_end: new Date('2026-05-31T00:00:00+09:00'),
         });
 
-        expect(clubRepository.create).toHaveBeenCalledWith(
+        expect(dataSource.transaction).toHaveBeenCalled();
+        expect(authService.consumeOneTimeKey).toHaveBeenCalledWith(
+            'one-time-key',
+            transactionManager,
+        );
+        expect(transactionClubRepository.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 recruit_start: new Date('2026-05-01T09:00:00+09:00'),
                 recruit_end: new Date('2026-05-31T00:00:00+09:00'),
@@ -154,13 +157,13 @@ describe('ClubsService', () => {
                 message: '모집 시작일은 종료일보다 이전이어야 합니다.',
             });
 
-            expect(authService.validateOneTimeKey).not.toHaveBeenCalled();
+            expect(authService.consumeOneTimeKey).not.toHaveBeenCalled();
             expect(clubRepository.save).not.toHaveBeenCalled();
         },
     );
 
     it('create는 문서화되지 않은 모집일 포맷을 거부한다', async () => {
-        authService.validateOneTimeKey.mockResolvedValue(true);
+        authService.consumeOneTimeKey.mockResolvedValue(true);
 
         await expect(
             service.create({
@@ -174,10 +177,181 @@ describe('ClubsService', () => {
             message: '날짜 형식이 올바르지 않습니다.',
         });
 
-        expect(clubRepository.create).not.toHaveBeenCalled();
+        expect(transactionClubRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('create(president_id 경로)는 사용자 검증 후 키 소모와 동아리 저장을 같은 트랜잭션에서 처리한다', async () => {
+        usersService.findOne.mockResolvedValue({ id: 1 });
+        authService.consumeOneTimeKey.mockResolvedValue(true);
+        transactionClubRepository.save.mockImplementation(async (club) => club);
+
+        await expect(
+            service.create({
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+                president_id: 1,
+            }),
+        ).resolves.toMatchObject({ president_id: 1 });
+
+        expect(usersService.findOne).toHaveBeenCalledWith(1);
+        expect(dataSource.transaction).toHaveBeenCalled();
+        expect(authService.consumeOneTimeKey).toHaveBeenCalledWith(
+            'one-time-key',
+            transactionManager,
+        );
+        expect(transactionClubRepository.save).toHaveBeenCalled();
+        expect(clubRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('create(president_id 경로)는 키 소모 실패 시 기존 메시지로 거부하고 저장하지 않는다', async () => {
+        usersService.findOne.mockResolvedValue({ id: 1 });
+        authService.consumeOneTimeKey.mockResolvedValue(false);
+
+        await expect(
+            service.create({
+                key: 'invalid-key',
+                name: '동아리',
+                category: '학술',
+                president_id: 1,
+            }),
+        ).rejects.toMatchObject({
+            status: HttpStatus.BAD_REQUEST,
+            message: '유효하지 않은 키입니다.',
+        });
+
+        expect(transactionClubRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('create(president_id 경로)는 저장 실패를 전파해 트랜잭션을 롤백한다', async () => {
+        usersService.findOne.mockResolvedValue({ id: 1 });
+        authService.consumeOneTimeKey.mockResolvedValue(true);
+        transactionClubRepository.save.mockRejectedValue(
+            new Error('club save failed'),
+        );
+
+        await expect(
+            service.create({
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+                president_id: 1,
+            }),
+        ).rejects.toThrow('club save failed');
+    });
+
+    it('create(president_id 경로)는 동시 요청에서 한 번만 키 소모에 성공한다', async () => {
+        usersService.findOne.mockResolvedValue({ id: 1 });
+        let consumed = false;
+        authService.consumeOneTimeKey.mockImplementation(async () => {
+            if (consumed) return false;
+            consumed = true;
+            return true;
+        });
+        transactionClubRepository.save.mockImplementation(async (club) => club);
+
+        const request = {
+            key: 'one-time-key',
+            name: '동아리',
+            category: '학술',
+            president_id: 1,
+        };
+        const results = await Promise.allSettled([
+            service.create(request),
+            service.create(request),
+        ]);
+
+        expect(
+            results.filter(({ status }) => status === 'fulfilled'),
+        ).toHaveLength(1);
+        expect(
+            results.filter(({ status }) => status === 'rejected'),
+        ).toHaveLength(1);
+        expect(transactionClubRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('update는 기존 종료일보다 늦은 시작일만 입력해도 거부한다', async () => {
+        clubRepository.findOne.mockResolvedValue({
+            recruit_start: new Date('2026-05-01T00:00:00+09:00'),
+            recruit_end: new Date('2026-05-31T00:00:00+09:00'),
+        });
+
+        await expect(
+            service.update(1, { recruit_start: '2026-06-01' }),
+        ).rejects.toMatchObject({
+            status: HttpStatus.BAD_REQUEST,
+            message: '모집 시작일은 종료일보다 이전이어야 합니다.',
+        });
+        expect(clubRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('update는 기존 시작일보다 이른 종료일만 입력해도 거부한다', async () => {
+        clubRepository.findOne.mockResolvedValue({
+            recruit_start: new Date('2026-05-01T00:00:00+09:00'),
+            recruit_end: new Date('2026-05-31T00:00:00+09:00'),
+        });
+
+        await expect(
+            service.update(1, { recruit_end: '2026-04-30' }),
+        ).rejects.toMatchObject({
+            status: HttpStatus.BAD_REQUEST,
+            message: '모집 시작일은 종료일보다 이전이어야 합니다.',
+        });
+        expect(clubRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('update는 입력한 양쪽 모집일로 기존 값을 대체해 검증한다', async () => {
+        clubRepository.findOne.mockResolvedValue({
+            recruit_start: new Date('2026-07-01T00:00:00+09:00'),
+            recruit_end: new Date('2026-05-31T00:00:00+09:00'),
+        });
+        clubRepository.update.mockResolvedValue(makeUpdateResult(1));
+
+        await expect(
+            service.update(1, {
+                recruit_start: '2026-06-01',
+                recruit_end: '2026-06-30',
+            }),
+        ).resolves.toMatchObject({ affected: 1 });
+    });
+
+    it('update는 모집일 한쪽을 null로 지우면 범위 검증을 생략한다', async () => {
+        clubRepository.findOne.mockResolvedValue({
+            recruit_start: new Date('2026-05-01T00:00:00+09:00'),
+            recruit_end: new Date('2026-05-31T00:00:00+09:00'),
+        });
+        clubRepository.update.mockResolvedValue(makeUpdateResult(1));
+
+        await expect(
+            service.update(1, { recruit_start: null }),
+        ).resolves.toMatchObject({ affected: 1 });
+    });
+
+    it('update는 날짜 미포함 수정 시 기존 모집일 조회를 추가하지 않는다', async () => {
+        clubRepository.update.mockResolvedValue(makeUpdateResult(1));
+
+        await service.update(1, { name: '수정된 동아리' });
+
+        expect(clubRepository.findOne).not.toHaveBeenCalled();
+    });
+
+    it('update는 모집일 수정 대상이 없으면 기존 Bad Request를 반환한다', async () => {
+        clubRepository.findOne.mockResolvedValue(null);
+
+        await expect(
+            service.update(404, { recruit_start: '2026-05-01' }),
+        ).rejects.toMatchObject({
+            status: HttpStatus.BAD_REQUEST,
+            message: '해당 동아리가 존재하지 않습니다.',
+        });
+        expect(clubRepository.update).not.toHaveBeenCalled();
     });
 
     it('update는 두 모집일의 시작이 종료일보다 늦으면 거부한다', async () => {
+        clubRepository.findOne.mockResolvedValue({
+            recruit_start: new Date('2026-05-01T00:00:00+09:00'),
+            recruit_end: new Date('2026-05-31T00:00:00+09:00'),
+        });
         await expect(
             service.update(1, {
                 recruit_start: '2026-06-01',
@@ -188,12 +362,13 @@ describe('ClubsService', () => {
             message: '모집 시작일은 종료일보다 이전이어야 합니다.',
         });
 
+        expect(clubRepository.findOne).toHaveBeenCalledTimes(1);
         expect(clubRepository.update).not.toHaveBeenCalled();
     });
 
     it('create는 null 모집일을 명시적 비우기로 저장한다', async () => {
-        authService.validateOneTimeKey.mockResolvedValue(true);
-        clubRepository.save.mockImplementation(async (club) => club);
+        authService.consumeOneTimeKey.mockResolvedValue(true);
+        transactionClubRepository.save.mockImplementation(async (club) => club);
 
         await expect(
             service.create({
@@ -208,7 +383,7 @@ describe('ClubsService', () => {
             recruit_end: null,
         });
 
-        expect(clubRepository.create).toHaveBeenCalledWith(
+        expect(transactionClubRepository.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 recruit_start: null,
                 recruit_end: null,
@@ -412,7 +587,6 @@ describe('ClubsService', () => {
                 transactionManager,
             );
             expect(keyConsumed).toBe(true);
-            expect(authService.validateOneTimeKey).not.toHaveBeenCalled();
         },
     );
 
@@ -434,7 +608,7 @@ describe('ClubsService', () => {
         });
 
         expect(clubRepository.save).not.toHaveBeenCalled();
-        expect(authService.validateOneTimeKey).not.toHaveBeenCalled();
+        expect(authService.consumeOneTimeKey).not.toHaveBeenCalled();
     });
 
     it('findAll은 삭제되지 않은 동아리만 조회한다', async () => {
@@ -476,6 +650,10 @@ describe('ClubsService', () => {
             recruit_end: null,
         };
         const result = makeUpdateResult(1);
+        clubRepository.findOne.mockResolvedValue({
+            recruit_start: new Date('2026-05-01T00:00:00+09:00'),
+            recruit_end: new Date('2026-05-31T00:00:00+09:00'),
+        });
         clubRepository.update.mockResolvedValue(result);
 
         await expect(service.update(1, updateClubDto)).resolves.toBe(result);
@@ -488,6 +666,10 @@ describe('ClubsService', () => {
                 recruit_end: null,
             },
         );
+        expect(clubRepository.findOne).toHaveBeenCalledWith({
+            where: { id: 1, deleted_at: IsNull() },
+            select: ['recruit_start', 'recruit_end'],
+        });
     });
 
     it('update는 이미 삭제된 동아리를 거부한다', async () => {
