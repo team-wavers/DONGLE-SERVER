@@ -19,7 +19,7 @@
 | common helpers | [extract-http-exception-detail.spec.ts](../../src/common/extract-http-exception-detail.spec.ts)  | code-graded | HttpException response body에서 사용자용 message와 개발자용 detail 문자열 추출 |
 | common response | [response.interceptor.spec.ts](../../src/common/response.interceptor.spec.ts)                    | code-graded | 에러 응답 envelope의 message/detail 분리와 선택적 code 전달 계약         |
 | clubs          | [clubs.controller.spec.ts](../../src/v1/clubs/clubs.controller.spec.ts)                            | code-graded | 동아리 controller 계약, 활동보고서 단건 위임, 이미지 업로드 validation |
-| clubs          | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                                  | code-graded | 동아리 service 계약, 공개 등록 트랜잭션 키 재시도와 소모 시 만료 경합, 모집 기간, 회장 존재 검증 |
+| clubs          | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                                  | code-graded | 동아리 service 계약, 공개 등록 및 `president_id` 경로의 트랜잭션 키 소모/재시도/동시 경합, 모집일 병합 범위 검증, 회장 존재 검증 |
 | users          | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)                                  | code-graded | 사용자 service 계약, 전화번호 정규화/중복 코드, 단건 Not Found, 필수값 누락 400 |
 | users          | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)                            | code-graded | 사용자 controller 계약, 단건 위임                                      |
 | club reports   | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)             | code-graded | 활동보고서 service 계약, 동아리 하위 단건/수정/삭제 Not Found          |
