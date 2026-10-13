@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import {
+    HttpException,
+    HttpStatus,
+    ConflictException,
+    NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -129,6 +134,31 @@ describe('ClubsService', () => {
         );
     });
 
+    it.each([
+        ['같은', '2026-05-31', '2026-05-31'],
+        ['늦은', '2026-06-01', '2026-05-31'],
+    ])(
+        'create는 모집 시작일이 종료일보다 %s 경우 거부한다',
+        async (_, start, end) => {
+            await expect(
+                service.create({
+                    key: 'one-time-key',
+                    name: '동아리',
+                    category: '학술',
+                    president_id: 1,
+                    recruit_start: start,
+                    recruit_end: end,
+                }),
+            ).rejects.toMatchObject({
+                status: HttpStatus.BAD_REQUEST,
+                message: '모집 시작일은 종료일보다 이전이어야 합니다.',
+            });
+
+            expect(authService.validateOneTimeKey).not.toHaveBeenCalled();
+            expect(clubRepository.save).not.toHaveBeenCalled();
+        },
+    );
+
     it('create는 문서화되지 않은 모집일 포맷을 거부한다', async () => {
         authService.validateOneTimeKey.mockResolvedValue(true);
 
@@ -145,6 +175,20 @@ describe('ClubsService', () => {
         });
 
         expect(clubRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('update는 두 모집일의 시작이 종료일보다 늦으면 거부한다', async () => {
+        await expect(
+            service.update(1, {
+                recruit_start: '2026-06-01',
+                recruit_end: '2026-05-31',
+            }),
+        ).rejects.toMatchObject({
+            status: HttpStatus.BAD_REQUEST,
+            message: '모집 시작일은 종료일보다 이전이어야 합니다.',
+        });
+
+        expect(clubRepository.update).not.toHaveBeenCalled();
     });
 
     it('create는 null 모집일을 명시적 비우기로 저장한다', async () => {
@@ -232,9 +276,36 @@ describe('ClubsService', () => {
                     phone: '01000000000',
                 },
             }),
-        ).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST });
+        ).rejects.toMatchObject({
+            status: HttpStatus.BAD_REQUEST,
+            message:
+                '이미 사용되었거나 유효하지 않은 키입니다. 방금 입력한 아이디로 로그인해 보시고, 안 되면 총동연에 문의해주세요.',
+        });
 
         expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('create는 트랜잭션 안에서 키 소모에 실패해도 새 등록 메시지로 거부한다', async () => {
+        authService.isOneTimeKeyValid.mockResolvedValue(true);
+        authService.consumeOneTimeKey.mockResolvedValue(false);
+
+        await expect(
+            service.create({
+                key: 'used-key',
+                name: '동아리',
+                category: '학술',
+                newPresident: {
+                    name: '회장',
+                    login_id: 'president1',
+                    password: 'password1',
+                    phone: '01012345678',
+                },
+            }),
+        ).rejects.toMatchObject({
+            status: HttpStatus.BAD_REQUEST,
+            message:
+                '이미 사용되었거나 유효하지 않은 키입니다. 방금 입력한 아이디로 로그인해 보시고, 안 되면 총동연에 문의해주세요.',
+        });
     });
 
     it('create는 동아리 저장이 실패하면 트랜잭션이 롤백돼 회장 계정도 남지 않는다', async () => {
@@ -262,6 +333,85 @@ describe('ClubsService', () => {
         // 실제 롤백은 TypeORM의 dataSource.transaction()이 예외 전파로 처리한다.
         // 여기서는 콜백이 예외를 그대로 던져 트랜잭션이 커밋되지 않는지만 확인한다.
         expect(usersService.create).toHaveBeenCalled();
+    });
+
+    it('create는 계정 중복 충돌 뒤 같은 키로 재시도할 수 있다', async () => {
+        let keyConsumed = false;
+        dataSource.transaction.mockImplementation(async (callback) => {
+            const previousKeyConsumed = keyConsumed;
+            try {
+                return await callback(transactionManager);
+            } catch (error) {
+                keyConsumed = previousKeyConsumed;
+                throw error;
+            }
+        });
+        authService.isOneTimeKeyValid.mockImplementation(
+            async () => !keyConsumed,
+        );
+        authService.consumeOneTimeKey.mockImplementation(async () => {
+            if (keyConsumed) return false;
+            keyConsumed = true;
+            return true;
+        });
+        usersService.create
+            .mockRejectedValueOnce(
+                new ConflictException('이미 사용 중인 로그인 아이디입니다.'),
+            )
+            .mockResolvedValueOnce({ id: 101 });
+        transactionClubRepository.save.mockImplementation(async (club) => club);
+        const request = {
+            key: 'retryable-key',
+            name: '동아리',
+            category: '학술',
+            newPresident: {
+                name: '회장',
+                login_id: 'president1',
+                password: 'password1',
+                phone: '01012345678',
+            },
+        };
+
+        await expect(service.create(request)).rejects.toBeInstanceOf(
+            ConflictException,
+        );
+        await expect(service.create(request)).resolves.toMatchObject({
+            president_id: 101,
+        });
+
+        expect(authService.consumeOneTimeKey).toHaveBeenNthCalledWith(
+            1,
+            'retryable-key',
+            transactionManager,
+        );
+        expect(authService.consumeOneTimeKey).toHaveBeenNthCalledWith(
+            2,
+            'retryable-key',
+            transactionManager,
+        );
+        expect(keyConsumed).toBe(true);
+        expect(authService.validateOneTimeKey).not.toHaveBeenCalled();
+    });
+
+    it('create는 존재하지 않는 president_id를 거부한다', async () => {
+        usersService.findOne.mockRejectedValue(
+            new NotFoundException('사용자를 찾을 수 없습니다.'),
+        );
+
+        await expect(
+            service.create({
+                key: 'one-time-key',
+                name: '동아리',
+                category: '학술',
+                president_id: 404,
+            }),
+        ).rejects.toMatchObject({
+            status: HttpStatus.BAD_REQUEST,
+            message: '존재하지 않는 사용자입니다.',
+        });
+
+        expect(clubRepository.save).not.toHaveBeenCalled();
+        expect(authService.validateOneTimeKey).not.toHaveBeenCalled();
     });
 
     it('findAll은 삭제되지 않은 동아리만 조회한다', async () => {
