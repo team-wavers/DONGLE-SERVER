@@ -15,7 +15,7 @@ import { Club } from '../clubs/entities/club.entity';
 import { normalizeRole } from './constants/roles';
 import { OneTimeKey } from './entities/one_time_key.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, IsNull, Repository } from 'typeorm';
+import { EntityManager, IsNull, MoreThan, Repository } from 'typeorm';
 
 // 인증 서비스
 @Injectable()
@@ -284,7 +284,7 @@ export class AuthService {
         const result = await manager
             .getRepository(OneTimeKey)
             .update(
-                { key, usedAt: IsNull() },
+                { key, usedAt: IsNull(), expiredAt: MoreThan(new Date()) },
                 { usedAt: new Date(), updatedAt: new Date() },
             );
         return (result.affected ?? 0) > 0;

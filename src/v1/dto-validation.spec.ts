@@ -56,6 +56,36 @@ describe('DTO runtime validation rules', () => {
         });
     });
 
+    describe('UpdateClubDto', () => {
+        it.each(['key', 'newPresident'])(
+            'rejects %s before it can reach the service',
+            async (field) => {
+                const payload = {
+                    [field]: field === 'newPresident' ? {} : 'one-time-key',
+                };
+
+                await expect(
+                    transformBody(UpdateClubDto, payload),
+                ).rejects.toMatchObject({
+                    response: expect.objectContaining({
+                        message: expect.arrayContaining([
+                            expect.stringContaining(field),
+                        ]),
+                    }),
+                });
+            },
+        );
+
+        it('accepts normal partial updates and president_id', async () => {
+            await expect(
+                transformBody(UpdateClubDto, { name: 'Updated club' }),
+            ).resolves.toMatchObject({ name: 'Updated club' });
+            await expect(
+                transformBody(UpdateClubDto, { president_id: 12 }),
+            ).resolves.toMatchObject({ president_id: 12 });
+        });
+    });
+
     describe('CreateClubDto', () => {
         it('requires key, name, and category strings', () => {
             const errors = validationPropertyNames(new CreateClubDto());
@@ -209,7 +239,7 @@ describe('DTO runtime validation rules', () => {
     });
 
     describe('UpdateClubDto', () => {
-        it('makes all CreateClubDto fields optional while preserving their types', () => {
+        it('makes updatable CreateClubDto fields optional while preserving their types', () => {
             expect(validateSync(new UpdateClubDto())).toHaveLength(0);
 
             const errors = validatePlain(UpdateClubDto, {
