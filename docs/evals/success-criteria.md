@@ -31,6 +31,15 @@
 
 - [date-time.spec.ts](../../src/common/lib/date-time.spec.ts)
 
+### 전화번호 정규화
+
+- 한국 휴대폰 번호는 공백과 하이픈을 제거한 뒤 10~11자리 `01[016789]` 번호만 허용해야 한다.
+- 유효한 전화번호는 `010-1234-5678` 형식으로 정규화해야 하며, 잘못된 입력은 Bad Request로 거부해야 한다.
+
+관련 테스트:
+
+- [normalize-korean-phone.spec.ts](../../src/common/lib/normalize-korean-phone.spec.ts)
+
 ## Clubs
 
 ### 동아리 관리
@@ -54,6 +63,8 @@
 - 사용자 단건 조회는 삭제되지 않은 일반 사용자만 반환해야 하며, 대상이 없으면 Not Found로 거부해야 한다.
 - 시스템 계정은 일반 목록/수정/삭제 흐름에서 보호되어야 한다.
 - 사용자 중복, 역할, 식별자 조건은 service 계약대로 처리되어야 한다.
+- 사용자 생성/수정은 전화번호를 정규화해 저장하고, 하이픈 포함/미포함 형식 모두를 중복 검사해야 한다.
+- 중복 로그인 ID와 전화번호는 각각 `LOGIN_ID_DUPLICATED`, `PHONE_DUPLICATED` 코드를 반환해야 한다.
 
 관련 테스트:
 
@@ -226,6 +237,15 @@
 - [extract-http-exception-detail.spec.ts](../../src/common/extract-http-exception-detail.spec.ts)
 
 ## HTTP Lifecycle
+
+### 에러 응답 코드
+
+- HttpException 응답 객체에 문자열 `code`가 있으면 공통 에러 envelope의 `error.code`로 전달해야 한다.
+- 문자열 `code`가 없으면 응답의 기존 형태를 유지하고 `error.code`를 추가하지 않아야 한다.
+
+관련 테스트:
+
+- [response.interceptor.spec.ts](../../src/common/response.interceptor.spec.ts)
 
 ### 앱 부트스트랩
 
