@@ -211,7 +211,8 @@
 - 동아리 생성/수정에서 `recruit_start`와 `recruit_end`가 모두 지정되면 시작일은 종료일보다 이전이어야 한다.
 - `UsersService.create` 필수값 누락은 Bad Request로 거부해야 한다.
 - `CreateClubDto`와 `UpdateClubDto`는 `apply_url` 값이 있으면 문자열 타입만 허용하고 2048자를 넘지 않아야 한다.
-- `UpdateClubDto`는 `CreateClubDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
+- `UpdateClubDto`는 `CreateClubDto`에서 `key`, `newPresident`를 제외한 필드만 선택 필드로 받아야 하며, 두 필드가 포함된 수정 요청은 400으로 거부해야 한다. `president_id`를 포함한 정상 부분 수정은 타입 규칙을 유지해야 한다.
+- 동아리 생성의 1회용 키 소모는 `key`, 미사용 상태, `expiredAt > now` 조건을 한 번의 원자적 갱신으로 검사해야 한다. 소모 시점에 만료된 키는 Bad Request로 거부하고 사용자나 동아리를 생성하지 않아야 한다.
 - `CreateUserDto`는 `name`, `login_id`, `password`, `role`, `phone`을 필수 문자열로 받고, `refresh_token`은 선택 문자열로 받아야 한다.
 - `UpdateUserDto`는 `CreateUserDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
 - `UpsertMainBannerDto`는 `image_url`, `publish_start_at`, `publish_end_at`을 필수 문자열로 받고 `is_active`를 필수 boolean으로 받아야 한다.

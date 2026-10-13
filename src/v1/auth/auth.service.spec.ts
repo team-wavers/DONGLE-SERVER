@@ -1,7 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Repository } from 'typeorm';
+import { FindOperator, Repository } from 'typeorm';
 import { Club } from '../clubs/entities/club.entity';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
@@ -348,6 +348,32 @@ describe('AuthService', () => {
                     manager as never,
                 ),
             ).resolves.toBe(false);
+        });
+
+        it('consumeOneTimeKey adds an atomic expiration condition to the update', async () => {
+            const managerRepo = { update: jest.fn() };
+            const manager = {
+                getRepository: jest.fn().mockReturnValue(managerRepo),
+            };
+            managerRepo.update.mockResolvedValue({ affected: 1 });
+            const beforeConsume = new Date();
+
+            await expect(
+                oneTimeKeyService.consumeOneTimeKey('k', manager as never),
+            ).resolves.toBe(true);
+
+            const [where] = managerRepo.update.mock.calls[0];
+            expect(where).toEqual(
+                expect.objectContaining({
+                    key: 'k',
+                    usedAt: expect.any(FindOperator),
+                    expiredAt: expect.any(FindOperator),
+                }),
+            );
+            expect(where.expiredAt.type).toBe('moreThan');
+            expect(where.expiredAt.value.getTime()).toBeGreaterThanOrEqual(
+                beforeConsume.getTime(),
+            );
         });
     });
 });

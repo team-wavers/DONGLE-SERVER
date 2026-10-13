@@ -306,6 +306,9 @@ describe('ClubsService', () => {
             message:
                 '이미 사용되었거나 유효하지 않은 키입니다. 방금 입력한 아이디로 로그인해 보시고, 안 되면 총동연에 문의해주세요.',
         });
+
+        expect(usersService.create).not.toHaveBeenCalled();
+        expect(transactionClubRepository.save).not.toHaveBeenCalled();
     });
 
     it('create는 동아리 저장이 실패하면 트랜잭션이 롤백돼 회장 계정도 남지 않는다', async () => {

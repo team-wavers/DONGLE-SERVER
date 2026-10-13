@@ -10,7 +10,6 @@ import {
     MaxLength,
     MinLength,
     Validate,
-    ValidateIf,
     ValidationArguments,
     ValidatorConstraint,
     ValidatorConstraintInterface,
@@ -124,7 +123,6 @@ export class CreateClubDto {
     @IsNumber()
     president_id?: number;
 
-    @ValidateIf((dto: CreateClubDto) => dto.constructor === CreateClubDto)
     @Validate(ExactlyOnePresidentSourceConstraint)
     @ValidateNested()
     @Type(() => NewClubPresidentDto)
