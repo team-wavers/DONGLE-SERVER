@@ -37,11 +37,20 @@ describe('ClubsController', () => {
         },
     };
 
-    const imageFile = (mimetype = 'image/png'): Express.Multer.File =>
-        ({
-            buffer: Buffer.from('image'),
+    const imageFile = (mimetype = 'image/png'): Express.Multer.File => {
+        const signatures: Record<string, number[]> = {
+            'image/jpeg': [0xff, 0xd8, 0xff],
+            'image/png': [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+            'image/webp': [
+                0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45,
+                0x42, 0x50,
+            ],
+        };
+        return {
+            buffer: Buffer.from(signatures[mimetype] ?? [0x00]),
             mimetype,
-        }) as Express.Multer.File;
+        } as Express.Multer.File;
+    };
 
     beforeEach(async () => {
         clubsService = {

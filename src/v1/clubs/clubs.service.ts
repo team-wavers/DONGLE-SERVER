@@ -124,7 +124,16 @@ export class ClubsService {
             throw new NotFoundException('해당 동아리가 존재하지 않습니다.');
         }
 
-        return club;
+        return {
+            ...club,
+            president: club.president
+                ? {
+                      id: club.president.id,
+                      name: club.president.name,
+                      phone: club.president.phone,
+                  }
+                : null,
+        };
     }
 
     async update(id: number, updateClubDto: UpdateClubDto) {
