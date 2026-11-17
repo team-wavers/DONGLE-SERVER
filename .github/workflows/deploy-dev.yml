@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: backend-dev-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -33,7 +33,7 @@ jobs:
           --health-retries=10
 
     env:
-      NODE_VERSION: '22'
+      NODE_VERSION: '22.23.5'
       REMOTE_APP_DIR: /home/ec2-user/dongle.server.dev
       REMOTE_ENV_FILE: .env.development
       PM2_CONFIG: ecosystem.dev.config.js
