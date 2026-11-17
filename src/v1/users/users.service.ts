@@ -21,6 +21,19 @@ import { Club } from '../clubs/entities/club.entity';
 import * as bcrypt from 'bcrypt';
 import { normalizeKoreanPhone } from '../../common/lib/normalize-korean-phone';
 import { ERROR_CODES } from '../../common/error-codes';
+import { isValidRole } from '../auth/constants/roles';
+
+export type PublicUser = Pick<
+    User,
+    | 'id'
+    | 'name'
+    | 'login_id'
+    | 'role'
+    | 'phone'
+    | 'created_at'
+    | 'updated_at'
+    | 'deleted_at'
+>;
 
 @Injectable()
 export class UsersService {
@@ -108,20 +121,21 @@ export class UsersService {
         // 데이터베이스에 저장
         const savedUser = await userRepo.save(user);
 
-        return savedUser;
+        return this.toPublicUser(savedUser);
     }
 
     async hasAnyUser(): Promise<boolean> {
         return (await this.userRepository.count()) > 0;
     }
 
-    findAll() {
-        return this.userRepository.find({
+    async findAll(): Promise<PublicUser[]> {
+        const users = await this.userRepository.find({
             where: { deleted_at: IsNull(), is_system: false },
         });
+        return users.map((user) => this.toPublicUser(user));
     }
 
-    async findOne(id: number): Promise<User> {
+    async findOne(id: number): Promise<PublicUser> {
         const user = await this.userRepository.findOne({
             where: { id, deleted_at: IsNull(), is_system: false },
         });
@@ -130,7 +144,7 @@ export class UsersService {
             throw new NotFoundException('사용자를 찾을 수 없습니다.');
         }
 
-        return user;
+        return this.toPublicUser(user);
     }
 
     findOneIncludingSystem(id: number): Promise<User | null> {
@@ -139,10 +153,25 @@ export class UsersService {
         });
     }
 
+    findOneIncludingSystemForRefresh(id: number): Promise<User | null> {
+        return this.userRepository.findOne({
+            where: { id, deleted_at: IsNull() },
+            select: ['id', 'login_id', 'name', 'role', 'refresh_token'],
+        });
+    }
+
     async update(
         id: number,
-        updateUserDto: UpdateUserDto | { refresh_token: string },
+        updateUserDto: UpdateUserDto,
     ): Promise<void> {
+        if (
+            updateUserDto.role !== undefined &&
+            (typeof updateUserDto.role !== 'string' ||
+                !isValidRole(updateUserDto.role))
+        ) {
+            throw new BadRequestException('유효하지 않은 역할입니다.');
+        }
+
         // 삭제된 사용자는 업데이트 불가
         const user = await this.userRepository.findOne({
             where: { id, deleted_at: IsNull() },
@@ -154,15 +183,21 @@ export class UsersService {
             throw new ForbiddenException('시스템 계정은 수정할 수 없습니다.');
         }
 
-        const updateData = { ...updateUserDto };
-        const login_id =
-            'login_id' in updateUserDto ? updateUserDto.login_id : undefined;
+        const updateData: Partial<
+            Pick<User, 'name' | 'login_id' | 'password' | 'role' | 'phone'>
+        > = {};
+        for (const field of ['name', 'login_id', 'password', 'role'] as const) {
+            if (updateUserDto[field] !== undefined) {
+                updateData[field] = updateUserDto[field];
+            }
+        }
+        const login_id = updateUserDto.login_id;
         const phone =
-            'phone' in updateUserDto && updateUserDto.phone !== undefined
+            updateUserDto.phone !== undefined
                 ? normalizeKoreanPhone(updateUserDto.phone)
                 : undefined;
 
-        if ('phone' in updateData && phone !== undefined) {
+        if (phone !== undefined) {
             updateData.phone = phone;
         }
 
@@ -209,6 +244,7 @@ export class UsersService {
     async findByLoginId(login_id: string): Promise<User | null> {
         return this.userRepository.findOne({
             where: { login_id, deleted_at: IsNull() },
+            select: ['id', 'login_id', 'name', 'role', 'password'],
         });
     }
 
@@ -250,7 +286,21 @@ export class UsersService {
     async findByRefreshToken(refreshToken: string): Promise<User | null> {
         const user = await this.userRepository.findOne({
             where: { refresh_token: refreshToken, deleted_at: IsNull() },
+            select: ['id', 'login_id', 'name', 'role', 'refresh_token'],
         });
         return user || null;
+    }
+
+    private toPublicUser(user: User): PublicUser {
+        return {
+            id: user.id,
+            name: user.name,
+            login_id: user.login_id,
+            role: user.role,
+            phone: user.phone,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+            deleted_at: user.deleted_at ?? null,
+        };
     }
 }

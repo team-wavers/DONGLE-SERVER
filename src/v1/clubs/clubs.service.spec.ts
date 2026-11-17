@@ -395,9 +395,7 @@ describe('ClubsService', () => {
         authService.isOneTimeKeyValid.mockResolvedValue(true);
         authService.consumeOneTimeKey.mockResolvedValue(true);
         usersService.create.mockResolvedValue({ id: 99 });
-        transactionClubRepository.save.mockImplementation(
-            async (club) => club,
-        );
+        transactionClubRepository.save.mockImplementation(async (club) => club);
 
         const result = await service.create({
             key: 'one-time-key',
@@ -623,14 +621,57 @@ describe('ClubsService', () => {
     });
 
     it('findOne은 삭제되지 않은 동아리 단건을 조회한다', async () => {
-        const club = { id: 1, name: '동아리', deleted_at: null };
+        const club = {
+            id: 1,
+            name: '동아리',
+            category: '학술',
+            icon_url: 'https://example.com/icon.png',
+            is_recruiting: true,
+            deleted_at: null,
+            president_id: 3,
+            president: {
+                id: 3,
+                name: '회장',
+                phone: '010-1234-5678',
+                password: 'hashed-password',
+                refresh_token: 'stored-token',
+                role: 'president',
+            },
+        };
         clubRepository.findOne.mockResolvedValue(club);
 
-        await expect(service.findOne(1)).resolves.toBe(club);
+        await expect(service.findOne(1)).resolves.toEqual({
+            id: 1,
+            name: '동아리',
+            category: '학술',
+            icon_url: 'https://example.com/icon.png',
+            is_recruiting: true,
+            deleted_at: null,
+            president_id: 3,
+            president: {
+                id: 3,
+                name: '회장',
+                phone: '010-1234-5678',
+            },
+        });
 
         expect(clubRepository.findOne).toHaveBeenCalledWith({
             where: { id: 1, deleted_at: IsNull() },
             relations: ['president', 'reports'],
+        });
+    });
+
+    it('회장이 없는 동아리는 president null을 유지한다', async () => {
+        clubRepository.findOne.mockResolvedValue({
+            id: 1,
+            name: '동아리',
+            president: null,
+        });
+
+        await expect(service.findOne(1)).resolves.toEqual({
+            id: 1,
+            name: '동아리',
+            president: null,
         });
     });
 
@@ -675,7 +716,9 @@ describe('ClubsService', () => {
     it('update는 이미 삭제된 동아리를 거부한다', async () => {
         clubRepository.update.mockResolvedValue(makeUpdateResult(0));
 
-        await expect(service.update(1, { name: '수정된 동아리' })).rejects.toEqual(
+        await expect(
+            service.update(1, { name: '수정된 동아리' }),
+        ).rejects.toEqual(
             new HttpException(
                 '해당 동아리가 존재하지 않습니다.',
                 HttpStatus.BAD_REQUEST,

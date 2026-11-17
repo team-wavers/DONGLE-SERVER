@@ -268,29 +268,29 @@ describe('DTO runtime validation rules', () => {
             );
         });
 
-        it('keeps refresh_token optional but validates it as a string when present', () => {
-            expect(
-                validatePlain(CreateUserDto, {
+        it('accepts only known user roles', () => {
+            const errors = validatePlain(CreateUserDto, {
+                name: '관리자',
+                login_id: 'admin',
+                password: 'password',
+                role: 'superuser',
+                phone: '010-0000-0000',
+            });
+
+            expect(errors.map((error) => error.property)).toContain('role');
+        });
+
+        it('rejects refresh_token writes through HTTP', async () => {
+            await expect(
+                transformBody(CreateUserDto, {
                     name: '관리자',
                     login_id: 'admin',
                     password: 'password',
                     role: 'admin',
                     phone: '010-0000-0000',
+                    refresh_token: 'client-token',
                 }),
-            ).toHaveLength(0);
-
-            const errors = validatePlain(CreateUserDto, {
-                name: '관리자',
-                login_id: 'admin',
-                password: 'password',
-                role: 'admin',
-                phone: '010-0000-0000',
-                refresh_token: 1,
-            });
-
-            expect(errors.map((error) => error.property)).toContain(
-                'refresh_token',
-            );
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
     });
 
@@ -301,6 +301,17 @@ describe('DTO runtime validation rules', () => {
             const errors = validatePlain(UpdateUserDto, { phone: 1 });
 
             expect(errors.map((error) => error.property)).toContain('phone');
+        });
+
+        it('rejects null and unknown role values', () => {
+            expect(validatePlain(UpdateUserDto, { role: null }).map((error) => error.property)).toContain('role');
+            expect(validatePlain(UpdateUserDto, { role: 'superuser' }).map((error) => error.property)).toContain('role');
+        });
+
+        it('rejects refresh_token writes through HTTP', async () => {
+            await expect(
+                transformBody(UpdateUserDto, { refresh_token: 'client-token' }),
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
     });
 
