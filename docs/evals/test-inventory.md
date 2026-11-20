@@ -20,7 +20,7 @@
 | common helpers | [extract-http-exception-detail.spec.ts](../../src/common/extract-http-exception-detail.spec.ts)  | code-graded | HttpException response body에서 사용자용 message와 개발자용 detail 문자열 추출 |
 | common response | [response.interceptor.spec.ts](../../src/common/response.interceptor.spec.ts)                    | code-graded | 에러 응답 envelope의 message/detail 분리와 선택적 code 전달 계약         |
 | clubs          | [clubs.controller.spec.ts](../../src/v1/clubs/clubs.controller.spec.ts)                            | code-graded | 동아리 controller 계약, 활동보고서 단건 위임, 이미지 업로드 validation |
-| clubs          | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                                  | code-graded | 동아리 service 계약, 공개 등록 및 `president_id` 경로의 트랜잭션 키 소모/재시도/동시 경합, 모집일 병합 범위, 회장 존재, 회장 응답 요약 검증 |
+| clubs          | [clubs.service.spec.ts](../../src/v1/clubs/clubs.service.spec.ts)                                  | code-graded | 동아리 service 계약, 공개 등록 및 `president_id` 경로의 트랜잭션 키 소모/재시도/동시 경합, 모집일 병합 범위 및 양쪽 null 조회의 실제 TypeORM hydration 회귀, 회장 존재, 회장 응답 요약 검증 |
 | users          | [users.service.spec.ts](../../src/v1/users/users.service.spec.ts)                                  | code-graded | 사용자 응답 allowlist, auth 전용 credential 조회, 전화번호 정규화/중복 코드, 역할 검증, 단건 Not Found, 필수값 누락 400 |
 | users          | [users.controller.spec.ts](../../src/v1/users/users.controller.spec.ts)                            | code-graded | 사용자 controller 계약, president self read/update, admin 역할 유지관리, 목록 role metadata |
 | club reports   | [club_reports.service.spec.ts](../../src/v1/club_reports/club_reports.service.spec.ts)             | code-graded | 활동보고서 service 계약, 동아리 하위 단건/수정/삭제 Not Found          |
@@ -36,9 +36,14 @@
 | feedback       | [feedback.service.spec.ts](../../src/v1/feedback/feedback.service.spec.ts)                         | code-graded | GitHub Issue 제목/본문 조립, 설정 지연 조회, API 성공/실패(4xx·네트워크 오류) 계약 |
 | feedback       | [create-feedback.dto.spec.ts](../../src/v1/feedback/dto/create-feedback.dto.spec.ts)               | code-graded | category enum, content 공백 전용 값 거부 계약                          |
 | feedback       | [feedback.controller.spec.ts](../../src/v1/feedback/feedback.controller.spec.ts)                   | code-graded | controller DI 계약                                                     |
+| dev E2E 시드 | [seed-dev-e2e.spec.ts](../../src/database/seed-dev-e2e.spec.ts) | code-graded | 대상 DB 제한, 자격 증명 검증, 반복 실행, 계정·전화번호 양식 충돌, 테스트 계정 비밀번호 갱신 |
 
 ## 잔존 E2E
 
 | 영역 | 파일                                          | 현재 목적                                     | 상태 |
 | ---- | --------------------------------------------- | --------------------------------------------- | ---- |
 | app  | [app.e2e-spec.ts](../../test/app.e2e-spec.ts) | Nest 앱 부트스트랩과 기본 HTTP lifecycle 확인 | 유지 |
+
+## 배포 환경 설정
+
+- [frontend-e2e-env.spec.ts](../../src/common/frontend-e2e-env.spec.ts): ENV_FILE 토큰 추출·별도 Secret 대체·유효성 검사·서버 전달 파일에서 제거·마스킹 후 gh 호출 계약을 검증한다.

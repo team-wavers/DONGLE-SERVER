@@ -178,6 +178,18 @@ NODE_ENV=development yarn migration:run
 운영 DB 상태를 그대로 비교해야 하는 예외 상황에서는 스크립트 상단의 `RUN_MIGRATIONS="false"`로 바꾼 뒤 실행합니다.
 sync 후 migration이 권한 문제로 실패하면 `.env.development`의 `DB_USERNAME`과 `DEV_OWNER_USER`가 같은지, `postgres` 계정이 `createdb --owner`와 `pg_restore --role`을 실행할 권한이 있는지 먼저 확인합니다.
 
+## dev E2E 시드
+
+개발 앱 빌드와 마이그레이션 후 dev 앱 디렉터리에서 시드를 실행합니다. 비밀번호는 시크릿으로 주입한 `E2E_ADMIN_PASSWORD`, `E2E_CLUB_PASSWORD`를 사용합니다.
+
+```bash
+NODE_ENV=development yarn seed:dev-e2e
+```
+
+- 시드는 `DB_NAME=dongle_dev`에서만 실행합니다. 계정은 `dongle_e2e_admin`, `dongle_e2e_president`를 사용하고 합성 연락처를 사용하며 동아리 A를 회장에 연결합니다. 동아리 B는 회장을 지정하지 않아 다른 동아리 접근 거부 검증에 사용할 수 있습니다.
+- 명령은 계정·동아리 ID를 JSON으로 출력합니다. 같은 비밀번호로 반복 실행하면 ID와 세션을 유지합니다. 시드 비밀번호를 바꾸면 해당 테스트 계정의 refresh token을 지웁니다.
+- `sync-prod-to-dev.sh`에서 자동으로 재생성하려면 dev 자격 증명을 주입하고 `RUN_DEV_E2E_SEED=true`를 지정합니다. 시드는 정리 SQL과 마이그레이션 이후 실행됩니다. 백업 파일에서 dev DB로 직접 복원하는 경우에는 마이그레이션 후 위 명령을 실행합니다.
+
 ## 운영 DB 백업
 
 로컬 PostgreSQL을 유지하는 동안에는 [데이터베이스 백업 운영 가이드](database-backup.md)에 따라 매일 S3 백업을 생성합니다. 기본 운영 기준은 `daily` 7일, `weekly` 12주 보관, 실패 알림, 월 1회 dev restore 리허설입니다. 서버 재구축과 장애 대응 절차도 같은 운영 가이드에 기록합니다.
@@ -193,3 +205,16 @@ sync 후 migration이 권한 문제로 실패하면 `.env.development`의 `DB_US
 - DB 설정은 `synchronize: false`입니다. 스키마 변경은 TypeORM migration으로 추가하고, 배포 중 앱 재시작 전에 실행합니다.
 - 운영 DB를 개발 DB로 복원한 뒤 개발 endpoint를 현재 개발 코드 기준으로 동작시킬 때도 TypeORM migration을 실행합니다.
 - 운영 배포 승인 전에 migration 내용을 확인하세요. `down` migration은 롤백 보조용이며, 운영 데이터가 있는 컬럼 삭제는 별도 판단이 필요합니다.
+
+## 개발 배포 후 E2E 자동 실행
+
+시드 계정 연락처는 관리자(`dongle_e2e_admin`) `01099990001`, 회장(`dongle_e2e_president`) `01099990002`다. dev DB의 일반 계정과 하이픈 유무를 포함해 중복되지 않아야 한다.
+
+개발 배포는 마이그레이션 후 시드를 준비하고 앱 재시작 및 내부·외부 헬스체크를 수행한다. 성공 후 별도 job이 프런트 `dev-e2e.yml`을 `dev` ref로 호출한다. 서버 PR CI는 기존 서버 검증을 실행한다.
+
+- 서버 development Environment의 `ENV_FILE`에 `E2E_ADMIN_PASSWORD`, `E2E_CLUB_PASSWORD`를 등록한다. 프런트 E2E와 같은 dev 전용 값을 사용한다.
+- development Environment의 `ENV_FILE`에 `FRONT_E2E_DISPATCH_TOKEN=github_pat_...`을 한 줄로 등록한다. 프런트 저장소 Actions write 권한의 PAT를 사용하며 작은따옴표·큰따옴표도 허용한다. 중복 키, 빈 값, PAT가 아닌 형식은 거부하고 셸 표현식은 실행하지 않는다.
+- `ENV_FILE`에 해당 키가 없으면 기존 별도 Environment secret `FRONT_E2E_DISPATCH_TOKEN`을 사용한다. 토큰은 호출 전에 로그 마스킹하며 서버에 업로드하는 환경파일에서는 제거한다.
+- 프런트 워크플로 정의는 GitHub 제약상 프런트 기본 브랜치에도 있어야 한다. 먼저 프런트 #104를 기본 브랜치까지 반영하고 수동 실행 가능 여부를 확인한 뒤 서버 자동 호출을 활성화한다.
+- 배포 헬스체크 실패는 기존 롤백 경로를 따른다. 프런트 검사 호출 실패는 성공한 서버 배포와 별도 job에서 표시한다.
+- 헬스 응답은 개발 환경 이름과 배포 SHA를 제공하여 프런트 E2E가 기대한 서버 버전을 확인한다.

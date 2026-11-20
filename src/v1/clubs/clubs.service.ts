@@ -143,7 +143,7 @@ export class ClubsService {
         ) {
             const existingClub = await this.clubRepository.findOne({
                 where: { id, deleted_at: IsNull() },
-                select: ['recruit_start', 'recruit_end'],
+                select: ['id', 'recruit_start', 'recruit_end'],
             });
             if (!existingClub) {
                 throw new HttpException(

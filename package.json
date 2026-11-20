@@ -19,6 +19,7 @@
     "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "type": "tsc --noEmit --incremental false -p tsconfig.json",
     "migration:check": "node scripts/check-migrations.mjs",
+    "seed:dev-e2e": "node dist/database/seed-dev-e2e.js",
     "verify:docs": "node scripts/check-doc-contracts.mjs",
     "verify:fast": "yarn verify:docs && yarn type && yarn test",
     "test": "jest",
