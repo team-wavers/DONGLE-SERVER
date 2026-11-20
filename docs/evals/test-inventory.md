@@ -10,6 +10,8 @@
 
 ## 기본 테스트
 
+공개 최근 활동은 [club_reports.recent.spec.ts](../../src/v1/club_reports/club_reports.recent.spec.ts)에서 실행할 SQL의 `DISTINCT ON`, soft delete 필터, 내부/외부 정렬, 고정 네 건 제한과 단일 쿼리 호출, 썸네일·nullable 필드·lean 응답을 검증한다. [clubs.recent-reports.spec.ts](../../src/v1/clubs/clubs.recent-reports.spec.ts)는 공개 GET 메타데이터와 기존 ADMIN route 가드 유지를 검증한다. 실제 PostgreSQL 결과·쿼리 계획은 포함하지 않는다.
+
 | 영역           | 파일                                                                                               | 검증 방식   | 비고                                                                   |
 | -------------- | -------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------- |
 | app            | [app.controller.spec.ts](../../src/app.controller.spec.ts)                                         | code-graded | 기본 컨트롤러 응답                                                     |
