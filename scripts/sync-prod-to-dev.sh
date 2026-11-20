@@ -16,6 +16,7 @@ DEV_OWNER_USER="dongle_dev"
 APP_DIR="/home/ec2-user/dongle.server.dev"
 APP_NODE_ENV="development"
 RUN_MIGRATIONS="true"
+RUN_DEV_E2E_SEED="${RUN_DEV_E2E_SEED:-false}"
 
 # 선택 사항입니다. 복원 후 개인정보/토큰 정리 SQL이 필요 없으면 비워두세요.
 # 예시: SANITIZE_SQL="./scripts/sanitize-dev.sql"
@@ -75,6 +76,17 @@ if [[ "$RUN_MIGRATIONS" == "true" ]]; then
   fi
 fi
 
+if [[ "$RUN_DEV_E2E_SEED" == "true" ]]; then
+  if [[ "$RUN_MIGRATIONS" != "true" || -z "${E2E_ADMIN_PASSWORD:-}" || -z "${E2E_CLUB_PASSWORD:-}" ]]; then
+    echo "dev E2E 시드에는 마이그레이션과 E2E_ADMIN_PASSWORD, E2E_CLUB_PASSWORD가 필요합니다." >&2
+    exit 1
+  fi
+  if [[ "$DEV_DB" != "dongle_dev" || "$APP_NODE_ENV" != "development" || ! -f "$APP_DIR/dist/database/seed-dev-e2e.js" ]]; then
+    echo "dev E2E 시드 대상 DB 설정과 빌드 산출물을 확인하세요." >&2
+    exit 1
+  fi
+fi
+
 mkdir -p "$BACKUP_DIR"
 
 cat <<EOF
@@ -91,6 +103,7 @@ cat <<EOF
 3. 운영 DB dump를 DEV_OWNER_USER role로 개발 DB에 복원합니다.
 4. SANITIZE_SQL이 설정되어 있으면 실행합니다.
 5. RUN_MIGRATIONS=true이면 개발 앱 기준 TypeORM migration을 실행합니다.
+6. RUN_DEV_E2E_SEED=true이면 dev E2E 시드를 실행합니다.
 EOF
 
 read -r -p "계속하려면 OVERWRITE_DEV 를 입력하세요: " CONFIRM
@@ -143,20 +156,25 @@ if [[ -n "$SANITIZE_SQL" ]]; then
     --port "$PG_PORT" \
     --username "$PG_USER" \
     --dbname "$DEV_DB" \
+    --set=ON_ERROR_STOP=1 \
     --file "$SANITIZE_SQL"
 fi
 
 if [[ "$RUN_MIGRATIONS" == "true" ]]; then
-  echo "개발 DB TypeORM migration 상태를 확인합니다..."
   (
     cd "$APP_DIR"
-    NODE_ENV="$APP_NODE_ENV" yarn migration:show </dev/null
-  )
+    export NODE_ENV="$APP_NODE_ENV"
+    if [[ "$RUN_DEV_E2E_SEED" == "true" ]]; then
+      export DB_HOST="$PG_HOST" DB_PORT="$PG_PORT" DB_NAME="$DEV_DB"
+    fi
 
-  echo "개발 DB 미적용 TypeORM migration을 실행합니다..."
-  (
-    cd "$APP_DIR"
-    NODE_ENV="$APP_NODE_ENV" yarn migration:run </dev/null
+    echo "개발 DB TypeORM migration 상태를 확인합니다..."
+    yarn migration:show </dev/null
+    echo "개발 DB 미적용 TypeORM migration을 실행합니다..."
+    yarn migration:run </dev/null
+    if [[ "$RUN_DEV_E2E_SEED" == "true" ]]; then
+      yarn seed:dev-e2e </dev/null
+    fi
   )
 fi
 

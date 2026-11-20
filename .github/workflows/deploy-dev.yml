@@ -92,9 +92,12 @@ jobs:
       - name: Render env file from secrets
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
+          RELEASE_SHA: ${{ github.sha }}
         run: |
           umask 077
           printf '%s\n' "$ENV_FILE_CONTENT" > backend-dev.env
+          sed -i '/^RELEASE_SHA=/d' backend-dev.env
+          printf '\nRELEASE_SHA=%s\n' "$RELEASE_SHA" >> backend-dev.env
 
       - name: Validate required env keys
         run: |
@@ -107,7 +110,7 @@ jobs:
               echo "::error::필수 환경변수 누락: $key"
               missing=1
             fi
-          done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env.sample)
+          done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env.sample; printf 'E2E_ADMIN_PASSWORD=\nE2E_CLUB_PASSWORD=\n')
           if [ "$missing" -ne 0 ]; then
             exit 1
           fi
@@ -156,6 +159,7 @@ jobs:
           yarn install --frozen-lockfile --production=true </dev/null
           NODE_ENV=development yarn migration:show </dev/null
           NODE_ENV=development yarn migration:run </dev/null
+          NODE_ENV=development yarn seed:dev-e2e </dev/null
           pm2 startOrReload "${{ env.PM2_CONFIG }}" --update-env </dev/null
           sleep 5
 
@@ -233,3 +237,19 @@ jobs:
           echo "롤백 후에도 헬스체크가 실패했습니다. 즉시 수동 점검이 필요합니다."
           exit 1
           EOF
+
+  notify-frontend-e2e:
+    needs: deploy
+    runs-on: ubuntu-24.04
+    environment: development
+    steps:
+      - name: Trigger frontend dev deployment E2E
+        env:
+          GH_TOKEN: ${{ secrets.FRONT_E2E_DISPATCH_TOKEN }}
+          SERVER_SHA: ${{ github.sha }}
+        run: |
+          test -n "$GH_TOKEN"
+          gh workflow run dev-e2e.yml \
+            --repo team-wavers/DONGLE-FRONT \
+            --ref dev \
+            --field "server_sha=$SERVER_SHA"
