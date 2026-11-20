@@ -8,6 +8,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, IsNull, UpdateResult } from 'typeorm';
+import { RawSqlResultsToEntityTransformer } from 'typeorm/query-builder/transformer/RawSqlResultsToEntityTransformer';
+import { User } from '../users/entities/user.entity';
+import { ClubReport } from '../club_reports/entities/club_report.entity';
+import { ClubSchedule } from '../club_schedules/entities/club_schedule.entity';
 import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
 import { Club } from './entities/club.entity';
@@ -269,6 +273,72 @@ describe('ClubsService', () => {
         ).toHaveLength(1);
         expect(transactionClubRepository.save).toHaveBeenCalledTimes(1);
     });
+
+    it.each([
+        {
+            payload: { recruit_start: null, recruit_end: null },
+            expected: { recruit_start: null, recruit_end: null },
+        },
+        {
+            payload: { recruit_start: '2026-06-01' },
+            expected: { recruit_start: new Date('2026-05-31T15:00:00Z') },
+        },
+        {
+            payload: { recruit_end: '2026-06-30' },
+            expected: { recruit_end: new Date('2026-06-29T15:00:00Z') },
+        },
+    ])(
+        'update는 기존 모집일이 모두 null이어도 수정한다: $payload',
+        async ({ payload, expected }) => {
+            // DB 연결 없이 실제 TypeORM hydration으로 nullable-only SELECT 회귀를 재현한다.
+            class MetadataDataSource extends DataSource {
+                public async buildMetadatas() {
+                    return super.buildMetadatas();
+                }
+            }
+            const source = new MetadataDataSource({
+                type: 'postgres',
+                entities: [Club, User, ClubReport, ClubSchedule],
+            });
+            await source.buildMetadatas();
+            clubRepository.findOne.mockImplementation(
+                ({ select }: { select: (keyof Club)[] }) => {
+                    const query = source
+                        .getRepository(Club)
+                        .createQueryBuilder('club')
+                        .select(
+                            select.map((column: string) => `club.${column}`),
+                        );
+                    const transformer = new RawSqlResultsToEntityTransformer(
+                        query.expressionMap,
+                        source.driver,
+                        [],
+                        [],
+                    );
+                    const entities = transformer.transform(
+                        [
+                            {
+                                club_id: 41,
+                                club_recruit_start: null,
+                                club_recruit_end: null,
+                            },
+                        ],
+                        query.expressionMap.mainAlias!,
+                    );
+                    return Promise.resolve(entities[0] ?? null);
+                },
+            );
+            clubRepository.update.mockResolvedValue(makeUpdateResult(1));
+
+            await expect(service.update(41, payload)).resolves.toMatchObject({
+                affected: 1,
+            });
+            expect(clubRepository.update).toHaveBeenCalledWith(
+                { id: 41, deleted_at: IsNull() },
+                expected,
+            );
+        },
+    );
 
     it('update는 기존 종료일보다 늦은 시작일만 입력해도 거부한다', async () => {
         clubRepository.findOne.mockResolvedValue({
@@ -709,7 +779,7 @@ describe('ClubsService', () => {
         );
         expect(clubRepository.findOne).toHaveBeenCalledWith({
             where: { id: 1, deleted_at: IsNull() },
-            select: ['recruit_start', 'recruit_end'],
+            select: ['id', 'recruit_start', 'recruit_end'],
         });
     });
 
