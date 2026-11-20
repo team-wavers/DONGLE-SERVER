@@ -16,6 +16,8 @@
 
 ## 우선순위 높은 공백
 
+- 공개 최근 활동의 `DISTINCT ON`, 전체 최신 네 건 제한, soft delete 필터는 실행 SQL 계약과 mapper 단위 테스트로 확인한다. 실행 가능한 로컬 PostgreSQL이 없어 실제 DB 결과와 쿼리 계획은 아직 검증하지 못했다. 배포 DB와 분리된 전용 fixture 연결을 사용할 수 있으면 실제 SQL 결과 검증을 재검토한다. 운영 DB 조회나 새 E2E 인프라 확장은 이번 범위에 포함하지 않는다.
+
 - JWT strategy의 비활성/삭제 사용자 처리
 - S3 업로드 helper의 key 생성 및 실패 응답 mapping (공통 MIME/signature 검증은 `upload-file-validation.spec.ts`에서 검사)
 - TypeORM entity와 DTO 사이 payload mapping 규칙

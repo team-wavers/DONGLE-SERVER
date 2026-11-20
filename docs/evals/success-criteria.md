@@ -88,6 +88,19 @@
 
 ## Club Reports
 
+### 공개 최근 활동
+
+- `GET /v1/clubs/reports/recent`는 인증 없이 고정 최대 네 건의 최근 활동 카드를 반환해야 한다. 기존 `GET /v1/clubs/reports`는 JWT와 ADMIN 권한을 계속 요구해야 한다.
+- 한 SQL에서 삭제된 동아리와 보고서를 제외하고, 동아리별 `created_at DESC, id DESC` 최신 한 건을 선택한 뒤 전체 `created_at DESC, id DESC` 순으로 최대 네 건을 제한해야 한다. 전 동아리별 반복 쿼리나 전체 보고서를 읽어 JavaScript에서 그룹화하지 않는다.
+- 네 건을 고른 뒤 해당 보고서의 본문과 첨부 이미지를 조회해 썸네일을 계산해야 한다. 응답은 `id`, `title`, `createdAt`(ISO 문자열), `club_id`, `club_name`, `thumbnail_url`만 포함하고 본문, 첨부 배열, 관계 객체, 사용자 정보와 인증 비밀을 노출하지 않아야 한다.
+- 썸네일은 첨부 배열의 첫 공백 아닌 문자열을 우선하고, 없으면 본문 HTML의 첫 `img src`를 사용하며 둘 다 없으면 `null`이어야 한다. nullable 첨부 배열·본문은 안전하게 처리하고 nullable 제목은 빈 문자열로 반환해야 한다.
+- 활동이 없으면 빈 배열을 반환하며 기존 전역 interceptor의 성공 응답 envelope를 유지해야 한다.
+
+관련 테스트:
+
+- [club_reports.recent.spec.ts](../../src/v1/club_reports/club_reports.recent.spec.ts)
+- [clubs.recent-reports.spec.ts](../../src/v1/clubs/clubs.recent-reports.spec.ts)
+
 ### 활동보고서 관리
 
 - 활동보고서 목록, 단건 조회, 생성, 수정, 삭제 흐름은 service 계약을 유지해야 한다.
