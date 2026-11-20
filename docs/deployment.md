@@ -211,7 +211,8 @@ NODE_ENV=development yarn seed:dev-e2e
 개발 배포는 마이그레이션 후 시드를 준비하고 앱 재시작 및 내부·외부 헬스체크를 수행한다. 성공 후 별도 job이 프런트 `dev-e2e.yml`을 `dev` ref로 호출한다. 서버 PR CI는 기존 서버 검증을 실행한다.
 
 - 서버 development Environment의 `ENV_FILE`에 `E2E_ADMIN_PASSWORD`, `E2E_CLUB_PASSWORD`를 등록한다. 프런트 E2E와 같은 dev 전용 값을 사용한다.
-- development Environment의 `FRONT_E2E_DISPATCH_TOKEN`에는 프런트 저장소 Actions write 권한 토큰을 등록한다. 값은 로그에 출력하지 않는다.
+- development Environment의 `ENV_FILE`에 `FRONT_E2E_DISPATCH_TOKEN=github_pat_...`을 한 줄로 등록한다. 프런트 저장소 Actions write 권한의 PAT를 사용하며 작은따옴표·큰따옴표도 허용한다. 중복 키, 빈 값, PAT가 아닌 형식은 거부하고 셸 표현식은 실행하지 않는다.
+- `ENV_FILE`에 해당 키가 없으면 기존 별도 Environment secret `FRONT_E2E_DISPATCH_TOKEN`을 사용한다. 토큰은 호출 전에 로그 마스킹하며 서버에 업로드하는 환경파일에서는 제거한다.
 - 프런트 워크플로 정의는 GitHub 제약상 프런트 기본 브랜치에도 있어야 한다. 먼저 프런트 #104를 기본 브랜치까지 반영하고 수동 실행 가능 여부를 확인한 뒤 서버 자동 호출을 활성화한다.
 - 배포 헬스체크 실패는 기존 롤백 경로를 따른다. 프런트 검사 호출 실패는 성공한 서버 배포와 별도 job에서 표시한다.
 - 헬스 응답은 개발 환경 이름과 배포 SHA를 제공하여 프런트 E2E가 기대한 서버 버전을 확인한다.

@@ -271,3 +271,12 @@
 관련 테스트:
 
 - [app.e2e-spec.ts](../../test/app.e2e-spec.ts)
+
+## 프런트 E2E 호출 환경 설정
+
+- `ENV_FILE`의 dispatch PAT를 우선 사용하고, 키가 없을 때만 별도 Secret을 사용한다. 누락·중복·잘못된 형식은 비밀을 포함하지 않는 오류로 거부하며 셸 표현식을 실행하지 않는다.
+- dispatch 토큰은 서버 전달 환경파일에서 제거하고, 워크플로 호출 전 마스킹하며 `gh`의 환경변수로만 전달한다.
+
+관련 테스트:
+
+- [frontend-e2e-env.spec.ts](../../src/common/frontend-e2e-env.spec.ts)

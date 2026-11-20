@@ -43,3 +43,7 @@
 | 영역 | 파일                                          | 현재 목적                                     | 상태 |
 | ---- | --------------------------------------------- | --------------------------------------------- | ---- |
 | app  | [app.e2e-spec.ts](../../test/app.e2e-spec.ts) | Nest 앱 부트스트랩과 기본 HTTP lifecycle 확인 | 유지 |
+
+## 배포 환경 설정
+
+- [frontend-e2e-env.spec.ts](../../src/common/frontend-e2e-env.spec.ts): ENV_FILE 토큰 추출·별도 Secret 대체·유효성 검사·서버 전달 파일에서 제거·마스킹 후 gh 호출 계약을 검증한다.

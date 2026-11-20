@@ -95,7 +95,7 @@ jobs:
           RELEASE_SHA: ${{ github.sha }}
         run: |
           umask 077
-          printf '%s\n' "$ENV_FILE_CONTENT" > backend-dev.env
+          node scripts/frontend-e2e-env.cjs strip > backend-dev.env
           sed -i '/^RELEASE_SHA=/d' backend-dev.env
           printf '\nRELEASE_SHA=%s\n' "$RELEASE_SHA" >> backend-dev.env
 
@@ -243,13 +243,17 @@ jobs:
     runs-on: ubuntu-24.04
     environment: development
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.5'
+
       - name: Trigger frontend dev deployment E2E
         env:
-          GH_TOKEN: ${{ secrets.FRONT_E2E_DISPATCH_TOKEN }}
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
+          FALLBACK_DISPATCH_TOKEN: ${{ secrets.FRONT_E2E_DISPATCH_TOKEN }}
           SERVER_SHA: ${{ github.sha }}
-        run: |
-          test -n "$GH_TOKEN"
-          gh workflow run dev-e2e.yml \
-            --repo team-wavers/DONGLE-FRONT \
-            --ref dev \
-            --field "server_sha=$SERVER_SHA"
+        run: node scripts/frontend-e2e-env.cjs dispatch
