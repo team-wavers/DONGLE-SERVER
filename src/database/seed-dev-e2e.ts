@@ -1,8 +1,9 @@
 import * as bcrypt from 'bcrypt';
-import { DataSource, IsNull, Repository } from 'typeorm';
+import { DataSource, In, IsNull, Repository } from 'typeorm';
 import { ROLES, UserRole } from '../v1/auth/constants/roles';
 import { Club } from '../v1/clubs/entities/club.entity';
 import { User } from '../v1/users/entities/user.entity';
+import { normalizeKoreanPhone } from '../common/lib/normalize-korean-phone';
 
 const DEV_DATABASE = 'dongle_dev';
 const FIXTURE_TAG = 'dev-e2e';
@@ -42,7 +43,8 @@ async function seedUser(
         (user &&
             (user.name !== name ||
                 user.role !== role ||
-                user.phone !== phone ||
+                normalizeKoreanPhone(user.phone) !==
+                    normalizeKoreanPhone(phone) ||
                 user.is_system ||
                 user.deleted_at))
     ) {
@@ -61,7 +63,12 @@ async function seedUser(
         return user.id;
     }
 
-    if (await repository.existsBy({ phone, deleted_at: IsNull() })) {
+    if (
+        await repository.existsBy({
+            phone: In([normalizeKoreanPhone(phone), phone.replace(/-/g, '')]),
+            deleted_at: IsNull(),
+        })
+    ) {
         throw new Error(
             'dev E2E 계정 연락처가 기존 계정과 충돌합니다: ' + loginId,
         );

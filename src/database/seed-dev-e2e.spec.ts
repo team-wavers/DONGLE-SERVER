@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import { DataSource } from 'typeorm';
+import { DataSource, FindOperator } from 'typeorm';
 import { Club } from '../v1/clubs/entities/club.entity';
 import { User } from '../v1/users/entities/user.entity';
 import { seedDevE2e } from './seed-dev-e2e';
@@ -19,8 +19,14 @@ function createStore() {
         find: jest.fn(({ where }: { where: { login_id: string } }) =>
             users.filter((user) => user.login_id === where.login_id),
         ),
-        existsBy: jest.fn(({ phone }: { phone: string }) =>
-            users.some((user) => user.phone === phone && !user.deleted_at),
+        existsBy: jest.fn(
+            ({ phone }: { phone: string | FindOperator<string> }) => {
+                const numbers: string[] =
+                    typeof phone === 'string' ? [phone] : [phone.value].flat();
+                return users.some(
+                    (user) => numbers.includes(user.phone) && !user.deleted_at,
+                );
+            },
         ),
         insert: jest.fn((user: User) => {
             const id = users.length + 1;
@@ -154,6 +160,25 @@ describe('seedDevE2e', () => {
         );
         expect(userRepo.insert).not.toHaveBeenCalled();
     });
+
+    it.each(['01000000001', '010-0000-0001'])(
+        'rejects an existing normalised contact %s',
+        async (phone) => {
+            const { dataSource, users, userRepo } = createStore();
+            users.push({
+                id: 99,
+                login_id: 'ordinary-user',
+                name: '일반 사용자',
+                phone,
+                role: 'president',
+            } as User);
+
+            await expect(seedDevE2e(dataSource, environment)).rejects.toThrow(
+                '계정 연락처가 기존 계정과 충돌',
+            );
+            expect(userRepo.insert).not.toHaveBeenCalled();
+        },
+    );
 
     it('rejects a conflicting account without updating it', async () => {
         const { source, dataSource, users, userRepo } = createStore();

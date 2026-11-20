@@ -36,7 +36,7 @@
 | feedback       | [feedback.service.spec.ts](../../src/v1/feedback/feedback.service.spec.ts)                         | code-graded | GitHub Issue 제목/본문 조립, 설정 지연 조회, API 성공/실패(4xx·네트워크 오류) 계약 |
 | feedback       | [create-feedback.dto.spec.ts](../../src/v1/feedback/dto/create-feedback.dto.spec.ts)               | code-graded | category enum, content 공백 전용 값 거부 계약                          |
 | feedback       | [feedback.controller.spec.ts](../../src/v1/feedback/feedback.controller.spec.ts)                   | code-graded | controller DI 계약                                                     |
-| dev E2E 시드 | [seed-dev-e2e.spec.ts](../../src/database/seed-dev-e2e.spec.ts) | code-graded | 대상 DB 제한, 자격 증명 검증, 반복 실행, 계정 충돌, 테스트 계정 비밀번호 갱신 |
+| dev E2E 시드 | [seed-dev-e2e.spec.ts](../../src/database/seed-dev-e2e.spec.ts) | code-graded | 대상 DB 제한, 자격 증명 검증, 반복 실행, 계정·전화번호 양식 충돌, 테스트 계정 비밀번호 갱신 |
 
 ## 잔존 E2E
 
