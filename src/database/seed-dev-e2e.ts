@@ -151,7 +151,7 @@ export async function seedDevE2e(
                 'dongle_e2e_admin',
                 'E2E 관리자',
                 ROLES.ADMIN,
-                '01000000001',
+                '01099990001',
                 adminPassword,
             );
             const presidentId = await seedUser(
@@ -159,7 +159,7 @@ export async function seedDevE2e(
                 'dongle_e2e_president',
                 'E2E 회장',
                 ROLES.PRESIDENT,
-                '01000000002',
+                '01099990002',
                 presidentPassword,
             );
 

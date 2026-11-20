@@ -109,8 +109,8 @@ describe('seedDevE2e', () => {
         expect(clubs).toHaveLength(2);
         expect(users.map(({ role }) => role)).toEqual(['admin', 'president']);
         expect(users.map(({ phone }) => phone)).toEqual([
-            '01000000001',
-            '01000000002',
+            '01099990001',
+            '01099990002',
         ]);
         expect(users.every(({ is_system }) => !is_system)).toBe(true);
         expect(
@@ -161,7 +161,7 @@ describe('seedDevE2e', () => {
         expect(userRepo.insert).not.toHaveBeenCalled();
     });
 
-    it.each(['01000000001', '010-0000-0001'])(
+    it.each(['01099990001', '010-9999-0001'])(
         'rejects an existing normalised contact %s',
         async (phone) => {
             const { dataSource, users, userRepo } = createStore();

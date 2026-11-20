@@ -208,6 +208,8 @@ NODE_ENV=development yarn seed:dev-e2e
 
 ## 개발 배포 후 E2E 자동 실행
 
+시드 계정 연락처는 관리자(`dongle_e2e_admin`) `01099990001`, 회장(`dongle_e2e_president`) `01099990002`다. dev DB의 일반 계정과 하이픈 유무를 포함해 중복되지 않아야 한다.
+
 개발 배포는 마이그레이션 후 시드를 준비하고 앱 재시작 및 내부·외부 헬스체크를 수행한다. 성공 후 별도 job이 프런트 `dev-e2e.yml`을 `dev` ref로 호출한다. 서버 PR CI는 기존 서버 검증을 실행한다.
 
 - 서버 development Environment의 `ENV_FILE`에 `E2E_ADMIN_PASSWORD`, `E2E_CLUB_PASSWORD`를 등록한다. 프런트 E2E와 같은 dev 전용 값을 사용한다.
