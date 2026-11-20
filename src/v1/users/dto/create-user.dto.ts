@@ -1,4 +1,5 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsIn, IsString } from 'class-validator';
+import { ROLES } from '../../auth/constants/roles';
 
 export class CreateUserDto {
     // 유저 이름 (필수)
@@ -14,15 +15,11 @@ export class CreateUserDto {
     password: string;
 
     // 역할(권한) (필수)
+    @IsIn(Object.values(ROLES))
     @IsString()
     role: string;
 
     // 전화번호 (필수)
     @IsString()
     phone: string;
-
-    // 리프레시 토큰 (최초 생성 시는 비워둘 수 있음)
-    @IsOptional()
-    @IsString()
-    refresh_token?: string;
 }

@@ -66,6 +66,8 @@
 
 운영 배포는 GitHub Environment `production` 승인 후 진행됩니다. 저장소 설정에서 `Settings > Environments > production`을 만들고 `Required reviewers`를 지정해야 합니다.
 
+개발 및 운영 배포는 이미 실행 중인 같은 환경의 workflow를 후속 실행이 취소하지 않도록 설정합니다. GitHub Actions concurrency 그룹은 실행 중 하나와 대기 중 하나만 유지하며, 대기 중인 실행이 있을 때 새 실행이 오면 이전 대기 실행은 최신 실행으로 대체될 수 있습니다. 따라서 진행 중인 서버 반영은 후속 실행 때문에 중단되지 않지만, 수동 취소나 runner 오류까지 방지하지는 않으며 대기 중인 모든 커밋의 배포도 보장되지는 않습니다.
+
 수동 실행(`workflow_dispatch`)도 브랜치 정책을 따릅니다.
 
 - 개발 배포는 `develop` ref에서만 실행됩니다.

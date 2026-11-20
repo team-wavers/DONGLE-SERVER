@@ -56,9 +56,10 @@
 
 - 동아리 목록, 단건 조회, 생성, 수정, 삭제 흐름은 service 계약을 유지해야 한다.
 - 동아리 단건 조회는 삭제되지 않은 대상만 반환해야 하며, 대상이 없으면 Not Found로 거부해야 한다.
+- 동아리 단건 응답은 회장 관계가 있으면 `president`를 `{ id, name, phone }`로 제한하고, 회장이 없으면 `president: null`을 반환해야 한다.
 - 동아리 목록 조회는 삭제되지 않은 동아리만 반환해야 하며, 수정/삭제는 이미 삭제된 동아리를 거부해야 한다.
 - controller는 service 결과와 예외를 의도한 HTTP 흐름으로 전달해야 한다.
-- 동아리 이미지 업로드는 파일 누락과 허용되지 않은 MIME 타입을 거부하고, 허용된 이미지 파일만 S3 업로드와 service 갱신으로 전달해야 한다.
+- 동아리 이미지 업로드는 파일 누락, 허용되지 않은 MIME 타입, MIME과 파일 signature 불일치를 거부하고, 일치하는 JPEG/PNG/WEBP만 S3 업로드와 service 갱신으로 전달해야 한다.
 
 관련 테스트:
 
@@ -70,8 +71,11 @@
 ### 사용자 관리
 
 - 최초 사용자 생성 허용 규칙과 이후 관리자 권한 요구 규칙을 유지해야 한다.
-- 사용자 단건 조회는 삭제되지 않은 일반 사용자만 반환해야 하며, 대상이 없으면 Not Found로 거부해야 한다.
+- 사용자 응답은 `id`, `name`, `login_id`, `role`, `phone`, `created_at`, `updated_at`, `deleted_at`만 반환해야 하며 비밀번호와 refresh token을 포함하면 안 된다.
+- 사용자 생성, 목록, 단건 조회 응답은 인증 비밀을 포함하면 안 되고, entity 기본 조회도 `password`, `refresh_token`을 선택하지 않아야 한다. 로그인 및 refresh 흐름은 내부 전용 조회로 필요한 비밀 필드를 명시적으로 선택해야 한다.
+- 사용자 목록 조회는 admin만 허용해야 한다. 단건 조회는 admin이 임의 사용자를 조회할 수 있고, president는 본인만 조회할 수 있어야 한다.
 - 시스템 계정은 일반 목록/수정/삭제 흐름에서 보호되어야 한다.
+- president는 본인 역할을 수정할 수 없어야 하고, admin은 유효한 `admin`/`president` 역할을 유지관리할 수 있어야 한다. HTTP 생성/수정 payload는 `refresh_token`을 거부해야 한다.
 - 사용자 중복, 역할, 식별자 조건은 service 계약대로 처리되어야 한다.
 - 사용자 생성/수정은 전화번호를 정규화해 저장하고, 하이픈 포함/미포함 형식 모두를 중복 검사해야 한다.
 - 중복 로그인 ID와 전화번호는 각각 `LOGIN_ID_DUPLICATED`, `PHONE_DUPLICATED` 코드를 반환해야 한다.
@@ -90,7 +94,7 @@
 - 동아리 하위 활동보고서 수정과 삭제는 route의 동아리 ID와 보고서 ID가 모두 일치하는 대상에만 수행해야 하며, 대상이 없으면 Not Found로 거부해야 한다.
 - 활동보고서 수정 payload는 실제 수정 필드가 하나 이상 있어야 하며, 없으면 Bad Request로 거부해야 한다.
 - controller는 업로드 파일과 요청 payload를 service 계약에 맞게 전달해야 한다.
-- 업로드 이미지는 `image/jpeg`, `image/png`, `image/webp`만 허용해야 한다.
+- 업로드 이미지는 `image/jpeg`, `image/png`, `image/webp`만 허용하고, 실제 파일 signature도 선언된 MIME과 일치해야 한다.
 
 관련 테스트:
 
@@ -150,7 +154,7 @@
 ### 메인 배너 이미지 업로드
 
 - 이미지 업로드 controller는 `file` 누락을 Bad Request로 거부해야 한다.
-- 이미지 업로드 controller는 `image/jpeg`, `image/png`, `image/webp`만 허용하고 그 외 MIME은 Bad Request로 거부해야 한다.
+- 이미지 업로드 controller는 `image/jpeg`, `image/png`, `image/webp`만 허용하고, MIME 불일치 및 실제 파일 signature가 일치하지 않는 업로드는 Bad Request로 거부해야 한다.
 - 정상 이미지 업로드는 S3 업로드 결과를 `image_url` payload로 반환해야 한다.
 
 관련 테스트:
@@ -224,8 +228,8 @@
 - `UpdateClubDto`는 `CreateClubDto`에서 `key`, `newPresident`를 제외한 필드만 선택 필드로 받아야 하며, 두 필드가 포함된 수정 요청은 400으로 거부해야 한다. `president_id`를 포함한 정상 부분 수정은 타입 규칙을 유지해야 한다.
 - 동아리 생성의 1회용 키 소모는 `key`, 미사용 상태, `expiredAt > now` 조건을 한 번의 원자적 갱신으로 검사해야 한다. 소모 시점에 만료된 키는 Bad Request로 거부하고 사용자나 동아리를 생성하지 않아야 한다.
 - `president_id` 생성 경로는 기존 사용자 확인 후 `consumeOneTimeKey(key, manager)`와 Club 저장을 같은 트랜잭션에서 처리해야 한다. 키 소모 실패는 기존 `유효하지 않은 키입니다.` Bad Request를 반환하고, Club 저장 실패는 키 소모를 포함해 롤백되어야 한다.
-- `CreateUserDto`는 `name`, `login_id`, `password`, `role`, `phone`을 필수 문자열로 받고, `refresh_token`은 선택 문자열로 받아야 한다.
-- `UpdateUserDto`는 `CreateUserDto`의 모든 필드를 선택 필드로 만들되 타입 규칙을 유지해야 한다.
+- `CreateUserDto`는 `name`, `login_id`, `password`, `role`, `phone`을 필수 문자열로 받고 `role`은 `admin` 또는 `president`여야 한다. HTTP create/update payload는 `refresh_token`을 거부해야 한다.
+- `UpdateUserDto`는 사용자 편집 필드를 선택값으로 받고 제공된 값의 타입을 검증해야 한다. `role`은 생략할 수 있지만 `null`이나 `admin`/`president` 이외의 값은 거부해야 한다.
 - `UpsertMainBannerDto`는 `image_url`, `publish_start_at`, `publish_end_at`을 필수 문자열로 받고 `is_active`를 필수 boolean으로 받아야 한다.
 - auth 요청 DTO는 `LoginDto.login_id`, `LoginDto.password`, `RefreshTokenDto.refreshToken`, `VerifyTokenDto.token`을 필수 문자열로 받아야 한다.
 - `CreateClubReportDto`는 route parameter에서 주입되는 `club_id`를 선택 number로 두고, `title`, `content`, `image_urls`를 각각 필수 문자열/문자열 배열로 검증해야 한다.

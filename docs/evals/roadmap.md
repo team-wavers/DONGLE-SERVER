@@ -55,7 +55,7 @@
 ## 다음 작업 순서
 
 1. auth service와 JWT strategy의 실패 분기를 `test`로 옮긴다.
-2. S3 업로드 helper의 순수 로직을 분리해 `test`로 옮긴다.
+2. S3 업로드 helper의 key 생성 및 실패 mapping 순수 로직을 `test`로 옮긴다. 공통 MIME/signature 검증은 `upload-file-validation.spec.ts`에 추가했다.
 3. DB 연결이 꼭 필요한 케이스만 E2E 후보로 남긴다.
 
 ## E2E 승격 기록 규칙

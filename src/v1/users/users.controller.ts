@@ -31,7 +31,7 @@ export class UsersController {
 
     @Get()
     @UseGuards(JwtAuthGuard, RoleGuard)
-    @Roles(ROLES.ADMIN, ROLES.PRESIDENT)
+    @Roles(ROLES.ADMIN)
     findAll() {
         return this.usersService.findAll();
     }
@@ -39,8 +39,19 @@ export class UsersController {
     @Get(':id')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.ADMIN, ROLES.PRESIDENT)
-    findOne(@Param('id') id: string) {
-        return this.usersService.findOne(+id);
+    findOne(
+        @Param('id') id: string,
+        @Request() req: { user: { role: string; userId: number } },
+    ) {
+        const targetUserId = Number(id);
+        if (
+            normalizeRole(req.user.role) === ROLES.PRESIDENT &&
+            req.user.userId !== targetUserId
+        ) {
+            throw new ForbiddenException('회장은 본인 정보만 조회할 수 있습니다.');
+        }
+
+        return this.usersService.findOne(targetUserId);
     }
 
     @Patch(':id')
@@ -59,6 +70,9 @@ export class UsersController {
             throw new ForbiddenException(
                 '회장은 본인 정보만 수정할 수 있습니다.',
             );
+        }
+        if (role === ROLES.PRESIDENT && updateUserDto.role !== undefined) {
+            throw new ForbiddenException('회장은 본인 역할을 수정할 수 없습니다.');
         }
 
         return this.usersService.update(+id, updateUserDto);

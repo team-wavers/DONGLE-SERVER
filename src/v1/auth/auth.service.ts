@@ -80,7 +80,7 @@ export class AuthService {
             });
 
             // 사용자 조회
-            const user = await this.usersService.findOneIncludingSystem(
+            const user = await this.usersService.findOneIncludingSystemForRefresh(
                 decoded.sub,
             );
             if (!user) {

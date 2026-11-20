@@ -11,7 +11,7 @@ export class User {
     @Column({ length: 100 })
     login_id: string;
 
-    @Column({ length: 255 })
+    @Column({ length: 255, select: false })
     password: string;
 
     @Column({ length: 10 })
@@ -20,7 +20,7 @@ export class User {
     @Column({ length: 100, nullable: true })
     phone: string;
 
-    @Column({ length: 255, nullable: true })
+    @Column({ length: 255, nullable: true, select: false })
     refresh_token: string;
 
     @Column({ default: false })

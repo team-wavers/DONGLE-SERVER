@@ -17,7 +17,7 @@
 ## 우선순위 높은 공백
 
 - JWT strategy의 비활성/삭제 사용자 처리
-- S3 업로드 helper의 key 생성, MIME 검증, 실패 응답 mapping
+- S3 업로드 helper의 key 생성 및 실패 응답 mapping (공통 MIME/signature 검증은 `upload-file-validation.spec.ts`에서 검사)
 - TypeORM entity와 DTO 사이 payload mapping 규칙
 - DB 제약과 service validation이 겹치는 중복/무결성 에러 처리
 

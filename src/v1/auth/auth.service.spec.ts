@@ -10,7 +10,10 @@ import { OneTimeKey } from './entities/one_time_key.entity';
 
 type MockedUsersService = Pick<
     UsersService,
-    'validateUser' | 'findOneIncludingSystem' | 'updateRefreshToken'
+    | 'validateUser'
+    | 'findOneIncludingSystem'
+    | 'findOneIncludingSystemForRefresh'
+    | 'updateRefreshToken'
 >;
 
 describe('AuthService', () => {
@@ -49,6 +52,7 @@ describe('AuthService', () => {
         usersService = {
             validateUser: jest.fn(),
             findOneIncludingSystem: jest.fn(),
+            findOneIncludingSystemForRefresh: jest.fn(),
             updateRefreshToken: jest.fn(),
         };
         jwtService = {
@@ -193,7 +197,9 @@ describe('AuthService', () => {
                 'expired-refresh-token',
                 { secret: 'refresh-secret' },
             );
-            expect(usersService.findOneIncludingSystem).not.toHaveBeenCalled();
+            expect(
+                usersService.findOneIncludingSystemForRefresh,
+            ).not.toHaveBeenCalled();
             expect(usersService.updateRefreshToken).not.toHaveBeenCalled();
         });
 
@@ -208,13 +214,15 @@ describe('AuthService', () => {
                 service.refreshToken({ refreshToken: 'invalid-refresh-token' }),
             ).rejects.toBeInstanceOf(UnauthorizedException);
 
-            expect(usersService.findOneIncludingSystem).not.toHaveBeenCalled();
+            expect(
+                usersService.findOneIncludingSystemForRefresh,
+            ).not.toHaveBeenCalled();
             expect(usersService.updateRefreshToken).not.toHaveBeenCalled();
         });
 
         it('저장된 refresh token과 요청 token이 다르면 UnauthorizedException을 던진다', async () => {
             jwtService.verify.mockReturnValue({ sub: adminUser.id });
-            usersService.findOneIncludingSystem.mockResolvedValue({
+            usersService.findOneIncludingSystemForRefresh.mockResolvedValue({
                 ...adminUser,
                 refresh_token: 'different-refresh-token',
             } as User);
@@ -223,30 +231,34 @@ describe('AuthService', () => {
                 service.refreshToken({ refreshToken: 'stored-refresh-token' }),
             ).rejects.toBeInstanceOf(UnauthorizedException);
 
-            expect(usersService.findOneIncludingSystem).toHaveBeenCalledWith(
-                adminUser.id,
-            );
+            expect(
+                usersService.findOneIncludingSystemForRefresh,
+            ).toHaveBeenCalledWith(adminUser.id);
             expect(jwtService.sign).not.toHaveBeenCalled();
             expect(usersService.updateRefreshToken).not.toHaveBeenCalled();
         });
 
         it('사용자가 없으면 UnauthorizedException을 던진다', async () => {
             jwtService.verify.mockReturnValue({ sub: 999 });
-            usersService.findOneIncludingSystem.mockResolvedValue(null);
+            usersService.findOneIncludingSystemForRefresh.mockResolvedValue(
+                null,
+            );
 
             await expect(
                 service.refreshToken({ refreshToken: 'stored-refresh-token' }),
             ).rejects.toBeInstanceOf(UnauthorizedException);
 
-            expect(usersService.findOneIncludingSystem).toHaveBeenCalledWith(
-                999,
-            );
+            expect(
+                usersService.findOneIncludingSystemForRefresh,
+            ).toHaveBeenCalledWith(999);
             expect(usersService.updateRefreshToken).not.toHaveBeenCalled();
         });
 
         it('refresh token rotation 성공 시 새 토큰을 발급하고 새 refresh token을 저장한다', async () => {
             jwtService.verify.mockReturnValue({ sub: adminUser.id });
-            usersService.findOneIncludingSystem.mockResolvedValue(adminUser);
+            usersService.findOneIncludingSystemForRefresh.mockResolvedValue(
+                adminUser,
+            );
             jwtService.sign
                 .mockReturnValueOnce('rotated-access-token')
                 .mockReturnValueOnce('rotated-refresh-token');
