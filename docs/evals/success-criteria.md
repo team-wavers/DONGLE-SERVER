@@ -88,6 +88,8 @@
 
 ## Club Reports
 
+- 공개 최근 활동 보고서의 HTTP 200 응답은 `contracts/openapi.json`의 명세와 일치해야 한다. 실제 NestJS 응답 인터셉터를 거쳐 성공 래퍼와 카드 필드를 반환하고, null 썸네일과 빈 결과 배열을 허용해야 한다.
+
 ### 공개 최근 활동
 
 - `GET /v1/clubs/reports/recent`는 인증 없이 고정 최대 네 건의 최근 활동 카드를 반환해야 한다. 기존 `GET /v1/clubs/reports`는 JWT와 ADMIN 권한을 계속 요구해야 한다.
