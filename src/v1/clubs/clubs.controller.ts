@@ -73,6 +73,11 @@ export class ClubsController {
         }
     }
 
+    @Get('reports/recent')
+    async findRecentReports() {
+        return await this.clubReportsService.findRecentPublic();
+    }
+
     @Get('reports')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Roles(ROLES.ADMIN)

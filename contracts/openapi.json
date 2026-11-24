@@ -1,0 +1,53 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Dongle application API", "version": "1.0.0" },
+  "paths": {
+    "/v1/clubs/reports/recent": {
+      "get": {
+        "operationId": "getRecentClubReports",
+        "summary": "List the latest public activity reports",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Up to four reports, with at most one report per club.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RecentClubReportSuccess" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RecentClubReport": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "createdAt", "club_id", "club_name", "thumbnail_url"],
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "club_id": { "type": "integer" },
+          "club_name": { "type": "string" },
+          "thumbnail_url": { "type": ["string", "null"] }
+        }
+      },
+      "RecentClubReportSuccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["isSuccess", "result"],
+        "properties": {
+          "isSuccess": { "const": true },
+          "result": {
+            "type": "array",
+            "maxItems": 4,
+            "items": { "$ref": "#/components/schemas/RecentClubReport" }
+          }
+        }
+      }
+    }
+  }
+}
